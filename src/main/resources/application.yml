@@ -1,0 +1,7 @@
+spring:
+  application:
+    name:
+      EF-BE
+
+server:
+  port: 8080
