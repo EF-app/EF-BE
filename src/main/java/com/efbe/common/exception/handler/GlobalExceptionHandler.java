@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
         for (FieldError fieldError: fieldErrors) {
             String errorMsg = sb
                     .append(fieldError.getDefaultMessage())
-                    .append(". 요청받은 값: ")
+                    .append(" 요청받은 값: ")
                     .append(fieldError.getRejectedValue())
                     .toString();
 
