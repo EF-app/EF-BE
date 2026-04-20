@@ -1,6 +1,6 @@
 package com.efbe.common.init;
 
-import com.efbe.domain.user.entity.Personal;
+import com.efbe.domain.profile.entity.Personal;
 import com.efbe.domain.user.repository.PersonalRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

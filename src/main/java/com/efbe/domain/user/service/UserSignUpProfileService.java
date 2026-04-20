@@ -5,15 +5,15 @@ import com.efbe.common.exception.BusinessException;
 import com.efbe.common.exception.ErrorCode;
 import com.efbe.domain.user.dto.request.SignUpProfileReqDto;
 import com.efbe.domain.user.dto.response.SignUpProfileRspDto;
-import com.efbe.domain.user.entity.Interest;
-import com.efbe.domain.user.entity.Personal;
-import com.efbe.domain.user.entity.ProfileImage;
+import com.efbe.domain.profile.entity.Interest;
+import com.efbe.domain.profile.entity.Personal;
+import com.efbe.domain.profile.entity.ProfileImage;
 import com.efbe.domain.user.entity.SignUpStep;
 import com.efbe.domain.user.entity.UserSignUpCustomInterest;
 import com.efbe.domain.user.entity.UserSignUpInterest;
 import com.efbe.domain.user.entity.UserSignUpInterestType;
 import com.efbe.domain.user.entity.UserSignUpPersonal;
-import com.efbe.domain.user.entity.UserSignUpPersonalType;
+import com.efbe.domain.profile.entity.UserPersonalType;
 import com.efbe.domain.user.entity.UserSignUpProfile;
 import com.efbe.domain.user.entity.UserSignUpSession;
 import com.efbe.domain.user.repository.InterestRepository;
@@ -235,6 +235,7 @@ public class UserSignUpProfileService {
                         profile -> profile.updateMessage(reqDto.getMessage()),
                         () -> userSignUpProfileRepository.save(UserSignUpProfile.builder()
                                 .signUpSessionId(signUpSessionId)
+                                .mbti(reqDto.getMbti())
                                 .message(reqDto.getMessage())
                                 .build())
                 );
@@ -296,7 +297,7 @@ public class UserSignUpProfileService {
                 personals.add(UserSignUpPersonal.builder()
                         .signUpSessionId(signUpSessionId)
                         .personalId(personalId)
-                        .personalType(UserSignUpPersonalType.SELF)
+                        .personalType(UserPersonalType.SELF)
                         .build());
             }
         }
@@ -306,7 +307,7 @@ public class UserSignUpProfileService {
                 personals.add(UserSignUpPersonal.builder()
                         .signUpSessionId(signUpSessionId)
                         .personalId(idealPersonalId)
-                        .personalType(UserSignUpPersonalType.IDEAL)
+                        .personalType(UserPersonalType.IDEAL)
                         .build());
             }
         }

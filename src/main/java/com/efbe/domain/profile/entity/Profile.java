@@ -1,7 +1,5 @@
-package com.efbe.domain.user.entity;
+package com.efbe.domain.profile.entity;
 
-import com.efbe.common.entity.BaseEntity;
-import com.efbe.domain.profile.entity.Mbti;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -10,32 +8,39 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "user_signup_profile")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserSignUpProfile extends BaseEntity {
+@Table(name = "profile")
+public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private Long signUpSessionId;
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
     private Mbti mbti;
 
-    @Column(nullable = false, length = 255)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Purpose purpose;
+
+    @Column(length = 300)
     private String message;
 
     @Builder
-    public UserSignUpProfile(Long signUpSessionId, Mbti mbti, String message) {
-        this.signUpSessionId = signUpSessionId;
+    public Profile(Long userId, Mbti mbti, Purpose purpose, String message) {
+        this.userId = userId;
         this.mbti = mbti;
+        this.purpose = purpose;
         this.message = message;
     }
 
-    public void updateMessage(String message) {
+    public void update(Mbti mbti, Purpose purpose, String message) {
+        this.mbti = mbti;
+        this.purpose = purpose;
         this.message = message;
     }
 }

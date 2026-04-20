@@ -1,4 +1,4 @@
-package com.efbe.domain.user.entity;
+package com.efbe.domain.profile.entity;
 
 import com.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;

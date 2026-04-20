@@ -1,6 +1,7 @@
 package com.efbe.domain.user.entity;
 
 import com.efbe.common.entity.BaseEntity;
+import com.efbe.domain.profile.entity.Purpose;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -72,23 +73,7 @@ public class UserSignUpSession extends BaseEntity {
     private LocalDateTime phoneVerifiedAt;
 
     @Builder
-    public UserSignUpSession(
-            boolean serviceTermsAgreed,
-            boolean privacyPolicyAgreed,
-            boolean ageConfirmed,
-            boolean femaleConfirmed,
-            boolean marketingAgreed,
-            String phone,
-            String loginId,
-            String password,
-            String nickname,
-            Long areaId,
-            Purpose purpose,
-            SignUpStep signUpStep,
-            LocalDateTime expiredAt,
-            boolean completed,
-            LocalDateTime phoneVerifiedAt
-    ) {
+    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyPolicyAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, String phone, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt) {
         this.serviceTermsAgreed = serviceTermsAgreed;
         this.privacyPolicyAgreed = privacyPolicyAgreed;
         this.ageConfirmed = ageConfirmed;
@@ -143,7 +128,6 @@ public class UserSignUpSession extends BaseEntity {
         this.areaId = areaId;
         this.signUpStep = SignUpStep.BASIC_INFO_COMPLETED;
     }
-
 
     // 회원가입 목적 저장
     public void updatePurpose(Purpose purpose) {

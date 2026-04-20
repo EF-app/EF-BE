@@ -1,6 +1,7 @@
 package com.efbe.domain.user.entity;
 
 import com.efbe.common.entity.BaseEntity;
+import com.efbe.domain.profile.entity.Purpose;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,6 +35,9 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String uuid;
+
     @Column(nullable = false, length = 50, unique = true)
     private String loginId;
 
@@ -50,7 +54,7 @@ public class User extends BaseEntity {
     private String nickname;
 
     @Column
-    private Integer age;
+    private Integer birth;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
@@ -72,19 +76,26 @@ public class User extends BaseEntity {
     @Column
     private LocalDateTime lastLoginTime;
 
+    @Column
+    private LocalDateTime lastNicknameChangeTime;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BanStatus banStatus;
 
     @Builder
-    public User(String loginId, String password, String phone, String scode, String nickname, Integer age, Job job, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, Purpose purpose, LocalDateTime lastLoginTime, Role role) {
+    public User(String uuid, String loginId, String password, String phone, String scode, String nickname, Integer birth, Job job, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, Purpose purpose, LocalDateTime lastLoginTime, Role role, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+        this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
         this.phone = phone;
         this.scode = scode;
         this.nickname = nickname;
-        this.age = age;
+        this.birth = birth;
         this.job = job;
         this.isWithdraw = isWithdraw;
         this.withdrawDate = withdrawDate;
@@ -92,6 +103,8 @@ public class User extends BaseEntity {
         this.purpose = purpose;
         this.lastLoginTime = lastLoginTime;
         this.role = role;
+        this.lastNicknameChangeTime = lastNicknameChangeTime;
+        this.banStatus = banStatus;
     }
 
     // 마지막 로그인 시간 갱신

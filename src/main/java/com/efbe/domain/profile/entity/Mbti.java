@@ -1,4 +1,4 @@
-package com.efbe.domain.user.entity;
+package com.efbe.domain.profile.entity;
 
 public enum Mbti {
     ENFJ,

@@ -1,5 +1,6 @@
 package com.efbe.domain.user.dto.request;
 
+import com.efbe.domain.profile.entity.Mbti;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +22,9 @@ public class SignUpProfileReqDto {
     @NotBlank(message = "회원가입 토큰은 필수입니다.")
     @Schema(description = "회원가입 진행 토큰", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String registrationToken;
+
+    @Schema(description = "MBTI", example = "ENFP")
+    private Mbti mbti;
 
     @NotBlank(message = "한 줄 소개는 필수입니다.")
     @Size(max = 255, message = "한 줄 소개는 255자 이하로 입력해야 합니다.")

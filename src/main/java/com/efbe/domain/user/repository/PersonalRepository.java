@@ -1,6 +1,6 @@
 package com.efbe.domain.user.repository;
 
-import com.efbe.domain.user.entity.Personal;
+import com.efbe.domain.profile.entity.Personal;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

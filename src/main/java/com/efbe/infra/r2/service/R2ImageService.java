@@ -1,6 +1,6 @@
 package com.efbe.infra.r2.service;
 
-import com.efbe.domain.user.entity.ProfileImage;
+import com.efbe.domain.profile.entity.ProfileImage;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface R2ImageService {

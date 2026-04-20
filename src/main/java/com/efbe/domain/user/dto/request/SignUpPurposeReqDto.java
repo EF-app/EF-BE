@@ -1,6 +1,6 @@
 package com.efbe.domain.user.dto.request;
 
-import com.efbe.domain.user.entity.Purpose;
+import com.efbe.domain.profile.entity.Purpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

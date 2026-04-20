@@ -2,7 +2,7 @@ package com.efbe.infra.r2.service;
 
 import com.efbe.common.exception.BusinessException;
 import com.efbe.common.exception.ErrorCode;
-import com.efbe.domain.user.entity.ProfileImage;
+import com.efbe.domain.profile.entity.ProfileImage;
 import com.efbe.domain.user.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

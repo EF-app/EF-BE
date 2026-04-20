@@ -3,6 +3,10 @@ package com.efbe.domain.user.service;
 import com.efbe.common.auth.jwt.JwtTokenProvider;
 import com.efbe.common.exception.BusinessException;
 import com.efbe.common.exception.ErrorCode;
+import com.efbe.domain.profile.entity.*;
+import com.efbe.domain.profile.repository.ProfileRepository;
+import com.efbe.domain.profile.repository.UserInterestRepository;
+import com.efbe.domain.profile.repository.UserPersonalRepository;
 import com.efbe.domain.user.dto.request.LoginReqDto;
 import com.efbe.domain.user.dto.request.PhoneVerificationReqDto;
 import com.efbe.domain.user.dto.request.SignUpBasicInfoReqDto;
@@ -12,12 +16,7 @@ import com.efbe.domain.user.dto.request.TermsAgreementReqDto;
 import com.efbe.domain.user.dto.response.LoginRspDto;
 import com.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.efbe.domain.user.dto.response.SignUpProgressRspDto;
-import com.efbe.domain.user.entity.ProfileImage;
-import com.efbe.domain.user.entity.Purpose;
-import com.efbe.domain.user.entity.Role;
-import com.efbe.domain.user.entity.SignUpStep;
-import com.efbe.domain.user.entity.User;
-import com.efbe.domain.user.entity.UserSignUpSession;
+import com.efbe.domain.user.entity.*;
 import com.efbe.domain.user.repository.ProfileImageRepository;
 import com.efbe.domain.user.repository.UserRepository;
 import com.efbe.domain.user.repository.UserSignUpCustomInterestRepository;
@@ -44,6 +43,9 @@ public class UserAuthService {
     private final UserSignUpCustomInterestRepository userSignUpCustomInterestRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
     private final ProfileImageRepository profileImageRepository;
+    private final ProfileRepository profileRepository;
+    private final UserInterestRepository userInterestRepository;
+    private final UserPersonalRepository userPersonalRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -152,7 +154,6 @@ public class UserAuthService {
                 .build();
     }
 
-
     // 가입 목적 저장
     @Transactional
     public SignUpProgressRspDto createPurpose(SignUpPurposeReqDto reqDto) {
@@ -202,19 +203,28 @@ public class UserAuthService {
         }
 
         User user = userRepository.save(User.builder()
+                .uuid(generateUuid())
                 .loginId(signUpSession.getLoginId())
                 .password(signUpSession.getPassword())
-                .age(0)
+                .birth(19900101)
                 .scode("0000")
                 .phone(signUpSession.getPhone())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
                 .purpose(signUpSession.getPurpose())
                 .isWithdraw(false)
+                .lastNicknameChangeTime(LocalDateTime.now())
                 .role(Role.ROLE_USER)
+                .banStatus(BanStatus.NONE)
                 .build());
 
-        List<ProfileImage> profileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
+        saveFinalProfile(user.getId(), signUpSession.getId(), signUpSession.getPurpose());
+        saveUserInterests(user.getId(), signUpSession.getId());
+        saveUserPersonals(user.getId(), signUpSession.getId());
+
+        List<ProfileImage> profileImages = profileImageRepository
+                .findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
+
         for (ProfileImage profileImage : profileImages) {
             profileImage.assignToUser(user.getId());
         }
@@ -319,5 +329,52 @@ public class UserAuthService {
         }
 
         return signUpSession;
+    }
+
+    // UUID 생성
+    private String generateUuid() {
+        return java.util.UUID.randomUUID().toString();
+    }
+
+    // 유저 프로필 저장
+    private void saveFinalProfile(Long userId, Long signUpSessionId, Purpose purpose) {
+        UserSignUpProfile signUpProfile = userSignUpProfileRepository.findBySignUpSessionId(signUpSessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_REQUIRED));
+
+        profileRepository.findByUserId(userId)
+                .ifPresentOrElse(
+                        profile -> profile.update(signUpProfile.getMbti(), purpose, signUpProfile.getMessage()),
+                        () -> profileRepository.save(Profile.builder()
+                                .userId(userId)
+                                .mbti(signUpProfile.getMbti())
+                                .purpose(purpose)
+                                .message(signUpProfile.getMessage())
+                                .build())
+                );
+    }
+
+    // 유저 관심사 저장
+    private void saveUserInterests(Long userId, Long signUpSessionId) {
+        List<UserSignUpInterest> signUpInterests = userSignUpInterestRepository.findBySignUpSessionId(signUpSessionId);
+
+        for (UserSignUpInterest signUpInterest : signUpInterests) {
+            userInterestRepository.save(UserInterest.builder()
+                    .userId(userId)
+                    .interestId(signUpInterest.getInterestId())
+                    .build());
+        }
+    }
+
+    // 유저 및 이상형 스타일 저장
+    private void saveUserPersonals(Long userId, Long signUpSessionId) {
+        List<UserSignUpPersonal> signUpPersonals = userSignUpPersonalRepository.findBySignUpSessionId(signUpSessionId);
+
+        for (UserSignUpPersonal signUpPersonal : signUpPersonals) {
+            userPersonalRepository.save(UserPersonal.builder()
+                    .userId(userId)
+                    .personalId(signUpPersonal.getPersonalId())
+                    .type(signUpPersonal.getPersonalType())
+                    .build());
+        }
     }
 }
