@@ -1,0 +1,17 @@
+package com.nokcha.efbe.common.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
+
+import java.util.Optional;
+
+@Configuration
+public class JpaAuditingConfig {
+
+    // 작성자 정보
+    @Bean
+    public AuditorAware<Long> auditorAware() {
+        return () -> Optional.of(0L);
+    }
+}
