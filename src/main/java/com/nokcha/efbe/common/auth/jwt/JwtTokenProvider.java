@@ -1,5 +1,6 @@
 package com.nokcha.efbe.common.auth.jwt;
 
+import com.nokcha.efbe.common.auth.model.AuthUserPrincipal;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.user.entity.Role;
@@ -82,11 +83,15 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
+        Long userId = claims.get(USER_ID_CLAIM, Long.class);
         String loginId = claims.get(LOGIN_ID_CLAIM, String.class);
         String role = claims.get(ROLE_CLAIM, String.class);
 
         return new UsernamePasswordAuthenticationToken(
-                loginId,
+                AuthUserPrincipal.builder()
+                        .userId(userId)
+                        .loginId(loginId)
+                        .build(),
                 token,
                 Collections.singletonList(new SimpleGrantedAuthority(role))
         );

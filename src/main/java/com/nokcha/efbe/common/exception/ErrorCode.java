@@ -4,6 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
+    // 권한
+    INVALID_USER(401, "로그인 정보를 확인해주세요."),
+    FORBIDDEN_ROLE(403, "관리자 권한이 필요합니다."),
+
     // 회원가입
     TERMS_AGREEMENT_REQUIRED(400, "필수 약관 동의가 필요합니다."),
     PASSWORD_CONFIRM_MISMATCH(400, "비밀번호 확인이 일치하지 않습니다."),
@@ -37,8 +41,10 @@ public enum ErrorCode {
     ALREADY_PHONE(409, "이미 가입된 휴대폰 번호입니다."),
     ALREADY_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_REQUIRED(400, "닉네임 입력이 필요합니다."),
-    AREA_REQUIRED(400, "지역 선택이 필요합니다.")
+    AREA_REQUIRED(400, "지역 선택이 필요합니다."),
 
+    // 공지사항
+    NOT_FOUND_NOTICE(404, "존재하지 않는 공지사항입니다.")
     ;
 
     private final int code;
