@@ -3,17 +3,24 @@ package com.nokcha.efbe.domain.user.service;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.user.dto.request.SignUpProfileReqDto;
-import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
-import com.nokcha.efbe.domain.profile.entity.Interest;
-import com.nokcha.efbe.domain.profile.entity.Personal;
+import com.nokcha.efbe.common.util.InterestKeywordNormalizer;
+import com.nokcha.efbe.domain.profile.entity.CodeInterest;
+import com.nokcha.efbe.domain.profile.entity.CodePersonal;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Mbti;
 import com.nokcha.efbe.domain.profile.entity.ProfileImage;
+import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
+import com.nokcha.efbe.domain.user.dto.request.SignUpAboutMeReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpIdealReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpInterestReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpLifestyleReqDto;
+import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
+import com.nokcha.efbe.domain.user.entity.Job;
 import com.nokcha.efbe.domain.user.entity.SignUpStep;
 import com.nokcha.efbe.domain.user.entity.UserSignUpCustomInterest;
 import com.nokcha.efbe.domain.user.entity.UserSignUpInterest;
 import com.nokcha.efbe.domain.user.entity.UserSignUpInterestType;
 import com.nokcha.efbe.domain.user.entity.UserSignUpPersonal;
-import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
 import com.nokcha.efbe.domain.user.entity.UserSignUpProfile;
 import com.nokcha.efbe.domain.user.entity.UserSignUpSession;
 import com.nokcha.efbe.domain.user.repository.InterestRepository;
@@ -33,12 +40,20 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserSignUpProfileService {
+
+    private static final Set<String> LIFESTYLE_CATEGORIES = Set.of("음주", "선호 주종", "흡연", "흡연 종류", "타투유무");
+    private static final Set<String> ABOUT_ME_CATEGORIES = Set.of("종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
+    private static final Set<String> IDEAL_CATEGORIES = Set.of("머리", "체형", "키", "성향");
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserSignUpSessionRepository userSignUpSessionRepository;
@@ -51,70 +66,92 @@ public class UserSignUpProfileService {
     private final PersonalRepository personalRepository;
     private final R2ImageService r2ImageService;
 
-    // 프로필 정보(관심자, 스타일 등) 저장
+    // 관심사 정보 저장
     @Transactional
-    public SignUpProfileRspDto createProfile(SignUpProfileReqDto reqDto) {
-        validateProfileRequest(reqDto);
-
+    public SignUpProfileRspDto createInterests(SignUpInterestReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (signUpSession.getSignUpStep() != SignUpStep.PURPOSE_SELECTED
-                && signUpSession.getSignUpStep() != SignUpStep.PROFILE_COMPLETED) {
+        if (!isInterestEditableStep(signUpSession.getSignUpStep())) {
             throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
         }
 
         validateInterestIds(reqDto.getInterestIds());
-        List<Personal> personals = validatePersonalIds(reqDto.getPersonalIds());
-        List<Personal> idealPersonals = validatePersonalIds(reqDto.getIdealPersonalIds());
-        validateRequiredPersonalCategories(personals);
-        validateIdealPersonalCategories(idealPersonals);
-
-        saveProfile(signUpSession.getId(), reqDto);
         saveInterests(signUpSession.getId(), reqDto.getInterestIds());
         saveCustomKeywords(signUpSession.getId(), reqDto.getCustomKeywords());
-        savePersonals(signUpSession.getId(), reqDto.getPersonalIds(), reqDto.getIdealPersonalIds());
+        signUpSession.updateInterestStep();
 
-        return SignUpProfileRspDto.builder()
-                .registrationToken(reqDto.getRegistrationToken())
-                .step(signUpSession.getSignUpStep().name())
-                .imageUrls(Collections.emptyList())
-                .build();
+        return buildResponse(reqDto.getRegistrationToken(), signUpSession.getSignUpStep(), Collections.emptyList());
     }
 
-    // 프로필 이미지 저장
+    // 생활 습관 정보 저장
     @Transactional
-    public SignUpProfileRspDto uploadProfileImages(String registrationToken, List<MultipartFile> images) {
-        UserSignUpSession signUpSession = getAvailableSignUpSession(registrationToken);
+    public SignUpProfileRspDto createLifestyle(SignUpLifestyleReqDto reqDto) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (signUpSession.getSignUpStep() != SignUpStep.PURPOSE_SELECTED
-                && signUpSession.getSignUpStep() != SignUpStep.PROFILE_COMPLETED) {
-            throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
+        if (!isLifestyleEditableStep(signUpSession.getSignUpStep())) {
+            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
         }
 
-        if (userSignUpProfileRepository.findBySignUpSessionId(signUpSession.getId()).isEmpty()) {
+        List<CodePersonal> lifestylePersonals = validatePersonalIds(reqDto.getPersonalIds());
+        validatePersonalCategories(lifestylePersonals, LIFESTYLE_CATEGORIES);
+        validateRequiredPersonalCategories(lifestylePersonals);
+        saveSelfPersonalsByCategories(signUpSession.getId(), lifestylePersonals, LIFESTYLE_CATEGORIES);
+        signUpSession.updateLifestyleStep();
+
+        return buildResponse(reqDto.getRegistrationToken(), signUpSession.getSignUpStep(), Collections.emptyList());
+    }
+
+    // 나에 대해서 정보 저장
+    @Transactional
+    public SignUpProfileRspDto createAboutMe(SignUpAboutMeReqDto reqDto) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
+
+        if (!isAboutMeEditableStep(signUpSession.getSignUpStep())) {
+            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
+        }
+
+        List<CodePersonal> aboutMePersonals = validatePersonalIds(reqDto.getPersonalIds());
+        validatePersonalCategories(aboutMePersonals, ABOUT_ME_CATEGORIES);
+        saveDraftProfileAboutMe(signUpSession.getId(), reqDto.getJob(), reqDto.getMbti());
+        saveSelfPersonalsByCategories(signUpSession.getId(), aboutMePersonals, ABOUT_ME_CATEGORIES);
+        signUpSession.updateAboutMeStep();
+
+        return buildResponse(reqDto.getRegistrationToken(), signUpSession.getSignUpStep(), Collections.emptyList());
+    }
+
+    // 이상형 정보 저장
+    @Transactional
+    public SignUpProfileRspDto createIdeal(SignUpIdealReqDto reqDto) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
+
+        if (!isIdealEditableStep(signUpSession.getSignUpStep())) {
+            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
+        }
+
+        List<CodePersonal> idealCodePersonals = validatePersonalIds(reqDto.getIdealPersonalIds());
+        validateIdealPersonalCategories(idealCodePersonals);
+        saveIdealPersonals(signUpSession.getId(), reqDto.getIdealPersonalIds());
+        saveDraftIdealPointTypes(signUpSession.getId(), reqDto.getIdealPointTypes());
+        signUpSession.updateIdealStep();
+
+        return buildResponse(reqDto.getRegistrationToken(), signUpSession.getSignUpStep(), Collections.emptyList());
+    }
+
+    // 프로필 사진과 소개 저장
+    @Transactional
+    public SignUpProfileRspDto createProfile(String registrationToken, String message, List<MultipartFile> images) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(registrationToken);
+
+        if (!isProfileIntroEditableStep(signUpSession.getSignUpStep())) {
             throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
         }
 
         validateProfileImages(images);
+        saveDraftProfileMessage(signUpSession.getId(), message);
         List<String> imageUrls = saveProfileImages(signUpSession.getId(), images);
-        signUpSession.updateProfileStep();
+        signUpSession.updateProfileIntroStep();
 
-        return SignUpProfileRspDto.builder()
-                .registrationToken(registrationToken)
-                .step(signUpSession.getSignUpStep().name())
-                .imageUrls(imageUrls)
-                .build();
-    }
-
-    // 프로필 요청 값 검증
-    private void validateProfileRequest(SignUpProfileReqDto reqDto) {
-        if (reqDto.getMessage() == null || reqDto.getMessage().isBlank()) {
-            throw new BusinessException(ErrorCode.INTRODUCTION_REQUIRED);
-        }
-
-        if (reqDto.getIdealPersonalIds() != null && reqDto.getIdealPersonalIds().size() > 6) {
-            throw new BusinessException(ErrorCode.IDEAL_PERSONAL_COUNT_INVALID);
-        }
+        return buildResponse(registrationToken, signUpSession.getSignUpStep(), imageUrls);
     }
 
     // 프로필 이미지 요청 값 검증
@@ -144,62 +181,72 @@ public class UserSignUpProfileService {
         return signUpSession;
     }
 
+    // 관심사 단계 수정 가능 여부 확인
+    private boolean isInterestEditableStep(SignUpStep signUpStep) {
+        return signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
+    }
+
+    // 생활 습관 단계 수정 가능 여부 확인
+    private boolean isLifestyleEditableStep(SignUpStep signUpStep) {
+        return signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
+    }
+
+    // 나에 대해서 단계 수정 가능 여부 확인
+    private boolean isAboutMeEditableStep(SignUpStep signUpStep) {
+        return signUpStep.isAtLeast(SignUpStep.LIFESTYLE_COMPLETED);
+    }
+
+    // 이상형 단계 수정 가능 여부 확인
+    private boolean isIdealEditableStep(SignUpStep signUpStep) {
+        return signUpStep.isAtLeast(SignUpStep.LIFESTYLE_COMPLETED);
+    }
+
+    // 프로필 사진 단계 수정 가능 여부 확인
+    private boolean isProfileIntroEditableStep(SignUpStep signUpStep) {
+        return signUpStep.isAtLeast(SignUpStep.LIFESTYLE_COMPLETED);
+    }
+
     // 관심사 존재 여부 검증
     private void validateInterestIds(List<Long> interestIds) {
         if (interestIds == null || interestIds.isEmpty()) {
             return;
         }
 
-        List<Interest> interests = interestRepository.findAllById(interestIds);
+        List<CodeInterest> codeInterests = interestRepository.findAllById(interestIds);
 
-        if (interests.size() != interestIds.size()) {
+        if (codeInterests.size() != interestIds.size()) {
             throw new BusinessException(ErrorCode.INTEREST_NOT_FOUND);
         }
     }
 
     // 성향 존재 여부 검증
-    private List<Personal> validatePersonalIds(List<Long> personalIds) {
+    private List<CodePersonal> validatePersonalIds(List<Long> personalIds) {
         if (personalIds == null || personalIds.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Personal> personals = personalRepository.findAllById(personalIds);
+        List<CodePersonal> codePersonals = personalRepository.findAllById(personalIds);
 
-        if (personals.size() != personalIds.size()) {
+        if (codePersonals.size() != personalIds.size()) {
             throw new BusinessException(ErrorCode.PERSONAL_NOT_FOUND);
         }
 
-        return personals;
+        return codePersonals;
     }
 
-    // 필수 성향 카테고리 존재 여부 검증
-    private void validateRequiredPersonalCategories(List<Personal> personals) {
-        boolean hasAlcohol = personals.stream()
-                .filter(personal -> "음주".equals(personal.getBigCategory()))
-                .anyMatch(personal -> {
-                    if (personal.getId() < 1 || personal.getId() > 12) {
-                        throw new BusinessException(ErrorCode.INVALID_ALCOHOL_ID);
-                    }
-                    return true;
-                });
+    // 허용된 성향 카테고리인지 검증
+    private void validatePersonalCategories(List<CodePersonal> codePersonals, Set<String> allowedCategories) {
+        for (CodePersonal codePersonal : codePersonals) {
+            if (!allowedCategories.contains(codePersonal.getBigCategory())) {
+                throw new BusinessException(ErrorCode.PERSONAL_NOT_FOUND);
+            }
+        }
+    }
 
-        boolean hasSmoking = personals.stream()
-                .filter(personal -> "흡연".equals(personal.getBigCategory()))
-                .anyMatch(personal -> {
-                    if (personal.getId() < 13 || personal.getId() > 21) {
-                        throw new BusinessException(ErrorCode.INVALID_SMOKING_ID);
-                    }
-                    return true;
-                });
-
-        boolean hasTattoo = personals.stream()
-                .filter(personal -> "타투유무".equals(personal.getBigCategory()))
-                .anyMatch(personal -> {
-                    if (personal.getId() < 22 || personal.getId() > 26) {
-                        throw new BusinessException(ErrorCode.INVALID_TATTOO_ID);
-                    }
-                    return true;
-                });
+    // 필수 생활습관 카테고리 존재 여부 검증
+    private void validateRequiredPersonalCategories(List<CodePersonal> codePersonals) {
+        boolean hasAlcohol = hasCategory(codePersonals, "음주");
+        boolean hasSmoking = hasCategory(codePersonals, "흡연");
 
         if (!hasAlcohol) {
             throw new BusinessException(ErrorCode.ALCOHOL_REQUIRED);
@@ -208,49 +255,64 @@ public class UserSignUpProfileService {
         if (!hasSmoking) {
             throw new BusinessException(ErrorCode.SMOKING_REQUIRED);
         }
-
-        if (!hasTattoo) {
-            throw new BusinessException(ErrorCode.TATTOO_REQUIRED);
-        }
     }
 
     // 이상형 카테고리 유효성 검증
-    private void validateIdealPersonalCategories(List<Personal> idealPersonals) {
-        for (Personal personal : idealPersonals) {
-            String bigCategory = personal.getBigCategory();
-
-            if (!"머리".equals(bigCategory)
-                    && !"체형".equals(bigCategory)
-                    && !"키".equals(bigCategory)
-                    && !"성향".equals(bigCategory)) {
+    private void validateIdealPersonalCategories(List<CodePersonal> idealCodePersonals) {
+        for (CodePersonal codePersonal : idealCodePersonals) {
+            if (!IDEAL_CATEGORIES.contains(codePersonal.getBigCategory())) {
                 throw new BusinessException(ErrorCode.INVALID_IDEAL_PERSONAL_CATEGORY);
             }
         }
     }
 
-    // 회원가입 프로필 정보 저장
-    private void saveProfile(Long signUpSessionId, SignUpProfileReqDto reqDto) {
-        userSignUpProfileRepository.findBySignUpSessionId(signUpSessionId)
-                .ifPresentOrElse(
-                        profile -> profile.updateMessage(reqDto.getMessage()),
-                        () -> userSignUpProfileRepository.save(UserSignUpProfile.builder()
-                                .signUpSessionId(signUpSessionId)
-                                .mbti(reqDto.getMbti())
-                                .message(reqDto.getMessage())
-                                .build())
-                );
+    // 특정 대분류 포함 여부 확인
+    private boolean hasCategory(List<CodePersonal> codePersonals, String bigCategory) {
+        return codePersonals.stream().anyMatch(codePersonal -> bigCategory.equals(codePersonal.getBigCategory()));
     }
 
-    // 회원가입 관심사 정보 저장
+    // 프로필 드래프트 조회하거나 생성
+    private UserSignUpProfile getOrCreateDraftProfile(Long signUpSessionId) {
+        return userSignUpProfileRepository.findBySignUpSessionId(signUpSessionId)
+                .orElseGet(() -> userSignUpProfileRepository.save(UserSignUpProfile.builder()
+                        .signUpSessionId(signUpSessionId)
+                        .build()));
+    }
+
+    // 나에 대해서 프로필 정보 저장
+    private void saveDraftProfileAboutMe(Long signUpSessionId, Job job, Mbti mbti) {
+        UserSignUpProfile profile = getOrCreateDraftProfile(signUpSessionId);
+        profile.updateAboutMe(job, mbti);
+    }
+
+    // 이상형 포인트 정보 저장
+    private void saveDraftIdealPointTypes(Long signUpSessionId, List<IdealPointType> idealPointTypes) {
+        UserSignUpProfile profile = getOrCreateDraftProfile(signUpSessionId);
+        profile.updateIdealPointTypes(normalizeIdealPointTypes(idealPointTypes));
+    }
+
+    // 소개 문구 저장
+    private void saveDraftProfileMessage(Long signUpSessionId, String message) {
+        UserSignUpProfile profile = getOrCreateDraftProfile(signUpSessionId);
+        profile.updateMessage(message == null || message.isBlank() ? null : message.trim());
+    }
+
+    // 이상형 포인트 목록 정규화
+    private List<IdealPointType> normalizeIdealPointTypes(List<IdealPointType> idealPointTypes) {
+        if (idealPointTypes == null || idealPointTypes.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return new ArrayList<>(new LinkedHashSet<>(idealPointTypes));
+    }
+
+    // 관심사 정보 저장
     private void saveInterests(Long signUpSessionId, List<Long> interestIds) {
         userSignUpInterestRepository.deleteBySignUpSessionId(signUpSessionId);
 
+        if (interestIds == null || interestIds.isEmpty()) return;
+
         List<UserSignUpInterest> interests = new ArrayList<>();
-
-        if (interestIds == null || interestIds.isEmpty()) {
-            return;
-        }
-
         for (Long interestId : interestIds) {
             interests.add(UserSignUpInterest.builder()
                     .signUpSessionId(signUpSessionId)
@@ -262,47 +324,83 @@ public class UserSignUpProfileService {
         userSignUpInterestRepository.saveAll(interests);
     }
 
-    // 회원가입 커스텀 관심사 저장
+    // 커스텀 관심사 저장
     private void saveCustomKeywords(Long signUpSessionId, List<String> customKeywords) {
         userSignUpCustomInterestRepository.deleteBySignUpSessionId(signUpSessionId);
+        userSignUpCustomInterestRepository.flush();
 
-        if (customKeywords == null || customKeywords.isEmpty()) {
-            return;
-        }
+        if (customKeywords == null || customKeywords.isEmpty()) return;
 
-        List<UserSignUpCustomInterest> interests = new ArrayList<>();
+        Map<String, String> normalizedKeywordMap = new LinkedHashMap<>();
 
         for (String customKeyword : customKeywords) {
             if (customKeyword == null || customKeyword.isBlank()) {
                 continue;
             }
 
+            String keyword = customKeyword.trim();
+            String normalizedKeyword = InterestKeywordNormalizer.normalize(keyword);
+
+            if (normalizedKeyword == null) {
+                continue;
+            }
+
+            normalizedKeywordMap.putIfAbsent(normalizedKeyword, keyword);
+        }
+
+        List<UserSignUpCustomInterest> interests = new ArrayList<>();
+        for (Map.Entry<String, String> entry : normalizedKeywordMap.entrySet()) {
             interests.add(UserSignUpCustomInterest.builder()
                     .signUpSessionId(signUpSessionId)
-                    .keyword(customKeyword.trim())
+                    .keyword(entry.getValue())
+                    .normalizedKeyword(entry.getKey())
                     .build());
         }
 
         userSignUpCustomInterestRepository.saveAll(interests);
     }
 
-    // 회원가입 성향 정보 저장
-    private void savePersonals(Long signUpSessionId, List<Long> personalIds, List<Long> idealPersonalIds) {
-        userSignUpPersonalRepository.deleteBySignUpSessionId(signUpSessionId);
+    // 자기 성향 정보 카테고리별 저장
+    private void saveSelfPersonalsByCategories(Long signUpSessionId, List<CodePersonal> codePersonals, Set<String> categories) {
+        List<UserSignUpPersonal> allPersonals = userSignUpPersonalRepository.findBySignUpSessionId(signUpSessionId);
+        Set<Long> existingSelfIds = allPersonals.stream()
+                .filter(personal -> personal.getPersonalType() == UserPersonalType.SELF)
+                .map(UserSignUpPersonal::getPersonalId)
+                .collect(Collectors.toSet());
 
-        List<UserSignUpPersonal> personals = new ArrayList<>();
+        List<CodePersonal> existingCodePersonals = existingSelfIds.isEmpty() ? Collections.emptyList() : personalRepository.findAllById(existingSelfIds);
 
-        if (personalIds != null && !personalIds.isEmpty()) {
-            for (Long personalId : personalIds) {
-                personals.add(UserSignUpPersonal.builder()
-                        .signUpSessionId(signUpSessionId)
-                        .personalId(personalId)
-                        .personalType(UserPersonalType.SELF)
-                        .build());
-            }
+        Set<Long> removableIds = existingCodePersonals.stream()
+                .filter(codePersonal -> categories.contains(codePersonal.getBigCategory()))
+                .map(CodePersonal::getId)
+                .collect(Collectors.toSet());
+
+        List<UserSignUpPersonal> personals = allPersonals.stream()
+                .filter(personal -> !(personal.getPersonalType() == UserPersonalType.SELF && removableIds.contains(personal.getPersonalId())))
+                .map(this::copySignUpPersonal)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        for (CodePersonal codePersonal : codePersonals) {
+            personals.add(UserSignUpPersonal.builder()
+                    .signUpSessionId(signUpSessionId)
+                    .personalId(codePersonal.getId())
+                    .personalType(UserPersonalType.SELF)
+                    .build());
         }
 
-        if (idealPersonalIds != null && !idealPersonalIds.isEmpty()) {
+        userSignUpPersonalRepository.deleteBySignUpSessionId(signUpSessionId);
+        userSignUpPersonalRepository.saveAll(personals);
+    }
+
+    // 이상형 정보 저장
+    private void saveIdealPersonals(Long signUpSessionId, List<Long> idealPersonalIds) {
+        List<UserSignUpPersonal> allPersonals = userSignUpPersonalRepository.findBySignUpSessionId(signUpSessionId);
+        List<UserSignUpPersonal> personals = allPersonals.stream()
+                .filter(personal -> personal.getPersonalType() != UserPersonalType.IDEAL)
+                .map(this::copySignUpPersonal)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        if (idealPersonalIds != null) {
             for (Long idealPersonalId : idealPersonalIds) {
                 personals.add(UserSignUpPersonal.builder()
                         .signUpSessionId(signUpSessionId)
@@ -312,10 +410,20 @@ public class UserSignUpProfileService {
             }
         }
 
+        userSignUpPersonalRepository.deleteBySignUpSessionId(signUpSessionId);
         userSignUpPersonalRepository.saveAll(personals);
     }
 
-    // 회원가입 프로필 이미지 저장
+    // 성향 엔티티를 새 인스턴스로 복사
+    private UserSignUpPersonal copySignUpPersonal(UserSignUpPersonal personal) {
+        return UserSignUpPersonal.builder()
+                .signUpSessionId(personal.getSignUpSessionId())
+                .personalId(personal.getPersonalId())
+                .personalType(personal.getPersonalType())
+                .build();
+    }
+
+    // 프로필 이미지 저장
     private List<String> saveProfileImages(Long signUpSessionId, List<MultipartFile> images) {
         profileImageRepository.deleteBySignUpSessionId(signUpSessionId);
 
@@ -325,8 +433,15 @@ public class UserSignUpProfileService {
             profileImages.add(profileImage);
         }
 
-        return profileImages.stream()
-                .map(ProfileImage::getUrl)
-                .collect(Collectors.toList());
+        return profileImages.stream().map(ProfileImage::getUrl).collect(Collectors.toList());
+    }
+
+    // 단계 응답을 생성
+    private SignUpProfileRspDto buildResponse(String registrationToken, SignUpStep signUpStep, List<String> imageUrls) {
+        return SignUpProfileRspDto.builder()
+                .registrationToken(registrationToken)
+                .step(signUpStep.name())
+                .imageUrls(imageUrls)
+                .build();
     }
 }

@@ -3,7 +3,6 @@ package com.nokcha.efbe.common.auth.jwt;
 import com.nokcha.efbe.common.auth.model.AuthUserPrincipal;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.user.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -50,7 +49,7 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(Long userId, String loginId, Role role) {
+    public String createAccessToken(Long userId, String loginId, String role) {
         Instant now = Instant.now();
 
         return Jwts.builder()
@@ -59,7 +58,7 @@ public class JwtTokenProvider {
                 .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
                 .claim(USER_ID_CLAIM, userId)
                 .claim(LOGIN_ID_CLAIM, loginId)
-                .claim(ROLE_CLAIM, role.name())
+                .claim(ROLE_CLAIM, role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
                 .signWith(secretKey)

@@ -1,12 +1,16 @@
 package com.nokcha.efbe.domain.user.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
+import com.nokcha.efbe.domain.profile.converter.IdealPointTypeListConverter;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.profile.entity.Mbti;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Getter
 @Entity
@@ -25,14 +29,33 @@ public class UserSignUpProfile extends BaseEntity {
     @Column(length = 10)
     private Mbti mbti;
 
-    @Column(nullable = false, length = 255)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private Job job;
+
+    @Convert(converter = IdealPointTypeListConverter.class)
+    @Column(length = 1000)
+    private List<IdealPointType> idealPointTypes;
+
+    @Column(length = 255)
     private String message;
 
     @Builder
-    public UserSignUpProfile(Long signUpSessionId, Mbti mbti, String message) {
+    public UserSignUpProfile(Long signUpSessionId, Mbti mbti, Job job, List<IdealPointType> idealPointTypes, String message) {
         this.signUpSessionId = signUpSessionId;
         this.mbti = mbti;
+        this.job = job;
+        this.idealPointTypes = idealPointTypes;
         this.message = message;
+    }
+
+    public void updateAboutMe(Job job, Mbti mbti) {
+        this.job = job;
+        this.mbti = mbti;
+    }
+
+    public void updateIdealPointTypes(List<IdealPointType> idealPointTypes) {
+        this.idealPointTypes = idealPointTypes;
     }
 
     public void updateMessage(String message) {
