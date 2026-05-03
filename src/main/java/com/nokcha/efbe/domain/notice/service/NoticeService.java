@@ -1,11 +1,13 @@
 package com.nokcha.efbe.domain.notice.service;
 
+import com.nokcha.efbe.domain.admin.entity.Admin;
 import com.nokcha.efbe.domain.notice.dto.request.NoticeReqDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeDetailRspDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticePageRspDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeSummaryRspDto;
 import com.nokcha.efbe.domain.notice.entity.Notice;
 import com.nokcha.efbe.domain.notice.repository.NoticeRepository;
+import com.nokcha.efbe.domain.admin.repository.AdminRepository;
 import com.nokcha.efbe.common.auth.service.AuthUserService;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -27,13 +29,13 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final AuthUserService authUserService;
+    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
 
     // 공지사항 작성
     @Transactional
     public NoticeDetailRspDto createNotice(String loginId, NoticeReqDto reqDto) {
-        User user = authUserService.getUser(loginId);
-        authUserService.validateAdmin(user);
+        authUserService.validateAdmin(loginId);
 
         Notice notice = noticeRepository.save(Notice.builder()
                 .title(reqDto.getTitle())
@@ -47,8 +49,7 @@ public class NoticeService {
     // 공지사항 수정
     @Transactional
     public NoticeDetailRspDto updateNotice(String loginId, Long noticeId, NoticeReqDto reqDto) {
-        User user = authUserService.getUser(loginId);
-        authUserService.validateAdmin(user);
+        authUserService.validateAdmin(loginId);
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
@@ -60,8 +61,7 @@ public class NoticeService {
     // 공지사항 삭제
     @Transactional
     public void deleteNotice(String loginId, Long noticeId) {
-        User user = authUserService.getUser(loginId);
-        authUserService.validateAdmin(user);
+        authUserService.validateAdmin(loginId);
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
@@ -101,8 +101,8 @@ public class NoticeService {
     private String getAuthorNickname(Notice notice) {
         if (notice.getCreateUser() == null) return "알 수 없음";
 
-        return userRepository.findById(notice.getCreateUser())
-                .map(User::getNickname)
+        return adminRepository.findById(notice.getCreateUser())
+                .map(Admin::getNickname)
                 .orElse("알 수 없음");
     }
 }

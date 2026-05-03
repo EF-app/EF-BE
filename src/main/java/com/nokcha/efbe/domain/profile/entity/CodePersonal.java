@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "personal")
+@Table(name = "code_personal")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Personal {
+public class CodePersonal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +28,7 @@ public class Personal {
     private String smallCategory;
 
     @Builder
-    public Personal(String bigCategory, String smallCategory) {
+    public CodePersonal(String bigCategory, String smallCategory) {
         this.bigCategory = bigCategory;
         this.smallCategory = smallCategory;
     }

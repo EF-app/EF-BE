@@ -3,21 +3,26 @@ package com.nokcha.efbe.domain.user.service;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.profile.entity.*;
+import com.nokcha.efbe.domain.admin.repository.AdminRepository;
+import com.nokcha.efbe.domain.area.repository.AreaRepository;
+import com.nokcha.efbe.domain.log.entity.LoginFailureReason;
+import com.nokcha.efbe.domain.log.service.UserLoginLogService;
 import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
+import com.nokcha.efbe.domain.profile.repository.UserCustomInterestRepository;
 import com.nokcha.efbe.domain.profile.repository.UserInterestRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
+import com.nokcha.efbe.domain.user.dto.request.EmailVerificationReqDto;
 import com.nokcha.efbe.domain.user.dto.request.LoginReqDto;
 import com.nokcha.efbe.domain.user.dto.request.PhoneVerificationReqDto;
-import com.nokcha.efbe.domain.user.dto.request.SignUpBasicInfoReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpAreaReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpCredentialsReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpNicknameReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpPurposeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.TermsAgreementReqDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
-import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
@@ -26,7 +31,9 @@ import com.nokcha.efbe.domain.user.repository.UserSignUpInterestRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpPersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpProfileRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpSessionRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,19 +42,26 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserAuthService {
 
+    private static final String USER_ROLE = "ROLE_USER";
+
+    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final UserSignUpSessionRepository userSignUpSessionRepository;
+    private final AreaRepository areaRepository;
     private final UserSignUpProfileRepository userSignUpProfileRepository;
     private final UserSignUpInterestRepository userSignUpInterestRepository;
     private final UserSignUpCustomInterestRepository userSignUpCustomInterestRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
     private final ProfileImageRepository profileImageRepository;
     private final ProfileRepository profileRepository;
+    private final UserCustomInterestRepository userCustomInterestRepository;
     private final UserInterestRepository userInterestRepository;
     private final UserPersonalRepository userPersonalRepository;
+    private final UserLoginLogService userLoginLogService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -103,6 +117,28 @@ public class UserAuthService {
                 .build();
     }
 
+    // 이메일 인증
+    @Transactional
+    public SignUpProgressRspDto verifyEmail(EmailVerificationReqDto reqDto) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
+
+        if (!signUpSession.hasRequiredTermsAgreed()) {
+            throw new BusinessException(ErrorCode.TERMS_AGREEMENT_REQUIRED);
+        }
+
+        if (!signUpSession.isPhoneVerified()) {
+            throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
+        }
+
+        signUpSession.verifyEmail(reqDto.getEmail(), LocalDateTime.now());
+
+        return SignUpProgressRspDto.builder()
+                .registrationToken(reqDto.getRegistrationToken())
+                .step(signUpSession.getSignUpStep().name())
+                .expiredAt(signUpSession.getExpiredAt())
+                .build();
+    }
+
     // 아이디 비밀번호 생성
     @Transactional
     public SignUpProgressRspDto createCredentials(SignUpCredentialsReqDto reqDto) {
@@ -118,7 +154,7 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
         }
 
-        if (userRepository.existsByLoginId(reqDto.getLoginId())) {
+        if (userRepository.existsByLoginId(reqDto.getLoginId()) || adminRepository.existsByLoginId(reqDto.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -131,13 +167,13 @@ public class UserAuthService {
                 .build();
     }
 
-    // 닉네임과 지역 정보 저장
+    // 닉네임 저장
     @Transactional
-    public SignUpProgressRspDto createBasicInfo(SignUpBasicInfoReqDto reqDto) {
+    public SignUpProgressRspDto createNickname(SignUpNicknameReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
         if (signUpSession.getSignUpStep() != SignUpStep.CREDENTIALS_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.BASIC_INFO_COMPLETED) {
+                && signUpSession.getSignUpStep() != SignUpStep.NICKNAME_COMPLETED) {
             throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
         }
 
@@ -147,7 +183,30 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.ALREADY_NICKNAME);
         }
 
-        signUpSession.updateBasicInfo(nickname, reqDto.getAreaId());
+        signUpSession.updateNickname(nickname);
+
+        return SignUpProgressRspDto.builder()
+                .registrationToken(reqDto.getRegistrationToken())
+                .step(signUpSession.getSignUpStep().name())
+                .expiredAt(signUpSession.getExpiredAt())
+                .build();
+    }
+
+    // 지역 저장
+    @Transactional
+    public SignUpProgressRspDto createArea(SignUpAreaReqDto reqDto) {
+        UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
+
+        if (signUpSession.getSignUpStep() != SignUpStep.NICKNAME_COMPLETED
+                && signUpSession.getSignUpStep() != SignUpStep.AREA_COMPLETED) {
+            throw new BusinessException(ErrorCode.NICKNAME_REQUIRED);
+        }
+
+        if (!areaRepository.existsById(reqDto.getAreaId())) {
+            throw new BusinessException(ErrorCode.AREA_REQUIRED);
+        }
+
+        signUpSession.updateArea(reqDto.getAreaId());
 
         return SignUpProgressRspDto.builder()
                 .registrationToken(reqDto.getRegistrationToken())
@@ -161,17 +220,15 @@ public class UserAuthService {
     public SignUpProgressRspDto createPurpose(SignUpPurposeReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (signUpSession.getSignUpStep() != SignUpStep.BASIC_INFO_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.PURPOSE_SELECTED) {
-            throw new BusinessException(ErrorCode.BASIC_INFO_REQUIRED);
+        if (!isPurposeEditableStep(signUpSession.getSignUpStep())) {
+            throw new BusinessException(ErrorCode.AREA_REQUIRED);
         }
 
-        Purpose purpose = reqDto.getPurpose();
-        if (purpose == null) {
+        if (reqDto.getPurpose() == null) {
             throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
         }
 
-        signUpSession.updatePurpose(purpose);
+        signUpSession.updatePurpose(reqDto.getPurpose());
 
         return SignUpProgressRspDto.builder()
                 .registrationToken(reqDto.getRegistrationToken())
@@ -189,10 +246,9 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
         }
 
-
         validateSignUpSessionForCompletion(signUpSession);
 
-        if (userRepository.existsByLoginId(signUpSession.getLoginId())) {
+        if (userRepository.existsByLoginId(signUpSession.getLoginId()) || adminRepository.existsByLoginId(signUpSession.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -209,24 +265,22 @@ public class UserAuthService {
                 .loginId(signUpSession.getLoginId())
                 .password(signUpSession.getPassword())
                 .birth(19900101)
-                .scode("0000")
+                .scode(null)
                 .phone(signUpSession.getPhone())
+                .email(signUpSession.getEmail())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
-                .purpose(signUpSession.getPurpose())
                 .isWithdraw(false)
                 .lastNicknameChangeTime(LocalDateTime.now())
-                .role(Role.ROLE_USER)
                 .banStatus(BanStatus.NONE)
                 .build());
 
         saveFinalProfile(user.getId(), signUpSession.getId(), signUpSession.getPurpose());
         saveUserInterests(user.getId(), signUpSession.getId());
+        saveUserCustomInterests(user.getId(), signUpSession.getId());
         saveUserPersonals(user.getId(), signUpSession.getId());
 
-        List<ProfileImage> profileImages = profileImageRepository
-                .findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
-
+        List<ProfileImage> profileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
         for (ProfileImage profileImage : profileImages) {
             profileImage.assignToUser(user.getId());
         }
@@ -234,34 +288,94 @@ public class UserAuthService {
         deleteTemporarySignUpData(signUpSession.getId());
         signUpSession.completeSignUp();
 
+        String completedStep = signUpSession.getSignUpStep().name();
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE);
+        userSignUpSessionRepository.delete(signUpSession);
+
         return SignUpCompleteRspDto.builder()
                 .userId(user.getId())
-                .step(signUpSession.getSignUpStep().name())
+                .accessToken(accessToken)
+                .loginId(user.getLoginId())
+                .step(completedStep)
                 .completed(true)
                 .build();
     }
 
     // 로그인
     @Transactional
-    public LoginRspDto login(LoginReqDto reqDto) {
-        User user = userRepository.findByLoginId(reqDto.getLoginId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN));
+    public LoginRspDto login(LoginReqDto reqDto, HttpServletRequest request) {
+        User user = userRepository.findByLoginId(reqDto.getLoginId()).orElse(null);
+
+        if (user == null) {
+            logFailure(null, reqDto, request, LoginFailureReason.INVALID_ID);
+            throw new BusinessException(ErrorCode.INVALID_LOGIN);
+        }
 
         if (user.isWithdraw()) {
+            logFailure(user.getId(), reqDto, request, LoginFailureReason.WITHDRAWN);
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
 
+        validateBanStatus(user, reqDto, request);
+
         if (!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())) {
+            logFailure(user.getId(), reqDto, request, LoginFailureReason.INVALID_PASSWORD);
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
 
         user.updateLastLoginTime(LocalDateTime.now());
+        logSuccess(user.getId(), reqDto, request);
 
         return LoginRspDto.builder()
-                .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), user.getRole()))
-                .tokenType("Bearer")
+                .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
                 .build();
+    }
+
+    // 목적 단계 수정 가능 여부 확인
+    private boolean isPurposeEditableStep(SignUpStep signUpStep) {
+        return signUpStep == SignUpStep.AREA_COMPLETED || signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
+    }
+
+    // 정지 상태 회원의 로그인 가능 여부 확인
+    private void validateBanStatus(User user, LoginReqDto reqDto, HttpServletRequest request) {
+        if (user.getBanStatus() == null || user.getBanStatus() == BanStatus.NONE) {
+            return;
+        }
+
+        switch (user.getBanStatus()) {
+            case SEVEN_DAYS -> {
+                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
+                throw new BusinessException(ErrorCode.BANNED_USER_SEVEN_DAYS);
+            }
+            case THIRTY_DAYS -> {
+                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
+                throw new BusinessException(ErrorCode.BANNED_USER_THIRTY_DAYS);
+            }
+            case FOREVER -> {
+                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
+                throw new BusinessException(ErrorCode.BANNED_USER_FOREVER);
+            }
+            default -> throw new BusinessException(ErrorCode.INVALID_USER);
+        }
+    }
+
+    // 로그인 성공 이력 저장
+    private void logSuccess(Long userId, LoginReqDto reqDto, HttpServletRequest request) {
+        try {
+            userLoginLogService.logSuccess(userId, reqDto.getLoginId(), request, reqDto.getDeviceId(), reqDto.getPlatform(), reqDto.isScodeStep());
+        } catch (Exception e) {
+            log.warn("로그인 성공 로그 저장 실패: loginId={}", reqDto.getLoginId(), e);
+        }
+    }
+
+    // 로그인 실패 이력 저장
+    private void logFailure(Long userId, LoginReqDto reqDto, HttpServletRequest request, LoginFailureReason failureReason) {
+        try {
+            userLoginLogService.logFailure(userId, reqDto.getLoginId(), request, reqDto.getDeviceId(), reqDto.getPlatform(), failureReason, reqDto.isScodeStep());
+        } catch (Exception e) {
+            log.warn("로그인 실패 로그 저장 실패: loginId={}, reason={}", reqDto.getLoginId(), failureReason, e);
+        }
     }
 
     // 휴대폰 인증 요청 값 검증
@@ -345,11 +459,13 @@ public class UserAuthService {
 
         profileRepository.findByUserId(userId)
                 .ifPresentOrElse(
-                        profile -> profile.update(signUpProfile.getMbti(), purpose, signUpProfile.getMessage()),
+                        profile -> profile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
                         () -> profileRepository.save(Profile.builder()
                                 .userId(userId)
                                 .mbti(signUpProfile.getMbti())
                                 .purpose(purpose)
+                                .job(signUpProfile.getJob())
+                                .idealPointTypes(signUpProfile.getIdealPointTypes())
                                 .message(signUpProfile.getMessage())
                                 .build())
                 );
@@ -363,6 +479,19 @@ public class UserAuthService {
             userInterestRepository.save(UserInterest.builder()
                     .userId(userId)
                     .interestId(signUpInterest.getInterestId())
+                    .build());
+        }
+    }
+
+    // 유저 커스텀 관심사 저장
+    private void saveUserCustomInterests(Long userId, Long signUpSessionId) {
+        List<UserSignUpCustomInterest> signUpCustomInterests = userSignUpCustomInterestRepository.findBySignUpSessionId(signUpSessionId);
+
+        for (UserSignUpCustomInterest signUpCustomInterest : signUpCustomInterests) {
+            userCustomInterestRepository.save(UserCustomInterest.builder()
+                    .userId(userId)
+                    .keyword(signUpCustomInterest.getKeyword())
+                    .normalizedKeyword(signUpCustomInterest.getNormalizedKeyword())
                     .build());
         }
     }
