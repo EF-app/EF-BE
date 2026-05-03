@@ -1,0 +1,33 @@
+# 운영 프로필 — 모든 시크릿/접속 정보는 환경변수 필수. 기본값 절대 금지.
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate     # 운영은 마이그레이션 도구로 스키마 관리
+    show-sql: false
+
+  sql:
+    init:
+      mode: never            # 운영은 시드 비활성화
+
+logging:
+  level:
+    root: INFO
+    com.nokcha.efbe: INFO
+
+# JWT secret 은 환경변수 필수 — 부재 시 부팅 실패 (의도적 fail-fast)
+jwt:
+  secret: ${JWT_SECRET}
+
+# 운영 CORS — 실제 도메인 화이트리스트만 허용. 와일드카드 절대 금지.
+cors:
+  allowed-origin-patterns: ${CORS_ALLOWED_ORIGINS}
