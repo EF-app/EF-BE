@@ -39,8 +39,6 @@ public enum ErrorCode {
     INVALID_IDEAL_PERSONAL_CATEGORY(400, "이상형 선택은 머리, 체형, 키, 성향만 가능합니다."),
     INVALID_LOGIN(401, "아이디 또는 비밀번호가 올바르지 않습니다."),
     UNAUTHORIZED(401, "인증이 필요합니다."),
-    INVALID_USER(401, "로그인 정보를 확인해주세요."),
-    FORBIDDEN_ROLE(403, "관리자 권한이 필요합니다."),
     WITHDRAWN_USER(403, "탈퇴한 회원은 로그인할 수 없습니다."),
     BANNED_USER_SEVEN_DAYS(403, "7일 정지된 회원은 로그인할 수 없습니다."),
     BANNED_USER_THIRTY_DAYS(403, "30일 정지된 회원은 로그인할 수 없습니다."),

@@ -3,6 +3,7 @@ package com.nokcha.efbe.common.exception.handler;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.exception.dto.ErrorRspDto;
+import com.nokcha.efbe.common.util.LoggingUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -71,24 +72,22 @@ public class GlobalExceptionHandler {
         return createErrorResponse(e.getCode(), e.getHttpStatus(), e.getMessage());
     }
 
-    // 정적 리소스/매핑 미존재 — 404 로 깔끔히 응답 (500 + traceId 마스킹 전에 분기).
+    // 정적 리소스/매핑 미존재
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorRspDto<String>> handleNoResourceFound(NoResourceFoundException e, HttpServletRequest request) {
         log.warn("404 NotFound: method={} url={}", request.getMethod(), request.getRequestURI());
         return createErrorResponse(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, "리소스를 찾을 수 없습니다.");
     }
 
-    // 예상하지 못한 예외 발생 시 500 — 응답에는 trace ID 만, 상세 스택트레이스는 서버 로그로만 남김.
-    // 운영 환경에서 내부 경로/테이블명/쿼리 등이 응답으로 노출되는 것을 차단.
+    // 예상하지 못한 예외 발생 시 500 에러와 함께 기본 에러 메시지 넘기기
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorRspDto<String>> handleException(Exception e, HttpServletRequest request){
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-        String traceId = java.util.UUID.randomUUID().toString();
-        // 서버 로그에는 traceId 와 전체 스택트레이스 함께 기록
-        log.error("[traceId={}] 예외 처리 범위 외의 오류 발생: {}", traceId, e.getMessage(), e);
+        log.error("예외 처리 범위 외의 오류 발생");
         printLog(e, request);
-        return createErrorResponse(httpStatus.value(), httpStatus,
-                "internal server error (traceId=" + traceId + ")");
+        String fullStackTrace = LoggingUtil.stackTraceToString(e);
+
+        return createErrorResponse(httpStatus.value(), httpStatus, e.getMessage() +", " + fullStackTrace);
     }
 
     // 응답 생성 메소드
