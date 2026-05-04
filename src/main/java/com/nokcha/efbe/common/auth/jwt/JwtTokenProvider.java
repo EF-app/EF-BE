@@ -1,6 +1,5 @@
 package com.nokcha.efbe.common.auth.jwt;
 
-import com.nokcha.efbe.common.auth.model.AuthUserPrincipal;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
@@ -102,15 +101,13 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
+        // principal 은 userId(Long) — SecurityUtil 이 Long instance 분기로 ID 를 꺼냄.
+        // 이전에는 loginId(String) 을 넣어 Long.parseLong 이 NFE → null fallback(1L) 로 빠지는 버그가 있었음.
         Long userId = claims.get(USER_ID_CLAIM, Long.class);
-        String loginId = claims.get(LOGIN_ID_CLAIM, String.class);
         String role = claims.get(ROLE_CLAIM, String.class);
 
         return new UsernamePasswordAuthenticationToken(
-                AuthUserPrincipal.builder()
-                        .userId(userId)
-                        .loginId(loginId)
-                        .build(),
+                userId,
                 token,
                 Collections.singletonList(new SimpleGrantedAuthority(role))
         );
