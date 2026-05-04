@@ -31,6 +31,7 @@ public class JwtTokenProvider {
     private static final String ROLE_CLAIM = "role";
     private static final String SIGNUP_SESSION_ID_CLAIM = "signupSessionId";
     private static final String ACCESS_TOKEN_TYPE = "ACCESS";
+    private static final String REFRESH_TOKEN_TYPE = "REFRESH";
     private static final String REGISTRATION_TOKEN_TYPE = "REGISTRATION";
 
     @Value("${jwt.secret}")
@@ -41,6 +42,9 @@ public class JwtTokenProvider {
 
     @Value("${jwt.registration-token-expiration}")
     private long registrationTokenExpiration;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
 
     private SecretKey secretKey;
 
@@ -61,6 +65,22 @@ public class JwtTokenProvider {
                 .claim(ROLE_CLAIM, role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessTokenExpiration)))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createRefreshToken(Long userId, String loginId, String role) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(String.valueOf(userId))
+                .claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN_TYPE)
+                .claim(USER_ID_CLAIM, userId)
+                .claim(LOGIN_ID_CLAIM, loginId)
+                .claim(ROLE_CLAIM, role)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(refreshTokenExpiration)))
                 .signWith(secretKey)
                 .compact();
     }
@@ -106,6 +126,30 @@ public class JwtTokenProvider {
 
     public boolean isRegistrationToken(String token) {
         return REGISTRATION_TOKEN_TYPE.equals(getClaims(token).get(TOKEN_TYPE_CLAIM, String.class));
+    }
+
+    public void validateRefreshToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+
+            if (!REFRESH_TOKEN_TYPE.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))) {
+                throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+            }
+        } catch (ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.EXPIRED_REFRESH_TOKEN);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+    }
+
+    public String getLoginId(String token) {
+        return getClaims(token).get(LOGIN_ID_CLAIM, String.class);
+    }
+
+    public String getRole(String token) {
+        return getClaims(token).get(ROLE_CLAIM, String.class);
     }
 
     public boolean validateToken(String token) {

@@ -8,6 +8,10 @@ public enum ErrorCode {
     INVALID_USER(401, "로그인 정보를 확인해주세요."),
     FORBIDDEN_ROLE(403, "관리자 권한이 필요합니다."),
 
+    // 토큰
+    INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
+    EXPIRED_REFRESH_TOKEN(401, "만료된 리프레시 토큰입니다."),
+
     // 회원가입
     TERMS_AGREEMENT_REQUIRED(400, "필수 약관 동의가 필요합니다."),
     PASSWORD_CONFIRM_MISMATCH(400, "비밀번호 확인이 일치하지 않습니다."),
@@ -38,6 +42,9 @@ public enum ErrorCode {
     ALREADY_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_REQUIRED(400, "닉네임 입력이 필요합니다."),
     AREA_REQUIRED(400, "지역 선택이 필요합니다."),
+
+    // 회원 관리
+    SCODE_CONFIRM_MISMATCH(400, "보안코드 확인이 일치하지 않습니다."),
 
     // 공지사항
     NOT_FOUND_NOTICE(404, "존재하지 않는 공지사항입니다.")

@@ -6,6 +6,7 @@ import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
+import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import com.nokcha.efbe.domain.user.service.UserAuthService;
 import com.nokcha.efbe.domain.user.service.UserSignUpProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,8 +37,8 @@ public class UserAuthController {
     // 약관 동의
     @Operation(summary = "약관 동의", description = "약관 동의 여부를 저장하고 다음 단계용 회원가입 토큰을 발급합니다.")
     @PostMapping("/signup/terms")
-    public RspTemplate<SignUpProgressRspDto> agreeTerms(@Valid @RequestBody TermsAgreementReqDto reqDto) {
-        return new RspTemplate<>(HttpStatus.OK, "약관 동의가 완료되었습니다.", userAuthService.agreeTerms(reqDto));
+    public RspTemplate<SignUpProgressRspDto> agreeTerms(HttpServletRequest request, @Valid @RequestBody TermsAgreementReqDto reqDto) {
+        return new RspTemplate<>(HttpStatus.OK, "약관 동의가 완료되었습니다.", userAuthService.agreeTerms(reqDto, request));
     }
 
     // 휴대폰 인증
@@ -132,5 +133,11 @@ public class UserAuthController {
     @PostMapping("/login")
     public RspTemplate<LoginRspDto> login(HttpServletRequest request, @Valid @RequestBody LoginReqDto reqDto) {
         return new RspTemplate<>(HttpStatus.OK, "로그인이 완료되었습니다.", userAuthService.login(reqDto, request));
+    }
+
+    @Operation(summary = "액세스 토큰 재발급", description = "리프레시 토큰으로 새 액세스 토큰을 발급합니다.")
+    @PostMapping("/token/refresh")
+    public RspTemplate<TokenRefreshRspDto> refreshAccessToken(@Valid @RequestBody RefreshTokenReqDto reqDto) {
+        return new RspTemplate<>(HttpStatus.OK, "액세스 토큰 재발급이 완료되었습니다.", userAuthService.refreshAccessToken(reqDto));
     }
 }
