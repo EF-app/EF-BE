@@ -8,11 +8,9 @@ import com.nokcha.efbe.domain.notice.dto.response.NoticeSummaryRspDto;
 import com.nokcha.efbe.domain.notice.entity.Notice;
 import com.nokcha.efbe.domain.notice.repository.NoticeRepository;
 import com.nokcha.efbe.domain.admin.repository.AdminRepository;
-import com.nokcha.efbe.common.auth.service.AuthUserService;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.user.entity.User;
-import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,14 +26,13 @@ public class NoticeService {
     private static final int NOTICE_PAGE_SIZE = 10;
 
     private final NoticeRepository noticeRepository;
-    private final AuthUserService authUserService;
+    private final SecurityUtil securityUtil;
     private final AdminRepository adminRepository;
-    private final UserRepository userRepository;
 
     // 공지사항 작성
     @Transactional
-    public NoticeDetailRspDto createNotice(String loginId, NoticeReqDto reqDto) {
-        authUserService.validateAdmin(loginId);
+    public NoticeDetailRspDto createNotice(NoticeReqDto reqDto) {
+        securityUtil.validateCurrentAdmin();
 
         Notice notice = noticeRepository.save(Notice.builder()
                 .title(reqDto.getTitle())
@@ -48,8 +45,8 @@ public class NoticeService {
 
     // 공지사항 수정
     @Transactional
-    public NoticeDetailRspDto updateNotice(String loginId, Long noticeId, NoticeReqDto reqDto) {
-        authUserService.validateAdmin(loginId);
+    public NoticeDetailRspDto updateNotice(Long noticeId, NoticeReqDto reqDto) {
+        securityUtil.validateCurrentAdmin();
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
@@ -60,8 +57,8 @@ public class NoticeService {
 
     // 공지사항 삭제
     @Transactional
-    public void deleteNotice(String loginId, Long noticeId) {
-        authUserService.validateAdmin(loginId);
+    public void deleteNotice(Long noticeId) {
+        securityUtil.validateCurrentAdmin();
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));

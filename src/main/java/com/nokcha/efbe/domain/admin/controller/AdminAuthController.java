@@ -3,7 +3,9 @@ package com.nokcha.efbe.domain.admin.controller;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.domain.admin.service.AdminAuthService;
 import com.nokcha.efbe.domain.user.dto.request.LoginReqDto;
+import com.nokcha.efbe.domain.user.dto.request.RefreshTokenReqDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
+import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,5 +29,11 @@ public class AdminAuthController {
     @PostMapping("/login")
     public RspTemplate<LoginRspDto> login(@Valid @RequestBody LoginReqDto reqDto) {
         return new RspTemplate<>(HttpStatus.OK, "관리자 로그인이 완료되었습니다.", adminAuthService.login(reqDto));
+    }
+
+    @Operation(summary = "관리자 액세스 토큰 재발급", description = "관리자 리프레시 토큰으로 새 액세스 토큰을 발급합니다.")
+    @PostMapping("/token/refresh")
+    public RspTemplate<TokenRefreshRspDto> refreshAccessToken(@Valid @RequestBody RefreshTokenReqDto reqDto) {
+        return new RspTemplate<>(HttpStatus.OK, "관리자 액세스 토큰 재발급이 완료되었습니다.", adminAuthService.refreshAccessToken(reqDto));
     }
 }

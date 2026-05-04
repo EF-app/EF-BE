@@ -3,6 +3,8 @@ package com.nokcha.efbe.domain.area.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -23,4 +25,10 @@ public class CodeArea {
 
     @Column(nullable = false, length = 30)
     private String city;
+
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
 }
