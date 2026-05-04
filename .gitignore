@@ -44,4 +44,4 @@ out/
 .vscode/
 
 ### yaml 파일 ###
-application.yml
+application*.yml
