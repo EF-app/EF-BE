@@ -13,5 +13,6 @@ public interface PostItQueryRepository {
     // 활성 피드 — isHidden=false, isDeleted=false, expiresAt>now, 카테고리 코드(선택)
     // createTime DESC, id DESC
     // size+1 fetch 로 hasMore 판정 가능
-    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size);
+    // viewerId == null 이면 likedByMe 는 모두 false
+    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId);
 }

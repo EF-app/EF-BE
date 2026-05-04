@@ -31,13 +31,14 @@ public class PostItController {
                 .body(new RspTemplate<>(HttpStatus.CREATED, "포스트잇 작성 성공", data));
     }
 
-    // 피드 조회 (커서 기반, 카테고리 옵션)
+    // 피드 조회 (커서 기반, 카테고리 옵션) - permitAll, viewer 비로그인 가능
     @GetMapping
     public ResponseEntity<RspTemplate<CursorPageResponse<PostItRspDto>>> getPostIts(
             @RequestParam(required = false) PostCategory categoryCode,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer size) {
-        CursorPageResponse<PostItRspDto> data = postItService.getPostIts(categoryCode, cursor, size);
+        Long viewerId = SecurityUtil.getCurrentUserIdOrNull();
+        CursorPageResponse<PostItRspDto> data = postItService.getPostIts(categoryCode, cursor, size, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 목록 조회 성공", data));
     }
 
@@ -51,10 +52,11 @@ public class PostItController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 포스트잇 조회 성공", data));
     }
 
-    // 단건 상세
+    // 단건 상세 - permitAll, viewer 비로그인 가능
     @GetMapping("/{postId}")
     public ResponseEntity<RspTemplate<PostItRspDto>> getOnePostIt(@PathVariable Long postId) {
-        PostItRspDto data = postItService.getOnePostIt(postId);
+        Long viewerId = SecurityUtil.getCurrentUserIdOrNull();
+        PostItRspDto data = postItService.getOnePostIt(postId, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 상세 조회 성공", data));
     }
 

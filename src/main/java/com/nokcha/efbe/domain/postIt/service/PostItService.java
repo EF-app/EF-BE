@@ -4,6 +4,8 @@ import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
+import com.nokcha.efbe.domain.area.entity.CodeArea;
+import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
 import com.nokcha.efbe.domain.payment.repository.CodeItemRepository;
 import com.nokcha.efbe.domain.payment.service.DailyUsageService;
@@ -14,6 +16,7 @@ import com.nokcha.efbe.domain.postIt.entity.PostChatRoom;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.repository.PostChatRoomRepository;
 import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
+import com.nokcha.efbe.domain.postIt.repository.PostLikeRepository;
 import com.nokcha.efbe.domain.postIt.repository.projection.PostItCursor;
 import com.nokcha.efbe.domain.postIt.repository.projection.PostItRow;
 import com.nokcha.efbe.domain.user.entity.User;
@@ -46,6 +49,8 @@ public class PostItService {
     private final PostItRepository postItRepository;
     private final PostChatRoomRepository postChatRoomRepository;
     private final UserRepository userRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final AreaRepository areaRepository;
     private final DailyUsageService dailyUsageService;
     private final CodeItemRepository itemCatalogRepository;
     private final CursorCodec cursorCodec;
@@ -82,19 +87,23 @@ public class PostItService {
                 .isAnonymous(anonymous && !lightning)
                 .expiresAt(expiresAt)
                 .build();
-        // 작성 직후는 owner view — 익명이어도 userId 노출 (본인 확인용)
-        return PostItRspDto.fromOwnerView(postItRepository.save(post));
+        // 작성 직후는 owner view — userId/nickname 노출 (본인 확인용). 작성 시점이라 좋아요는 항상 0/false.
+        // anonymous 면 area lookup 생략 — DTO 가 어차피 null 처리.
+        PostIt saved = postItRepository.save(post);
+        AreaPair area = anonymous ? AreaPair.EMPTY : resolveArea(user.getAreaId());
+        return PostItRspDto.fromOwnerView(saved, 0L, false, area.country, area.city);
     }
 
     // 활성 피드 조회 (커서 기반, createTime DESC + id DESC, 만료/숨김/삭제 제외, 카테고리 옵션)
-    // 메인 피드는 본인이어도 익명 글은 userId 마스킹 — frontend 에서 "from 익명" 표시.
+    // 메인 피드는 본인이어도 익명 글은 userId/nickname/age/location 마스킹 — frontend 에서 "from 익명" 표시.
+    // viewerId == null (비로그인) 이면 likedByMe 는 모두 false.
     @Transactional(readOnly = true)
-    public CursorPageResponse<PostItRspDto> getPostIts(PostCategory categoryCode, String cursor, Integer size) {
+    public CursorPageResponse<PostItRspDto> getPostIts(PostCategory categoryCode, String cursor, Integer size, Long viewerId) {
         int pageSize = clampSize(size);
         PostItCursor decoded = cursorCodec.decode(cursor, PostItCursor.class);
         LocalDateTime now = LocalDateTime.now();
 
-        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1);
+        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1, viewerId);
         boolean hasMore = rows.size() > pageSize;
         List<PostItRow> page = hasMore ? rows.subList(0, pageSize) : rows;
 
@@ -114,18 +123,37 @@ public class PostItService {
 
     // 내가 쓴 글 목록 — 쿼리에서 user_id 필터링되므로 모든 행이 본인 글.
     // 응답 표기는 익명 정책 따라 마스킹 ("from 익명" 표시). 본인 식별은 목록 자체로 충분.
+    // 페이지 사이즈가 작아(<=10 기본) N+1 lookup 으로 좋아요 정보 채움 — 차후 batch projection 으로 교체 가능.
+    // viewer == owner 라 area 는 owner User 1회 lookup → 캐시 후 모든 행에 재사용.
     @Transactional(readOnly = true)
     public Page<PostItRspDto> getMyPosts(Long userId, int page, int size) {
+        AreaPair ownerArea = userRepository.findById(userId)
+                .map(u -> resolveArea(u.getAreaId()))
+                .orElse(AreaPair.EMPTY);
         return postItRepository.findByUserIdOrderByCreateTimeDesc(userId, PageRequest.of(page, size))
-                .map(PostItRspDto::from);
+                .map(p -> PostItRspDto.from(
+                        p,
+                        postLikeRepository.countByPostId(p.getId()),
+                        postLikeRepository.existsByPostIdAndUserId(p.getId(), userId),
+                        ownerArea.country,
+                        ownerArea.city
+                ));
     }
 
-    // 단건 상세 조회 — 본인이어도 익명 글은 userId 마스킹 (피드 정책과 일관)
+    // 단건 상세 조회 — 본인이어도 익명 글은 userId/nickname/age/location 마스킹 (피드 정책과 일관)
+    // viewerId == null 이면 likedByMe=false.
     @Transactional(readOnly = true)
-    public PostItRspDto getOnePostIt(Long postId) {
+    public PostItRspDto getOnePostIt(Long postId, Long viewerId) {
         PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
-        return PostItRspDto.from(post);
+        long likeCount = postLikeRepository.countByPostId(postId);
+        boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(postId, viewerId);
+        // anonymous 면 area lookup 생략 — DTO 가 어차피 null 처리.
+        boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
+        AreaPair area = anonymous || post.getUser() == null
+                ? AreaPair.EMPTY
+                : resolveArea(post.getUser().getAreaId());
+        return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city);
     }
 
     // Soft delete - 연결된 채팅방도 is_active=FALSE 로 전환
@@ -156,7 +184,24 @@ public class PostItService {
                 .map(item -> item.getEffectDurationMin() == null ? 0 : item.getEffectDurationMin())
                 .orElse(0);
         post.activatePin(LocalDateTime.now().plusMinutes(minutes));
-        // owner 액션 응답 — userId 노출
-        return PostItRspDto.fromOwnerView(post);
+        // owner 액션 응답 — userId/nickname 노출. 좋아요/area lookup.
+        long likeCount = postLikeRepository.countByPostId(postId);
+        boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+        boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
+        AreaPair area = anonymous ? AreaPair.EMPTY : resolveArea(post.getUser().getAreaId());
+        return PostItRspDto.fromOwnerView(post, likeCount, likedByMe, area.country, area.city);
+    }
+
+    // areaId → (country, city). null/미존재 시 EMPTY 반환.
+    private AreaPair resolveArea(Long areaId) {
+        if (areaId == null) return AreaPair.EMPTY;
+        return areaRepository.findById(areaId)
+                .map(a -> new AreaPair(a.getCountry(), a.getCity()))
+                .orElse(AreaPair.EMPTY);
+    }
+
+    // 단일 area lookup 결과의 (country, city) 캐리어
+    private record AreaPair(String country, String city) {
+        static final AreaPair EMPTY = new AreaPair(null, null);
     }
 }
