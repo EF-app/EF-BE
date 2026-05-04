@@ -56,6 +56,10 @@ public class User extends BaseEntity {
     @Column
     private Integer birth;
 
+    // 한국 나이 (휴대폰 인증 단계에서 생년월일을 받아 산출, 빠른년생 등으로 수정 가능)
+    @Column
+    private Integer age;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private Job job;
@@ -88,7 +92,7 @@ public class User extends BaseEntity {
     private BanStatus banStatus;
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String scode, String nickname, Integer birth, Job job, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, Purpose purpose, LocalDateTime lastLoginTime, Role role, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+    public User(String uuid, String loginId, String password, String phone, String scode, String nickname, Integer birth, Integer age, Job job, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, Purpose purpose, LocalDateTime lastLoginTime, Role role, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -96,6 +100,7 @@ public class User extends BaseEntity {
         this.scode = scode;
         this.nickname = nickname;
         this.birth = birth;
+        this.age = age;
         this.job = job;
         this.isWithdraw = isWithdraw;
         this.withdrawDate = withdrawDate;
@@ -110,5 +115,10 @@ public class User extends BaseEntity {
     // 마지막 로그인 시간 갱신
     public void updateLastLoginTime(LocalDateTime lastLoginTime) {
         this.lastLoginTime = lastLoginTime;
+    }
+
+    // 빠른년생 등으로 인한 한국 나이 수정 (생년월일과 별개)
+    public void updateAge(Integer age) {
+        this.age = age;
     }
 }

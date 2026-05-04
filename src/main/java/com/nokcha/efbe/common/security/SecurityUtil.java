@@ -29,6 +29,11 @@ public final class SecurityUtil {
         return id == null ? SYSTEM_USER_ID : id;
     }
 
+    // 현재 유저 ID (미인증 시 null) - permitAll 엔드포인트가 viewer 컨텍스트를 옵션으로 받을 때 사용
+    public static Long getCurrentUserIdOrNull() {
+        return resolveUserIdOrNull();
+    }
+
     // SecurityContext 에서 principal 을 Long 으로 해석
     private static Long resolveUserIdOrNull() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
