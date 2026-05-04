@@ -45,3 +45,6 @@ out/
 
 ### yaml 파일 ###
 application*.yml
+
+### sql 파일 ###
+*.sql

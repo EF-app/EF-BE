@@ -33,6 +33,15 @@ public class UserSignUpSession extends BaseEntity {
     private boolean privacyPolicyAgreed;
 
     @Column(nullable = false)
+    private boolean sensitiveInfoAgreed;
+
+    @Column(nullable = false)
+    private boolean personalInformationAgreed;
+
+    @Column(nullable = false)
+    private boolean locationAgreed;
+
+    @Column(nullable = false)
     private boolean ageConfirmed;
 
     @Column(nullable = false)
@@ -41,8 +50,56 @@ public class UserSignUpSession extends BaseEntity {
     @Column(nullable = false)
     private boolean marketingAgreed;
 
+    @Column(nullable = false)
+    private boolean pushAgreed;
+
+    @Column(length = 20)
+    private String serviceTermsVersion;
+
+    @Column(length = 20)
+    private String privacyPolicyVersion;
+
+    @Column(length = 20)
+    private String sensitiveInfoVersion;
+
+    @Column(length = 20)
+    private String personalInformationVersion;
+
+    @Column(length = 20)
+    private String locationVersion;
+
+    @Column(length = 20)
+    private String marketingVersion;
+
+    @Column
+    private LocalDateTime serviceTermsAgreedAt;
+
+    @Column
+    private LocalDateTime privacyPolicyAgreedAt;
+
+    @Column
+    private LocalDateTime sensitiveInfoAgreedAt;
+
+    @Column
+    private LocalDateTime personalInformationAgreedAt;
+
+    @Column
+    private LocalDateTime locationAgreedAt;
+
+    @Column
+    private LocalDateTime marketingAgreedAt;
+
+    @Column
+    private LocalDateTime pushAgreedAt;
+
+    @Column(length = 45)
+    private String lastConsentIp;
+
     @Column(length = 20)
     private String phone;
+
+    @Column(length = 100)
+    private String email;
 
     @Column(length = 50)
     private String loginId;
@@ -72,14 +129,36 @@ public class UserSignUpSession extends BaseEntity {
     @Column
     private LocalDateTime phoneVerifiedAt;
 
+    @Column
+    private LocalDateTime emailVerifiedAt;
+
     @Builder
-    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyPolicyAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, String phone, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt) {
+    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyPolicyAgreed, boolean sensitiveInfoAgreed, boolean personalInformationAgreed, boolean locationAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, boolean pushAgreed, String serviceTermsVersion, String privacyPolicyVersion, String sensitiveInfoVersion, String personalInformationVersion, String locationVersion, String marketingVersion, LocalDateTime serviceTermsAgreedAt, LocalDateTime privacyPolicyAgreedAt, LocalDateTime sensitiveInfoAgreedAt, LocalDateTime personalInformationAgreedAt, LocalDateTime locationAgreedAt, LocalDateTime marketingAgreedAt, LocalDateTime pushAgreedAt, String lastConsentIp, String phone, String email, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt, LocalDateTime emailVerifiedAt) {
         this.serviceTermsAgreed = serviceTermsAgreed;
         this.privacyPolicyAgreed = privacyPolicyAgreed;
+        this.sensitiveInfoAgreed = sensitiveInfoAgreed;
+        this.personalInformationAgreed = personalInformationAgreed;
+        this.locationAgreed = locationAgreed;
         this.ageConfirmed = ageConfirmed;
         this.femaleConfirmed = femaleConfirmed;
         this.marketingAgreed = marketingAgreed;
+        this.pushAgreed = pushAgreed;
+        this.serviceTermsVersion = serviceTermsVersion;
+        this.privacyPolicyVersion = privacyPolicyVersion;
+        this.sensitiveInfoVersion = sensitiveInfoVersion;
+        this.personalInformationVersion = personalInformationVersion;
+        this.locationVersion = locationVersion;
+        this.marketingVersion = marketingVersion;
+        this.serviceTermsAgreedAt = serviceTermsAgreedAt;
+        this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
+        this.sensitiveInfoAgreedAt = sensitiveInfoAgreedAt;
+        this.personalInformationAgreedAt = personalInformationAgreedAt;
+        this.locationAgreedAt = locationAgreedAt;
+        this.marketingAgreedAt = marketingAgreedAt;
+        this.pushAgreedAt = pushAgreedAt;
+        this.lastConsentIp = lastConsentIp;
         this.phone = phone;
+        this.email = email;
         this.loginId = loginId;
         this.password = password;
         this.nickname = nickname;
@@ -89,11 +168,12 @@ public class UserSignUpSession extends BaseEntity {
         this.expiredAt = expiredAt;
         this.completed = completed;
         this.phoneVerifiedAt = phoneVerifiedAt;
+        this.emailVerifiedAt = emailVerifiedAt;
     }
 
     // 필수 약관 동의 여부 확인
     public boolean hasRequiredTermsAgreed() {
-        return serviceTermsAgreed && privacyPolicyAgreed;
+        return serviceTermsAgreed && privacyPolicyAgreed && sensitiveInfoAgreed && personalInformationAgreed;
     }
 
     // 휴대폰 인증 완료 여부 확인
@@ -115,6 +195,13 @@ public class UserSignUpSession extends BaseEntity {
         this.signUpStep = SignUpStep.PHONE_VERIFIED;
     }
 
+    // 이메일 인증 정보 저장
+    public void verifyEmail(String email, LocalDateTime emailVerifiedAt) {
+        this.email = email;
+        this.emailVerifiedAt = emailVerifiedAt;
+        this.signUpStep = SignUpStep.EMAIL_VERIFIED;
+    }
+
     // 아이디, 비밀번호 저장
     public void updateCredentials(String loginId, String password) {
         this.loginId = loginId;
@@ -122,27 +209,59 @@ public class UserSignUpSession extends BaseEntity {
         this.signUpStep = SignUpStep.CREDENTIALS_COMPLETED;
     }
 
-    // 닉네임 및 지역 저장
-    public void updateBasicInfo(String nickname, Long areaId) {
+    // 닉네임 저장
+    public void updateNickname(String nickname) {
         this.nickname = nickname;
+        this.signUpStep = SignUpStep.NICKNAME_COMPLETED;
+    }
+
+    // 지역 저장
+    public void updateArea(Long areaId) {
         this.areaId = areaId;
-        this.signUpStep = SignUpStep.BASIC_INFO_COMPLETED;
+        this.signUpStep = SignUpStep.AREA_COMPLETED;
     }
 
     // 회원가입 목적 저장
     public void updatePurpose(Purpose purpose) {
         this.purpose = purpose;
-        this.signUpStep = SignUpStep.PURPOSE_SELECTED;
+        updateProgressStep(SignUpStep.PURPOSE_SELECTED);
     }
 
-    // 프로핈 설정 완료 상태로 변경
-    public void updateProfileStep() {
-        this.signUpStep = SignUpStep.PROFILE_COMPLETED;
+    // 관심사 설정 완료 상태로 변경
+    public void updateInterestStep() {
+        updateProgressStep(SignUpStep.INTEREST_COMPLETED);
+    }
+
+    // 생활 습관 설정 완료 상태로 변경
+    public void updateLifestyleStep() {
+        updateProgressStep(SignUpStep.LIFESTYLE_COMPLETED);
+    }
+
+    // 나에 대해서 설정 완료 상태로 변경
+    public void updateAboutMeStep() {
+        updateProgressStep(SignUpStep.ABOUT_ME_COMPLETED);
+    }
+
+    // 이상형 설정 완료 상태로 변경
+    public void updateIdealStep() {
+        updateProgressStep(SignUpStep.IDEAL_COMPLETED);
+    }
+
+    // 프로필 사진 및 소개 설정 완료 상태로 변경
+    public void updateProfileIntroStep() {
+        updateProgressStep(SignUpStep.PROFILE_COMPLETED);
     }
 
     // 회원가입 완료 상태로 변경
     public void completeSignUp() {
         this.completed = true;
         this.signUpStep = SignUpStep.SIGNUP_COMPLETED;
+    }
+
+    // 뒷단계가 이미 저장되어 있으면 진행 단계 유지
+    private void updateProgressStep(SignUpStep targetStep) {
+        if (signUpStep == null || !signUpStep.isAtLeast(targetStep)) {
+            this.signUpStep = targetStep;
+        }
     }
 }

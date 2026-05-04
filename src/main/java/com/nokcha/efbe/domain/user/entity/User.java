@@ -1,7 +1,6 @@
 package com.nokcha.efbe.domain.user.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
-import com.nokcha.efbe.domain.profile.entity.Purpose;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -47,6 +46,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20, unique = true)
     private String phone;
 
+    @Column
+    private String email;
+
     @Column(length = 4)
     private String scode;
 
@@ -56,9 +58,8 @@ public class User extends BaseEntity {
     @Column
     private Integer birth;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 30)
-    private Job job;
+    @Column
+    private Integer age;
 
     @Column(nullable = false)
     private boolean isWithdraw;
@@ -69,10 +70,6 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Long areaId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Purpose purpose;
-
     @Column
     private LocalDateTime lastLoginTime;
 
@@ -80,29 +77,24 @@ public class User extends BaseEntity {
     private LocalDateTime lastNicknameChangeTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Role role;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BanStatus banStatus;
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String scode, String nickname, Integer birth, Job job, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, Purpose purpose, LocalDateTime lastLoginTime, Role role, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, Integer birth, Integer age, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
         this.phone = phone;
+        this.email = email;
         this.scode = scode;
         this.nickname = nickname;
         this.birth = birth;
-        this.job = job;
+        this.age = age;
         this.isWithdraw = isWithdraw;
         this.withdrawDate = withdrawDate;
         this.areaId = areaId;
-        this.purpose = purpose;
         this.lastLoginTime = lastLoginTime;
-        this.role = role;
         this.lastNicknameChangeTime = lastNicknameChangeTime;
         this.banStatus = banStatus;
     }
@@ -110,5 +102,10 @@ public class User extends BaseEntity {
     // 마지막 로그인 시간 갱신
     public void updateLastLoginTime(LocalDateTime lastLoginTime) {
         this.lastLoginTime = lastLoginTime;
+    }
+
+    // 보안코드 설정/수정
+    public void updateScode(String scode) {
+        this.scode = scode;
     }
 }

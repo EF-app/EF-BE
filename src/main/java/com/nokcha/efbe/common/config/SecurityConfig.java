@@ -69,7 +69,10 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/v1/users/signup/**",
-                                "/v1/users/login"
+                                "/v1/users/login",
+                                "/v1/users/token/refresh",
+                                "/v1/admin/token/refresh",
+                                "/v1/admin/login"
                         ).permitAll()
                         // 밸런스 게임 조회는 비로그인 허용 (홈 진입·피드·단건). myChoice 는 viewerId=null 처리.
                         // 투표/댓글/좋아요 등 mutating 은 GET 이 아니므로 자연히 인증 필요.

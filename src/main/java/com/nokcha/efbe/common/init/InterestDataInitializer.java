@@ -1,6 +1,6 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.profile.entity.Interest;
+import com.nokcha.efbe.domain.profile.entity.CodeInterest;
 import com.nokcha.efbe.domain.user.repository.InterestRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +59,7 @@ public class InterestDataInitializer {
                 continue;
             }
 
-            interestRepository.save(Interest.builder()
+            interestRepository.save(CodeInterest.builder()
                     .bigCategory(bigCategory)
                     .smallCategory(smallCategory)
                     .sortOrder(index + 1)

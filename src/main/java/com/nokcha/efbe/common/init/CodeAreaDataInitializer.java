@@ -1,128 +1,30 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import jakarta.annotation.PostConstruct;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class CodeAreaDataInitializer {
 
     private final AreaRepository areaRepository;
+    private final DataSource dataSource;
 
     @PostConstruct
     public void initialize() {
-        registerCountry("서울특별시", List.of(
-                "강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구",
-                "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구", "성동구",
-                "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"
-        ));
+        if (areaRepository.count() > 0) return;
 
-        registerCountry("부산광역시", List.of(
-                "강서구", "금정구", "기장군", "남구", "동구", "동래구", "부산진구", "북구",
-                "사상구", "사하구", "서구", "수영구", "연제구", "영도구", "중구", "해운대구"
-        ));
+        ClassPathResource resource = new ClassPathResource("static/area.sql");
 
-        registerCountry("대구광역시", List.of(
-                "군위군", "남구", "달서구", "달성군", "동구", "북구", "서구", "수성구", "중구"
-        ));
+        if (!resource.exists()) return;
 
-        registerCountry("인천광역시", List.of(
-                "강화군", "계양구", "미추홀구", "남동구", "동구", "부평구", "서구", "연수구",
-                "옹진군", "중구"
-        ));
-
-        registerCountry("광주광역시", List.of(
-                "광산구", "남구", "동구", "북구", "서구"
-        ));
-
-        registerCountry("대전광역시", List.of(
-                "대덕구", "동구", "서구", "유성구", "중구"
-        ));
-
-        registerCountry("울산광역시", List.of(
-                "남구", "동구", "북구", "울주군", "중구"
-        ));
-
-        registerCountry("세종특별자치시", List.of(
-                "세종시"
-        ));
-
-        registerCountry("경기도", List.of(
-                "수원시", "성남시", "고양시", "용인시", "부천시", "안산시", "안양시", "남양주시",
-                "화성시", "평택시", "의정부시", "시흥시", "파주시", "김포시", "광명시", "광주시",
-                "군포시", "오산시", "이천시", "안성시", "구리시", "의왕시", "하남시", "양주시",
-                "포천시", "여주시", "동두천시", "과천시", "가평군", "양평군", "연천군"
-        ));
-
-        registerCountry("강원특별자치도", List.of(
-                "춘천시", "원주시", "강릉시", "동해시", "태백시", "속초시", "삼척시",
-                "홍천군", "횡성군", "영월군", "평창군", "정선군", "철원군", "화천군",
-                "양구군", "인제군", "고성군", "양양군"
-        ));
-
-        registerCountry("충청북도", List.of(
-                "청주시", "충주시", "제천시", "보은군", "옥천군", "영동군", "증평군",
-                "진천군", "괴산군", "음성군", "단양군"
-        ));
-
-        registerCountry("충청남도", List.of(
-                "천안시", "공주시", "보령시", "아산시", "서산시", "논산시", "계룡시", "당진시",
-                "금산군", "부여군", "서천군", "청양군", "홍성군", "예산군", "태안군"
-        ));
-
-        registerCountry("전북특별자치도", List.of(
-                "전주시", "군산시", "익산시", "정읍시", "남원시", "김제시",
-                "완주군", "진안군", "무주군", "장수군", "임실군", "순창군",
-                "고창군", "부안군"
-        ));
-
-        registerCountry("전라남도", List.of(
-                "목포시", "여수시", "순천시", "나주시", "광양시", "담양군", "곡성군", "구례군",
-                "고흥군", "보성군", "화순군", "장흥군", "강진군", "해남군", "영암군", "무안군",
-                "함평군", "영광군", "장성군", "완도군", "진도군", "신안군"
-        ));
-
-        registerCountry("경상북도", List.of(
-                "포항시", "경주시", "김천시", "안동시", "구미시", "영주시", "영천시", "상주시",
-                "문경시", "경산시", "의성군", "청송군", "영양군", "영덕군", "청도군", "고령군",
-                "성주군", "칠곡군", "예천군", "봉화군", "울진군", "울릉군"
-        ));
-
-        registerCountry("경상남도", List.of(
-                "창원시", "진주시", "통영시", "사천시", "김해시", "밀양시", "거제시", "양산시",
-                "의령군", "함안군", "창녕군", "고성군", "남해군", "하동군", "산청군", "함양군",
-                "거창군", "합천군"
-        ));
-
-        registerCountry("제주특별자치도", List.of(
-                "제주시", "서귀포시"
-        ));
-
-        registerCountry("해외", List.of(
-                "일본", "중국", "대만", "홍콩", "태국", "베트남", "싱가포르", "필리핀",
-                "말레이시아", "인도네시아", "미국", "캐나다", "영국", "프랑스", "독일",
-                "이탈리아", "스페인", "호주", "뉴질랜드"
-        ));
-    }
-
-    // country 기준 지역 데이터 등록
-    private void registerCountry(String country, List<String> cities) {
-        for (int index = 0; index < cities.size(); index++) {
-            String city = cities.get(index);
-
-            if (areaRepository.findByCountryAndCity(country, city).isPresent()) {
-                continue;
-            }
-
-            areaRepository.save(CodeArea.builder()
-                    .country(country)
-                    .city(city)
-                    .build());
-        }
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(resource);
+        populator.setContinueOnError(false);
+        populator.execute(dataSource);
     }
 }
