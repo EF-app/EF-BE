@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -43,19 +42,11 @@ public class SwaggerConfig {
     @Bean
     public OpenApiCustomizer openApiCustomizer() {
         return openApi -> openApi.getPaths().values().forEach(pathItem ->
-                pathItem.readOperationsMap().forEach((httpMethod, operation) -> {
+                pathItem.readOperations().forEach(operation -> {
                     if (!operation.getResponses().containsKey("200")) {
                         operation.getResponses().addApiResponse("200", new ApiResponse()
                                 .description("성공")
                                 .content(createSuccessContent()));
-                    }
-
-                    // 생성 성공은 POST 일 때만 의미 있음
-                    if (httpMethod == PathItem.HttpMethod.POST
-                            && !operation.getResponses().containsKey("201")) {
-                        operation.getResponses().addApiResponse("201", new ApiResponse()
-                                .description("생성 성공")
-                                .content(createCreatedContent()));
                     }
 
                     if (!operation.getResponses().containsKey("400")) {
@@ -87,26 +78,6 @@ public class SwaggerConfig {
                                           "data": {
                                             "id": 1,
                                             "nickname": "ef_user"
-                                          }
-                                        }
-                                        """))
-        );
-    }
-
-    // 생성 성공 응답 예시 (POST 전용)
-    private Content createCreatedContent() {
-        return new Content().addMediaType(
-                org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                new MediaType()
-                        .schema(createCreatedSchema())
-                        .addExamples("created", new Example()
-                                .summary("생성 성공 응답 예시")
-                                .value("""
-                                        {
-                                          "code": 201,
-                                          "message": "생성되었습니다.",
-                                          "data": {
-                                            "id": 1
                                           }
                                         }
                                         """))
@@ -159,15 +130,6 @@ public class SwaggerConfig {
                 .addProperty("data", new ObjectSchema()
                         .addProperty("id", new IntegerSchema().example(1))
                         .addProperty("nickname", new StringSchema().example("ef_user")));
-    }
-
-    // 생성 성공 응답 스키마 (POST)
-    private Schema<?> createCreatedSchema() {
-        return new ObjectSchema()
-                .addProperty("code", new IntegerSchema().example(201))
-                .addProperty("message", new StringSchema().example("생성되었습니다."))
-                .addProperty("data", new ObjectSchema()
-                        .addProperty("id", new IntegerSchema().example(1)));
     }
 
     // 실패 응답 스키마
