@@ -7,10 +7,11 @@ public enum ErrorCode {
     // 권한
     INVALID_USER(401, "로그인 정보를 확인해주세요."),
     FORBIDDEN_ROLE(403, "관리자 권한이 필요합니다."),
-    // [merge-squash] develop 의존 누락분 보강 — develop 도메인(postIt chat/like) 사용
+    // [merge-squash] develop 의존 누락분 보강 — develop 도메인(postIt chat/like, balGame) 사용
     FORBIDDEN(403, "권한이 없습니다."),
     DUPLICATE_LIKE(409, "이미 좋아요를 누른 게시글입니다."),
     MESSAGE_ALREADY_READ(400, "이미 읽음 처리된 메시지입니다."),
+    COMMENT_REPLY_DEPTH_EXCEEDED(400, "허용된 댓글 깊이를 초과했습니다."),
     ADMIN_TOKEN_EXPIRED(401, "관리자 토큰이 만료되었습니다."),
     ADMIN_TOKEN_INVALID(401, "유효하지 않은 관리자 토큰입니다."),
     ADMIN_NOT_FOUND(404, "존재하지 않는 관리자입니다."),
