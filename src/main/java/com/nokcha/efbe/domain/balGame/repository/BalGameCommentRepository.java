@@ -30,14 +30,15 @@ public interface BalGameCommentRepository extends JpaRepository<BalGameComment, 
     List<BalGameComment> findRecentTopCommentsByGameIds(@Param("gameIds") List<Long> gameIds);
 
     // 특정 게임 댓글 전체 조회 - 신고 누적 숨김 + 내가 신고한 댓글 제외, 오래된 순(맨 아래가 최신)
+    // TODO(merge-squash): main 에 report 도메인 미존재 — Report 서브쿼리 부분만 주석. report 도메인 합류 후 라인 주석 해제.
     @Query("select c from BalGameComment c " +
             "where c.game.id = :gameId " +
             "and (c.isHidden = false or c.isHidden is null) " +
-            "and c.id not in (" +
-            "  select r.targetId from Report r " +
-            "  where r.targetType = com.nokcha.efbe.domain.report.entity.ReportTargetType.BAL_COMMENT " +
-            "  and r.reporter.id = :viewerId" +
-            ") " +
+            // "and c.id not in (" +
+            // "  select r.targetId from Report r " +
+            // "  where r.targetType = com.nokcha.efbe.domain.report.entity.ReportTargetType.BAL_COMMENT " +
+            // "  and r.reporter.id = :viewerId" +
+            // ") " +
             "order by c.createTime asc")
     List<BalGameComment> findVisibleCommentsAsc(@Param("gameId") Long gameId,
                                                 @Param("viewerId") Long viewerId);
