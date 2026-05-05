@@ -41,8 +41,8 @@ public class PostItService {
     // 일일 한도 (BASIC 플랜 기준 — 프리미엄은 별도 처리 지점, 현재는 일괄 적용)
     private static final String ACTION_POST_WRITE = "POST_WRITE";
     private static final String ACTION_POST_LIGHTNING = "POST_LIGHTNING";
-    private static final int FREE_POST_WRITE_LIMIT = 2;
-    private static final int FREE_POST_LIGHTNING_LIMIT = 1;
+    private static final int FREE_POST_WRITE_LIMIT = 10;
+    private static final int FREE_POST_LIGHTNING_LIMIT = 2;
     private static final int DEFAULT_FEED_SIZE = 20;
     private static final int MAX_FEED_SIZE = 50;
 
