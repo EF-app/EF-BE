@@ -83,7 +83,7 @@ public class UserAuthService {
 
         UserSignUpSession signUpSession = userSignUpSessionRepository.save(UserSignUpSession.builder()
                 .serviceTermsAgreed(reqDto.isServiceTermsAgreed())
-                .privacyPolicyAgreed(reqDto.isPrivacyPolicyAgreed())
+                .privacyCollectionAgreed(reqDto.isPrivacyPolicyAgreed())
                 .sensitiveInfoAgreed(reqDto.isSensitiveInfoAgreed())
                 .personalInformationAgreed(reqDto.isPersonalInformationAgreed())
                 .locationAgreed(reqDto.isLocationAgreed())
@@ -92,13 +92,13 @@ public class UserAuthService {
                 .marketingAgreed(reqDto.isMarketingAgreed())
                 .pushAgreed(reqDto.isPushAgreed())
                 .serviceTermsVersion(reqDto.getServiceTermsVersion())
-                .privacyPolicyVersion(reqDto.getPrivacyPolicyVersion())
+                .privacyCollectionVersion(reqDto.getPrivacyPolicyVersion())
                 .sensitiveInfoVersion(reqDto.getSensitiveInfoVersion())
                 .personalInformationVersion(reqDto.getPersonalInformationVersion())
                 .locationVersion(reqDto.isLocationAgreed() ? reqDto.getLocationVersion() : null)
                 .marketingVersion(reqDto.isMarketingAgreed() ? reqDto.getMarketingVersion() : null)
                 .serviceTermsAgreedAt(now)
-                .privacyPolicyAgreedAt(now)
+                .privacyCollectionAgreedAt(now)
                 .sensitiveInfoAgreedAt(now)
                 .personalInformationAgreedAt(now)
                 .locationAgreedAt(reqDto.isLocationAgreed() ? now : null)
@@ -640,7 +640,7 @@ public class UserAuthService {
         String consentIp = signUpSession.getLastConsentIp();
 
         userTerms.add(buildUserTerms(userId, TermType.TERMS_AGREE, signUpSession.getServiceTermsVersion(), signUpSession.getServiceTermsAgreedAt(), true, consentIp));
-        userTerms.add(buildUserTerms(userId, TermType.PRIVACY_AGREE, signUpSession.getPrivacyPolicyVersion(), signUpSession.getPrivacyPolicyAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, TermType.PRIVACY_COLLECTION_AGREE, signUpSession.getPrivacyCollectionVersion(), signUpSession.getPrivacyCollectionAgreedAt(), true, consentIp));
         userTerms.add(buildUserTerms(userId, TermType.SENSITIVE_AGREE, signUpSession.getSensitiveInfoVersion(), signUpSession.getSensitiveInfoAgreedAt(), true, consentIp));
         userTerms.add(buildUserTerms(userId, TermType.PERSONAL_INFORMATION_AGREE, signUpSession.getPersonalInformationVersion(), signUpSession.getPersonalInformationAgreedAt(), true, consentIp));
 
@@ -671,9 +671,7 @@ public class UserAuthService {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        if (request == null) {
-            return null;
-        }
+        if (request == null) return null;
 
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {

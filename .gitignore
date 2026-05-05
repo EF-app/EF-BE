@@ -9,8 +9,7 @@ build/
 .claude/
 
 ### JVM crash logs ###
-hs_err_pid*.log
-replay_pid*.log
+*.log
 
 ### STS ###
 .apt_generated

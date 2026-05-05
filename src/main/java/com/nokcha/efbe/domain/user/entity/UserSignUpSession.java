@@ -30,7 +30,7 @@ public class UserSignUpSession extends BaseEntity {
     private boolean serviceTermsAgreed;
 
     @Column(nullable = false)
-    private boolean privacyPolicyAgreed;
+    private boolean privacyCollectionAgreed;
 
     @Column(nullable = false)
     private boolean sensitiveInfoAgreed;
@@ -57,7 +57,7 @@ public class UserSignUpSession extends BaseEntity {
     private String serviceTermsVersion;
 
     @Column(length = 20)
-    private String privacyPolicyVersion;
+    private String privacyCollectionVersion;
 
     @Column(length = 20)
     private String sensitiveInfoVersion;
@@ -75,7 +75,7 @@ public class UserSignUpSession extends BaseEntity {
     private LocalDateTime serviceTermsAgreedAt;
 
     @Column
-    private LocalDateTime privacyPolicyAgreedAt;
+    private LocalDateTime privacyCollectionAgreedAt;
 
     @Column
     private LocalDateTime sensitiveInfoAgreedAt;
@@ -133,9 +133,9 @@ public class UserSignUpSession extends BaseEntity {
     private LocalDateTime emailVerifiedAt;
 
     @Builder
-    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyPolicyAgreed, boolean sensitiveInfoAgreed, boolean personalInformationAgreed, boolean locationAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, boolean pushAgreed, String serviceTermsVersion, String privacyPolicyVersion, String sensitiveInfoVersion, String personalInformationVersion, String locationVersion, String marketingVersion, LocalDateTime serviceTermsAgreedAt, LocalDateTime privacyPolicyAgreedAt, LocalDateTime sensitiveInfoAgreedAt, LocalDateTime personalInformationAgreedAt, LocalDateTime locationAgreedAt, LocalDateTime marketingAgreedAt, LocalDateTime pushAgreedAt, String lastConsentIp, String phone, String email, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt, LocalDateTime emailVerifiedAt) {
+    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyCollectionAgreed, boolean sensitiveInfoAgreed, boolean personalInformationAgreed, boolean locationAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, boolean pushAgreed, String serviceTermsVersion, String privacyCollectionVersion, String sensitiveInfoVersion, String personalInformationVersion, String locationVersion, String marketingVersion, LocalDateTime serviceTermsAgreedAt, LocalDateTime privacyCollectionAgreedAt, LocalDateTime sensitiveInfoAgreedAt, LocalDateTime personalInformationAgreedAt, LocalDateTime locationAgreedAt, LocalDateTime marketingAgreedAt, LocalDateTime pushAgreedAt, String lastConsentIp, String phone, String email, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt, LocalDateTime emailVerifiedAt) {
         this.serviceTermsAgreed = serviceTermsAgreed;
-        this.privacyPolicyAgreed = privacyPolicyAgreed;
+        this.privacyCollectionAgreed = privacyCollectionAgreed;
         this.sensitiveInfoAgreed = sensitiveInfoAgreed;
         this.personalInformationAgreed = personalInformationAgreed;
         this.locationAgreed = locationAgreed;
@@ -144,13 +144,13 @@ public class UserSignUpSession extends BaseEntity {
         this.marketingAgreed = marketingAgreed;
         this.pushAgreed = pushAgreed;
         this.serviceTermsVersion = serviceTermsVersion;
-        this.privacyPolicyVersion = privacyPolicyVersion;
+        this.privacyCollectionVersion = privacyCollectionVersion;
         this.sensitiveInfoVersion = sensitiveInfoVersion;
         this.personalInformationVersion = personalInformationVersion;
         this.locationVersion = locationVersion;
         this.marketingVersion = marketingVersion;
         this.serviceTermsAgreedAt = serviceTermsAgreedAt;
-        this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
+        this.privacyCollectionAgreedAt = privacyCollectionAgreedAt;
         this.sensitiveInfoAgreedAt = sensitiveInfoAgreedAt;
         this.personalInformationAgreedAt = personalInformationAgreedAt;
         this.locationAgreedAt = locationAgreedAt;
@@ -173,7 +173,7 @@ public class UserSignUpSession extends BaseEntity {
 
     // 필수 약관 동의 여부 확인
     public boolean hasRequiredTermsAgreed() {
-        return serviceTermsAgreed && privacyPolicyAgreed && sensitiveInfoAgreed && personalInformationAgreed;
+        return serviceTermsAgreed && privacyCollectionAgreed && sensitiveInfoAgreed && personalInformationAgreed;
     }
 
     // 휴대폰 인증 완료 여부 확인
