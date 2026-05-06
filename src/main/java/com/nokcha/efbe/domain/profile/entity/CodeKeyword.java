@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "code_interest")
+@Table(name = "code_keyword")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CodeInterest {
+public class CodeKeyword {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +31,7 @@ public class CodeInterest {
     private Integer sortOrder;
 
     @Builder
-    public CodeInterest(String bigCategory, String smallCategory, Integer sortOrder) {
+    public CodeKeyword(String bigCategory, String smallCategory, Integer sortOrder) {
         this.bigCategory = bigCategory;
         this.smallCategory = smallCategory;
         this.sortOrder = sortOrder;

@@ -11,8 +11,8 @@ import com.nokcha.efbe.domain.premium.entity.UserInkFund;
 import com.nokcha.efbe.domain.premium.repository.UserInkFundRepository;
 import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
-import com.nokcha.efbe.domain.profile.repository.UserCustomInterestRepository;
-import com.nokcha.efbe.domain.profile.repository.UserInterestRepository;
+import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
+import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
 import com.nokcha.efbe.domain.user.dto.request.EmailVerificationReqDto;
 import com.nokcha.efbe.domain.user.dto.request.LoginReqDto;
@@ -31,8 +31,8 @@ import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserActivityStatusRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
-import com.nokcha.efbe.domain.user.repository.UserSignUpCustomInterestRepository;
-import com.nokcha.efbe.domain.user.repository.UserSignUpInterestRepository;
+import com.nokcha.efbe.domain.user.repository.UserSignUpCustomKeywordRepository;
+import com.nokcha.efbe.domain.user.repository.UserSignUpKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpPersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpProfileRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpSessionRepository;
@@ -60,13 +60,13 @@ public class UserAuthService {
     private final UserSignUpSessionRepository userSignUpSessionRepository;
     private final AreaRepository areaRepository;
     private final UserSignUpProfileRepository userSignUpProfileRepository;
-    private final UserSignUpInterestRepository userSignUpInterestRepository;
-    private final UserSignUpCustomInterestRepository userSignUpCustomInterestRepository;
+    private final UserSignUpKeywordRepository userSignUpKeywordRepository;
+    private final UserSignUpCustomKeywordRepository userSignUpCustomKeywordRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
     private final ProfileImageRepository profileImageRepository;
     private final ProfileRepository profileRepository;
-    private final UserCustomInterestRepository userCustomInterestRepository;
-    private final UserInterestRepository userInterestRepository;
+    private final UserCustomKeywordRepository userCustomKeywordRepository;
+    private final UserKeywordRepository userKeywordRepository;
     private final UserPersonalRepository userPersonalRepository;
     private final UserActivityStatusRepository userActivityStatusRepository;
     private final UserTermsRepository userTermsRepository;
@@ -74,6 +74,18 @@ public class UserAuthService {
     private final UserLoginLogService userLoginLogService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+
+    // 로그인 아이디 사용 가능 여부 (실시간 중복 체크용 — 회원가입 전 단계 노출)
+    @Transactional(readOnly = true)
+    public boolean isLoginIdAvailable(String loginId) {
+        return !userRepository.existsByLoginId(loginId);
+    }
+
+    // 닉네임 사용 가능 여부 (실시간 중복 체크용 — 회원가입 전 단계 노출)
+    @Transactional(readOnly = true)
+    public boolean isNicknameAvailable(String nickname) {
+        return !userRepository.existsByNickname(nickname);
+    }
 
     // 약관 동의
     @Transactional
@@ -85,7 +97,7 @@ public class UserAuthService {
                 .serviceTermsAgreed(reqDto.isServiceTermsAgreed())
                 .privacyCollectionAgreed(reqDto.isPrivacyPolicyAgreed())
                 .sensitiveInfoAgreed(reqDto.isSensitiveInfoAgreed())
-                .personalInformationAgreed(reqDto.isPersonalInformationAgreed())
+                .noDisclosureAgreed(reqDto.isNoDisclosureAgreed())
                 .locationAgreed(reqDto.isLocationAgreed())
                 .ageConfirmed(false)
                 .femaleConfirmed(false)
@@ -94,13 +106,13 @@ public class UserAuthService {
                 .serviceTermsVersion(reqDto.getServiceTermsVersion())
                 .privacyCollectionVersion(reqDto.getPrivacyPolicyVersion())
                 .sensitiveInfoVersion(reqDto.getSensitiveInfoVersion())
-                .personalInformationVersion(reqDto.getPersonalInformationVersion())
+                .noDisclosureVersion(reqDto.getNoDisclosureVersion())
                 .locationVersion(reqDto.isLocationAgreed() ? reqDto.getLocationVersion() : null)
                 .marketingVersion(reqDto.isMarketingAgreed() ? reqDto.getMarketingVersion() : null)
                 .serviceTermsAgreedAt(now)
                 .privacyCollectionAgreedAt(now)
                 .sensitiveInfoAgreedAt(now)
-                .personalInformationAgreedAt(now)
+                .noDisclosureAgreedAt(now)
                 .locationAgreedAt(reqDto.isLocationAgreed() ? now : null)
                 .marketingAgreedAt(reqDto.isMarketingAgreed() ? now : null)
                 .pushAgreedAt(reqDto.isPushAgreed() ? now : null)
@@ -309,16 +321,16 @@ public class UserAuthService {
                 .build());
 
         saveFinalProfile(user.getId(), signUpSession.getId(), signUpSession.getPurpose());
-        saveUserInterests(user.getId(), signUpSession.getId());
-        saveUserCustomInterests(user.getId(), signUpSession.getId());
+        saveUserKeywords(user.getId(), signUpSession.getId());
+        saveUserCustomKeywords(user.getId(), signUpSession.getId());
         saveUserPersonals(user.getId(), signUpSession.getId());
         saveUserActivityStatus(user.getId());
         saveUserInkFund(user.getId());
         saveUserTerms(user.getId(), signUpSession);
 
-        List<ProfileImage> profileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
-        for (ProfileImage profileImage : profileImages) {
-            profileImage.assignToUser(user.getId());
+        List<UserProfileImage> userProfileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
+        for (UserProfileImage userProfileImage : userProfileImages) {
+            userProfileImage.assignToUser(user.getId());
         }
 
         deleteTemporarySignUpData(signUpSession.getId());
@@ -474,7 +486,7 @@ public class UserAuthService {
         validateRequiredVersion(reqDto.getServiceTermsVersion());
         validateRequiredVersion(reqDto.getPrivacyPolicyVersion());
         validateRequiredVersion(reqDto.getSensitiveInfoVersion());
-        validateRequiredVersion(reqDto.getPersonalInformationVersion());
+        validateRequiredVersion(reqDto.getNoDisclosureVersion());
 
         if (reqDto.isMarketingAgreed()) {
             validateRequiredVersion(reqDto.getMarketingVersion());
@@ -517,8 +529,8 @@ public class UserAuthService {
     // 임시 회원가입 데이터 정리
     private void deleteTemporarySignUpData(Long signUpSessionId) {
         userSignUpProfileRepository.deleteBySignUpSessionId(signUpSessionId);
-        userSignUpInterestRepository.deleteBySignUpSessionId(signUpSessionId);
-        userSignUpCustomInterestRepository.deleteBySignUpSessionId(signUpSessionId);
+        userSignUpKeywordRepository.deleteBySignUpSessionId(signUpSessionId);
+        userSignUpCustomKeywordRepository.deleteBySignUpSessionId(signUpSessionId);
         userSignUpPersonalRepository.deleteBySignUpSessionId(signUpSessionId);
     }
 
@@ -561,8 +573,8 @@ public class UserAuthService {
 
         profileRepository.findByUserId(userId)
                 .ifPresentOrElse(
-                        profile -> profile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
-                        () -> profileRepository.save(Profile.builder()
+                        userProfile -> userProfile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
+                        () -> profileRepository.save(UserProfile.builder()
                                 .userId(userId)
                                 .mbti(signUpProfile.getMbti())
                                 .purpose(purpose)
@@ -574,26 +586,26 @@ public class UserAuthService {
     }
 
     // 유저 관심사 저장
-    private void saveUserInterests(Long userId, Long signUpSessionId) {
-        List<UserSignUpInterest> signUpInterests = userSignUpInterestRepository.findBySignUpSessionId(signUpSessionId);
+    private void saveUserKeywords(Long userId, Long signUpSessionId) {
+        List<UserSignUpKeyword> signUpKeywords = userSignUpKeywordRepository.findBySignUpSessionId(signUpSessionId);
 
-        for (UserSignUpInterest signUpInterest : signUpInterests) {
-            userInterestRepository.save(UserInterest.builder()
+        for (UserSignUpKeyword signUpKeyword : signUpKeywords) {
+            userKeywordRepository.save(UserKeyword.builder()
                     .userId(userId)
-                    .interestId(signUpInterest.getInterestId())
+                    .keywordId(signUpKeyword.getKeywordId())
                     .build());
         }
     }
 
     // 유저 커스텀 관심사 저장
-    private void saveUserCustomInterests(Long userId, Long signUpSessionId) {
-        List<UserSignUpCustomInterest> signUpCustomInterests = userSignUpCustomInterestRepository.findBySignUpSessionId(signUpSessionId);
+    private void saveUserCustomKeywords(Long userId, Long signUpSessionId) {
+        List<UserSignUpCustomKeyword> signUpCustomKeywords = userSignUpCustomKeywordRepository.findBySignUpSessionId(signUpSessionId);
 
-        for (UserSignUpCustomInterest signUpCustomInterest : signUpCustomInterests) {
-            userCustomInterestRepository.save(UserCustomInterest.builder()
+        for (UserSignUpCustomKeyword signUpCustomKeyword : signUpCustomKeywords) {
+            userCustomKeywordRepository.save(UserCustomKeyword.builder()
                     .userId(userId)
-                    .keyword(signUpCustomInterest.getKeyword())
-                    .normalizedKeyword(signUpCustomInterest.getNormalizedKeyword())
+                    .keyword(signUpCustomKeyword.getKeyword())
+                    .normalizedKeyword(signUpCustomKeyword.getNormalizedKeyword())
                     .build());
         }
     }
@@ -637,13 +649,13 @@ public class UserAuthService {
 
     // 유저 약관 동의 정보 저장
     private void saveUserTerms(Long userId, UserSignUpSession signUpSession) {
-        List<UserTerms> userTerms = new ArrayList<>();
+        List<UserPolicy> userTerms = new ArrayList<>();
         String consentIp = signUpSession.getLastConsentIp();
 
         userTerms.add(buildUserTerms(userId, TermType.TERMS_AGREE, signUpSession.getServiceTermsVersion(), signUpSession.getServiceTermsAgreedAt(), true, consentIp));
         userTerms.add(buildUserTerms(userId, TermType.PRIVACY_COLLECTION_AGREE, signUpSession.getPrivacyCollectionVersion(), signUpSession.getPrivacyCollectionAgreedAt(), true, consentIp));
         userTerms.add(buildUserTerms(userId, TermType.SENSITIVE_AGREE, signUpSession.getSensitiveInfoVersion(), signUpSession.getSensitiveInfoAgreedAt(), true, consentIp));
-        userTerms.add(buildUserTerms(userId, TermType.PERSONAL_INFORMATION_AGREE, signUpSession.getPersonalInformationVersion(), signUpSession.getPersonalInformationAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, TermType.NO_DISCLOSURE_AGREE, signUpSession.getNoDisclosureVersion(), signUpSession.getNoDisclosureAgreedAt(), true, consentIp));
 
         if (signUpSession.isMarketingAgreed()) {
             userTerms.add(buildUserTerms(userId, TermType.MARKETING_AGREE, signUpSession.getMarketingVersion(), signUpSession.getMarketingAgreedAt(), false, consentIp));
@@ -660,8 +672,8 @@ public class UserAuthService {
         userTermsRepository.saveAll(userTerms);
     }
 
-    private UserTerms buildUserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
-        return UserTerms.builder()
+    private UserPolicy buildUserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
+        return UserPolicy.builder()
                 .userId(userId)
                 .termType(termType)
                 .termsVer(termsVer)

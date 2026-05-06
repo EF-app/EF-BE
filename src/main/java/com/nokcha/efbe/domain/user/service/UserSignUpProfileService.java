@@ -3,31 +3,26 @@ package com.nokcha.efbe.domain.user.service;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.common.util.InterestKeywordNormalizer;
-import com.nokcha.efbe.domain.profile.entity.CodeInterest;
-import com.nokcha.efbe.domain.profile.entity.CodePersonal;
-import com.nokcha.efbe.domain.profile.entity.IdealPointType;
-import com.nokcha.efbe.domain.profile.entity.Mbti;
-import com.nokcha.efbe.domain.profile.entity.ProfileImage;
-import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
+import com.nokcha.efbe.common.util.KeywordNormalizer;
+import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.user.dto.request.SignUpAboutMeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpIdealReqDto;
-import com.nokcha.efbe.domain.user.dto.request.SignUpInterestReqDto;
+import com.nokcha.efbe.domain.user.dto.request.SignUpKeywordReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpLifestyleReqDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
 import com.nokcha.efbe.domain.user.entity.Job;
 import com.nokcha.efbe.domain.user.entity.SignUpStep;
-import com.nokcha.efbe.domain.user.entity.UserSignUpCustomInterest;
-import com.nokcha.efbe.domain.user.entity.UserSignUpInterest;
-import com.nokcha.efbe.domain.user.entity.UserSignUpInterestType;
+import com.nokcha.efbe.domain.user.entity.UserSignUpCustomKeyword;
+import com.nokcha.efbe.domain.user.entity.UserSignUpKeyword;
+import com.nokcha.efbe.domain.user.entity.UserSignUpKeywordType;
 import com.nokcha.efbe.domain.user.entity.UserSignUpPersonal;
 import com.nokcha.efbe.domain.user.entity.UserSignUpProfile;
 import com.nokcha.efbe.domain.user.entity.UserSignUpSession;
-import com.nokcha.efbe.domain.user.repository.InterestRepository;
+import com.nokcha.efbe.domain.user.repository.KeywordRepository;
 import com.nokcha.efbe.domain.user.repository.PersonalRepository;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
-import com.nokcha.efbe.domain.user.repository.UserSignUpCustomInterestRepository;
-import com.nokcha.efbe.domain.user.repository.UserSignUpInterestRepository;
+import com.nokcha.efbe.domain.user.repository.UserSignUpCustomKeywordRepository;
+import com.nokcha.efbe.domain.user.repository.UserSignUpKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpPersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpProfileRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpSessionRepository;
@@ -52,33 +47,33 @@ import java.util.stream.Collectors;
 public class UserSignUpProfileService {
 
     private static final Set<String> LIFESTYLE_CATEGORIES = Set.of("음주", "선호 주종", "흡연", "흡연 종류", "타투유무");
-    private static final Set<String> ABOUT_ME_CATEGORIES = Set.of("종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
+    private static final Set<String> ABOUT_ME_CATEGORIES = Set.of("일상 유형", "종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
     private static final Set<String> IDEAL_CATEGORIES = Set.of("머리", "체형", "키", "성향");
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserSignUpSessionRepository userSignUpSessionRepository;
     private final UserSignUpProfileRepository userSignUpProfileRepository;
-    private final UserSignUpInterestRepository userSignUpInterestRepository;
-    private final UserSignUpCustomInterestRepository userSignUpCustomInterestRepository;
+    private final UserSignUpKeywordRepository userSignUpKeywordRepository;
+    private final UserSignUpCustomKeywordRepository userSignUpCustomKeywordRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
     private final ProfileImageRepository profileImageRepository;
-    private final InterestRepository interestRepository;
+    private final KeywordRepository keywordRepository;
     private final PersonalRepository personalRepository;
     private final R2ImageService r2ImageService;
 
     // 관심사 정보 저장
     @Transactional
-    public SignUpProfileRspDto createInterests(SignUpInterestReqDto reqDto) {
+    public SignUpProfileRspDto createKeywords(SignUpKeywordReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (!isInterestEditableStep(signUpSession.getSignUpStep())) {
+        if (!isKeywordEditableStep(signUpSession.getSignUpStep())) {
             throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
         }
 
-        validateInterestIds(reqDto.getInterestIds());
-        saveInterests(signUpSession.getId(), reqDto.getInterestIds());
+        validateKeywordIds(reqDto.getKeywordIds());
+        saveKeywords(signUpSession.getId(), reqDto.getKeywordIds());
         saveCustomKeywords(signUpSession.getId(), reqDto.getCustomKeywords());
-        signUpSession.updateInterestStep();
+        signUpSession.updateKeywordStep();
 
         return buildResponse(reqDto.getRegistrationToken(), signUpSession.getSignUpStep(), Collections.emptyList());
     }
@@ -182,7 +177,7 @@ public class UserSignUpProfileService {
     }
 
     // 관심사 단계 수정 가능 여부 확인
-    private boolean isInterestEditableStep(SignUpStep signUpStep) {
+    private boolean isKeywordEditableStep(SignUpStep signUpStep) {
         return signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
     }
 
@@ -207,14 +202,14 @@ public class UserSignUpProfileService {
     }
 
     // 관심사 존재 여부 검증
-    private void validateInterestIds(List<Long> interestIds) {
-        if (interestIds == null || interestIds.isEmpty()) {
+    private void validateKeywordIds(List<Long> keywordIds) {
+        if (keywordIds == null || keywordIds.isEmpty()) {
             return;
         }
 
-        List<CodeInterest> codeInterests = interestRepository.findAllById(interestIds);
+        List<CodeKeyword> codeKeywords = keywordRepository.findAllById(keywordIds);
 
-        if (codeInterests.size() != interestIds.size()) {
+        if (codeKeywords.size() != keywordIds.size()) {
             throw new BusinessException(ErrorCode.INTEREST_NOT_FOUND);
         }
     }
@@ -307,27 +302,27 @@ public class UserSignUpProfileService {
     }
 
     // 관심사 정보 저장
-    private void saveInterests(Long signUpSessionId, List<Long> interestIds) {
-        userSignUpInterestRepository.deleteBySignUpSessionId(signUpSessionId);
+    private void saveKeywords(Long signUpSessionId, List<Long> keywordIds) {
+        userSignUpKeywordRepository.deleteBySignUpSessionId(signUpSessionId);
 
-        if (interestIds == null || interestIds.isEmpty()) return;
+        if (keywordIds == null || keywordIds.isEmpty()) return;
 
-        List<UserSignUpInterest> interests = new ArrayList<>();
-        for (Long interestId : interestIds) {
-            interests.add(UserSignUpInterest.builder()
+        List<UserSignUpKeyword> keywords = new ArrayList<>();
+        for (Long keywordId : keywordIds) {
+            keywords.add(UserSignUpKeyword.builder()
                     .signUpSessionId(signUpSessionId)
-                    .interestId(interestId)
-                    .interestType(UserSignUpInterestType.INTEREST)
+                    .keywordId(keywordId)
+                    .keywordType(UserSignUpKeywordType.KEYWORD)
                     .build());
         }
 
-        userSignUpInterestRepository.saveAll(interests);
+        userSignUpKeywordRepository.saveAll(keywords);
     }
 
     // 커스텀 관심사 저장
     private void saveCustomKeywords(Long signUpSessionId, List<String> customKeywords) {
-        userSignUpCustomInterestRepository.deleteBySignUpSessionId(signUpSessionId);
-        userSignUpCustomInterestRepository.flush();
+        userSignUpCustomKeywordRepository.deleteBySignUpSessionId(signUpSessionId);
+        userSignUpCustomKeywordRepository.flush();
 
         if (customKeywords == null || customKeywords.isEmpty()) return;
 
@@ -339,7 +334,7 @@ public class UserSignUpProfileService {
             }
 
             String keyword = customKeyword.trim();
-            String normalizedKeyword = InterestKeywordNormalizer.normalize(keyword);
+            String normalizedKeyword = KeywordNormalizer.normalize(keyword);
 
             if (normalizedKeyword == null) {
                 continue;
@@ -348,16 +343,16 @@ public class UserSignUpProfileService {
             normalizedKeywordMap.putIfAbsent(normalizedKeyword, keyword);
         }
 
-        List<UserSignUpCustomInterest> interests = new ArrayList<>();
+        List<UserSignUpCustomKeyword> keywords = new ArrayList<>();
         for (Map.Entry<String, String> entry : normalizedKeywordMap.entrySet()) {
-            interests.add(UserSignUpCustomInterest.builder()
+            keywords.add(UserSignUpCustomKeyword.builder()
                     .signUpSessionId(signUpSessionId)
                     .keyword(entry.getValue())
                     .normalizedKeyword(entry.getKey())
                     .build());
         }
 
-        userSignUpCustomInterestRepository.saveAll(interests);
+        userSignUpCustomKeywordRepository.saveAll(keywords);
     }
 
     // 자기 성향 정보 카테고리별 저장
@@ -427,13 +422,13 @@ public class UserSignUpProfileService {
     private List<String> saveProfileImages(Long signUpSessionId, List<MultipartFile> images) {
         profileImageRepository.deleteBySignUpSessionId(signUpSessionId);
 
-        List<ProfileImage> profileImages = new ArrayList<>();
+        List<UserProfileImage> userProfileImages = new ArrayList<>();
         for (int i = 0; i < images.size(); i++) {
-            ProfileImage profileImage = r2ImageService.uploadProfileImage(images.get(i), "profile", signUpSessionId, i + 1);
-            profileImages.add(profileImage);
+            UserProfileImage userProfileImage = r2ImageService.uploadProfileImage(images.get(i), "profile", signUpSessionId, i + 1);
+            userProfileImages.add(userProfileImage);
         }
 
-        return profileImages.stream().map(ProfileImage::getUrl).collect(Collectors.toList());
+        return userProfileImages.stream().map(UserProfileImage::getUrl).collect(Collectors.toList());
     }
 
     // 단계 응답을 생성

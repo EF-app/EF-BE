@@ -107,6 +107,9 @@ public enum ErrorCode {
     POST_LIGHTNING_ANONYMOUS(400, "번개 포스트는 닉네임으로만 작성할 수 있습니다."),
     NOT_FOUND_POST_CHAT_ROOM(404, "포스트 채팅방을 찾을 수 없습니다."),
 
+    // 약관/정책
+    NOT_FOUND_POLICY_DOCUMENT(404, "활성화된 약관을 찾을 수 없습니다."),
+
     // 결제·별·아이템·구독·광고
     INSUFFICIENT_STAR(400, "잉크가 부족합니다."),
     INSUFFICIENT_ITEM(400, "아이템 보유 수량이 부족합니다."),

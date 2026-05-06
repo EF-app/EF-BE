@@ -18,15 +18,18 @@ public class PersonalDataInitializer {
     public void initialize() {
         registerCategory("음주", List.of(
                 "아예 안 마심", "가끔 마심", "꽤 마심", "자주 마심", "금주 중"
+                //"\uD83D\uDEAB 아예 안 마심", "\uD83C\uDF3F 가끔 마심", "\uD83C\uDF7A 꽤 마심", "\uD83E\uDD42 자주 마심", "\uD83D\uDCAA 금주 중"
         ));
         registerCategory("선호 주종", List.of(
                 "소주", "맥주", "와인", "위스키/하이볼", "칵테일", "전통주", "가리지 않아요"
+               //"\uD83C\uDF76 소주", "\uD83C\uDF7A 맥주", "\uD83C\uDF77 와인", "\uD83E\uDD43 위스키/하이볼", "\uD83C\uDF79 칵테일", "\uD83C\uDF76 전통주", "가리지 않아요"
         ));
         registerCategory("흡연", List.of(
                 "비흡연자", "아주 가끔 피움", "때때로 피움", "흡연자", "금연 중"
+                //"\uD83C\uDF3F 비흡연자", "\uD83C\uDF43 아주 가끔 피움", "\uD83D\uDCA8 때때로 피움", "\uD83D\uDEAC 흡연자", "\uD83D\uDCAA 금연 중"
         ));
         registerCategory("흡연 종류", List.of(
-                "액상 전자담배", "궐련형 전자담배", "연초", "해당없음"
+                "액상 전자담배", "궐련형 전자담배", "연초"
         ));
         registerCategory("타투유무", List.of(
                 "타투가 많이 있어요(아주 많아요)",
@@ -34,6 +37,9 @@ public class PersonalDataInitializer {
                 "작은 포인트 타투 하나/소수 있어요",
                 "지금은 없지만 관심 있어요",
                 "없어요"
+        ));
+        registerCategory("일상 유형", List.of(
+                "직장인", "프리랜서", "자영업·사업", "학생(대학생/대학원생)", "취업준비", "유학생", "기타"
         ));
         registerCategory("종교", List.of(
                 "무교", "불교", "개신교", "천주교", "기타"
