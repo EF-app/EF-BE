@@ -4,12 +4,7 @@ import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.util.KeywordNormalizer;
-import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
-import com.nokcha.efbe.domain.profile.entity.CodePersonal;
-import com.nokcha.efbe.domain.profile.entity.IdealPointType;
-import com.nokcha.efbe.domain.profile.entity.Mbti;
-import com.nokcha.efbe.domain.profile.entity.ProfileImage;
-import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
+import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.user.dto.request.SignUpAboutMeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpIdealReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpKeywordReqDto;
@@ -427,13 +422,13 @@ public class UserSignUpProfileService {
     private List<String> saveProfileImages(Long signUpSessionId, List<MultipartFile> images) {
         profileImageRepository.deleteBySignUpSessionId(signUpSessionId);
 
-        List<ProfileImage> profileImages = new ArrayList<>();
+        List<UserProfileImage> userProfileImages = new ArrayList<>();
         for (int i = 0; i < images.size(); i++) {
-            ProfileImage profileImage = r2ImageService.uploadProfileImage(images.get(i), "profile", signUpSessionId, i + 1);
-            profileImages.add(profileImage);
+            UserProfileImage userProfileImage = r2ImageService.uploadProfileImage(images.get(i), "profile", signUpSessionId, i + 1);
+            userProfileImages.add(userProfileImage);
         }
 
-        return profileImages.stream().map(ProfileImage::getUrl).collect(Collectors.toList());
+        return userProfileImages.stream().map(UserProfileImage::getUrl).collect(Collectors.toList());
     }
 
     // 단계 응답을 생성

@@ -328,9 +328,9 @@ public class UserAuthService {
         saveUserInkFund(user.getId());
         saveUserTerms(user.getId(), signUpSession);
 
-        List<ProfileImage> profileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
-        for (ProfileImage profileImage : profileImages) {
-            profileImage.assignToUser(user.getId());
+        List<UserProfileImage> userProfileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
+        for (UserProfileImage userProfileImage : userProfileImages) {
+            userProfileImage.assignToUser(user.getId());
         }
 
         deleteTemporarySignUpData(signUpSession.getId());
@@ -572,8 +572,8 @@ public class UserAuthService {
 
         profileRepository.findByUserId(userId)
                 .ifPresentOrElse(
-                        profile -> profile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
-                        () -> profileRepository.save(Profile.builder()
+                        userProfile -> userProfile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
+                        () -> profileRepository.save(UserProfile.builder()
                                 .userId(userId)
                                 .mbti(signUpProfile.getMbti())
                                 .purpose(purpose)

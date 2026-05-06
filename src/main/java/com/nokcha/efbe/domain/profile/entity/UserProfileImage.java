@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "user_profile_image")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProfileImage extends BaseEntity {
+public class UserProfileImage extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +47,7 @@ public class ProfileImage extends BaseEntity {
     }
 
     @Builder
-    public ProfileImage(Long signUpSessionId, Long userId, String originalName, String storedName, Integer sortOrder, String url) {
+    public UserProfileImage(Long signUpSessionId, Long userId, String originalName, String storedName, Integer sortOrder, String url) {
         this.signUpSessionId = signUpSessionId;
         this.userId = userId;
         this.originalName = originalName;

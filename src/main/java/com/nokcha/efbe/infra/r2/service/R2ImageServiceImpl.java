@@ -2,7 +2,7 @@ package com.nokcha.efbe.infra.r2.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.profile.entity.ProfileImage;
+import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +36,7 @@ public class R2ImageServiceImpl implements R2ImageService {
 
     // 프로필 이미지 업로드
     @Override
-    public ProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder) {
+    public UserProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder) {
         validateImage(multipartFile);
 
         String originalName = multipartFile.getOriginalFilename();
@@ -58,7 +58,7 @@ public class R2ImageServiceImpl implements R2ImageService {
 
         String imageUrl = publicUrl + "/" + objectKey;
 
-        ProfileImage profileImage = ProfileImage.builder()
+        UserProfileImage userProfileImage = UserProfileImage.builder()
                 .signUpSessionId(signUpSessionId)
                 .originalName(originalName)
                 .storedName(storedName)
@@ -66,7 +66,7 @@ public class R2ImageServiceImpl implements R2ImageService {
                 .url(imageUrl)
                 .build();
 
-        return profileImageRepository.save(profileImage);
+        return profileImageRepository.save(userProfileImage);
     }
 
     // 프로필 이미지 유효성 검증

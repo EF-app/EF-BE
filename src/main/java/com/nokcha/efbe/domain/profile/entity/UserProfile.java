@@ -14,7 +14,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user_profile")
-public class Profile {
+public class UserProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +43,7 @@ public class Profile {
     private String message;
 
     @Builder
-    public Profile(Long userId, Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String message) {
+    public UserProfile(Long userId, Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String message) {
         this.userId = userId;
         this.mbti = mbti;
         this.purpose = purpose;
