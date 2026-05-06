@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.premium.entity;
+package com.nokcha.efbe.domain.payment.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;

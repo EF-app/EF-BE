@@ -58,13 +58,10 @@ public class CodePolicyDocument extends BaseEntity {
     @Column(nullable = false)
     private boolean requiresReagreement;
 
-    @Column(nullable = false)
-    private Long createdByAdminId;
-
     @Builder
     public CodePolicyDocument(TermType policyType, String version, String title, String content, String summary,
                               boolean isRequired, LocalDateTime effectiveDate, LocalDateTime expiresAt,
-                              boolean isActive, boolean requiresReagreement, Long createdByAdminId) {
+                              boolean isActive, boolean requiresReagreement) {
         this.policyType = policyType;
         this.version = version;
         this.title = title;
@@ -75,6 +72,5 @@ public class CodePolicyDocument extends BaseEntity {
         this.expiresAt = expiresAt;
         this.isActive = isActive;
         this.requiresReagreement = requiresReagreement;
-        this.createdByAdminId = createdByAdminId;
     }
 }

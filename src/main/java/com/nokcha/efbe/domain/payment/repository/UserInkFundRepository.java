@@ -1,6 +1,6 @@
-package com.nokcha.efbe.domain.premium.repository;
+package com.nokcha.efbe.domain.payment.repository;
 
-import com.nokcha.efbe.domain.premium.entity.UserInkFund;
+import com.nokcha.efbe.domain.payment.entity.UserInkFund;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserInkFundRepository extends JpaRepository<UserInkFund, Long> {
