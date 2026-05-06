@@ -64,9 +64,6 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean isWithdraw;
 
-    @Column
-    private LocalDateTime withdrawDate;
-
     @Column(nullable = false)
     private Long areaId;
 
@@ -81,7 +78,7 @@ public class User extends BaseEntity {
     private BanStatus banStatus;
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, Integer birth, Integer age, boolean isWithdraw, LocalDateTime withdrawDate, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, Integer birth, Integer age, boolean isWithdraw, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -92,7 +89,6 @@ public class User extends BaseEntity {
         this.birth = birth;
         this.age = age;
         this.isWithdraw = isWithdraw;
-        this.withdrawDate = withdrawDate;
         this.areaId = areaId;
         this.lastLoginTime = lastLoginTime;
         this.lastNicknameChangeTime = lastNicknameChangeTime;
@@ -107,5 +103,10 @@ public class User extends BaseEntity {
     // 보안코드 설정/수정
     public void updateScode(String scode) {
         this.scode = scode;
+    }
+
+    // 탈퇴
+    public void withdraw() {
+        this.isWithdraw = true;
     }
 }

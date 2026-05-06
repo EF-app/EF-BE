@@ -4,17 +4,25 @@ import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.user.dto.request.UserScodeReqDto;
+import com.nokcha.efbe.domain.user.dto.request.UserWithdrawalReqDto;
 import com.nokcha.efbe.domain.user.entity.User;
+import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
+import com.nokcha.efbe.domain.user.entity.WithdrawStatus;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
+import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class UserInfoService {
 
     private final UserRepository userRepository;
+    private final UserWithdrawalRepository userWithdrawalRepository;
     private final SecurityUtil securityUtil;
 
     @Transactional
@@ -27,5 +35,59 @@ public class UserInfoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
         user.updateScode(reqDto.getScode());
+    }
+
+    @Transactional
+    public void withdraw(UserWithdrawalReqDto reqDto, HttpServletRequest request) {
+        User user = userRepository.findById(securityUtil.getCurrentUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
+
+        UserWithdrawal withdrawal = userWithdrawalRepository.findByUserId(user.getId())
+                .orElse(null);
+
+        if (withdrawal != null
+                && (withdrawal.getStatus() == WithdrawStatus.REQUESTED
+                || withdrawal.getStatus() == WithdrawStatus.COMPLETED)) {
+            throw new BusinessException(ErrorCode.ALREADY_WITHDRAWN_USER);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (withdrawal == null) {
+            withdrawal = UserWithdrawal.builder()
+                    .userId(user.getId())
+                    .status(WithdrawStatus.REQUESTED)
+                    .build();
+        }
+
+        withdrawal.request(reqDto.getWithdrawReason(), reqDto.getDetailText(), resolveClientIp(request), now);
+
+        userWithdrawalRepository.save(withdrawal);
+    }
+
+    @Transactional
+    public void cancelWithdrawal() {
+        Long userId = securityUtil.getCurrentUserId();
+        userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
+
+        UserWithdrawal withdrawal = userWithdrawalRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WITHDRAWAL_REQUEST_NOT_FOUND));
+
+        if (withdrawal.getStatus() != WithdrawStatus.REQUESTED) {
+            throw new BusinessException(ErrorCode.INVALID_WITHDRAWAL_STATUS);
+        }
+
+        withdrawal.cancel(LocalDateTime.now(), null, null);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        if (request == null) return null;
+
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
     }
 }
