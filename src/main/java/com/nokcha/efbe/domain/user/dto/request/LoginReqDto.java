@@ -16,11 +16,11 @@ import lombok.NoArgsConstructor;
 public class LoginReqDto {
 
     @NotBlank(message = "아이디는 필수입니다.")
-    @Schema(description = "로그인 아이디", example = "efuser01")
+    @Schema(description = "로그인 아이디", example = "test001")
     private String loginId;
 
     @NotBlank(message = "비밀번호는 필수입니다.")
-    @Schema(description = "로그인 비밀번호", example = "Ef123456!")
+    @Schema(description = "로그인 비밀번호", example = "123qwer!")
     private String password;
 
     @Schema(description = "기기 고유 식별자", example = "device-install-id-001")

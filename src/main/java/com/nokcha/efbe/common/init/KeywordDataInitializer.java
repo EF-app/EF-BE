@@ -1,7 +1,7 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.profile.entity.CodeInterest;
-import com.nokcha.efbe.domain.user.repository.InterestRepository;
+import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
+import com.nokcha.efbe.domain.user.repository.KeywordRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -10,9 +10,9 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class InterestDataInitializer {
+public class KeywordDataInitializer {
 
-    private final InterestRepository interestRepository;
+    private final KeywordRepository keywordRepository;
 
     @PostConstruct
     public void initialize() {
@@ -27,7 +27,7 @@ public class InterestDataInitializer {
         registerCategory("외부 여가 활동", List.of(
                 "맛집 탐방", "카페 투어", "전시회", "연극", "뮤지컬", "사진 찍기", "필름사진", "스포츠 경기 직관", "페스티벌", "방탈출",
                 "코인노래방", "볼링", "당구", "포켓볼", "쇼핑", "피크닉", "놀이공원", "산책", "외출", "국내여행",
-                "해외여행", "드라이브", "캠핑", "바비큐", "등산", "봉사활동", "플로깅", "낚시"
+                "해외여행", "드라이브", "캠핑", "바비큐", "등산", "낚시", "봉사활동", "플로깅"
         ));
         registerCategory("자기계발", List.of(
                 "재테크", "자격증 취득", "외국어 공부", "커리어 개발", "독서", "신문", "뉴스", "카공", "명상", "미라클모닝",
@@ -46,20 +46,20 @@ public class InterestDataInitializer {
                 "K-POP", "J-POP", "팝송", "인디음악", "시티팝", "알앤비", "EDM", "힙합", "락", "발라드", "재즈", "클래식", "골고루"
         ));
         registerCategory("게임", List.of(
-                "닌텐도", "보드게임", "오버워치", "배틀그라운드", "LOL", "서든어택", "메이플스토리", "발로란트", "플스", "스팀 게임"
+                "닌텐도", "보드게임", "오버워치", "배틀그라운드", "LOL", "서든어택", "메이플스토리", "발로란트", "플스", "스팀 게임", "폰게임", "기타"
         ));
     }
 
-    // 대분류 기준 관심사 데이터 등록
+    // 대분류 기준 키워드 데이터 등록
     private void registerCategory(String bigCategory, List<String> smallCategories) {
         for (int index = 0; index < smallCategories.size(); index++) {
             String smallCategory = smallCategories.get(index);
 
-            if (interestRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
+            if (keywordRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
                 continue;
             }
 
-            interestRepository.save(CodeInterest.builder()
+            keywordRepository.save(CodeKeyword.builder()
                     .bigCategory(bigCategory)
                     .smallCategory(smallCategory)
                     .sortOrder(index + 1)

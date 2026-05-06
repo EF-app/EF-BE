@@ -72,6 +72,7 @@ dependencies {
 def querydslGeneratedDir = layout.buildDirectory.dir('generated/sources/annotationProcessor/java/main')
 
 tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
     options.generatedSourceOutputDirectory.set(querydslGeneratedDir.get().asFile)
 }
 

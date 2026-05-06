@@ -16,16 +16,16 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(
-        name = "user_signup_custom_interest",
+        name = "user_signup_custom_keyword",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_signup_custom_interest_session_id_normalized_keyword",
+                        name = "uk_signup_custom_keyword_session_id_normalized_keyword",
                         columnNames = {"sign_up_session_id", "normalized_keyword"}
                 )
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserSignUpCustomInterest extends BaseEntity {
+public class UserSignUpCustomKeyword extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +41,7 @@ public class UserSignUpCustomInterest extends BaseEntity {
     private String normalizedKeyword;
 
     @Builder
-    public UserSignUpCustomInterest(Long signUpSessionId, String keyword, String normalizedKeyword) {
+    public UserSignUpCustomKeyword(Long signUpSessionId, String keyword, String normalizedKeyword) {
         this.signUpSessionId = signUpSessionId;
         this.keyword = keyword;
         this.normalizedKeyword = normalizedKeyword;

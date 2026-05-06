@@ -1,6 +1,6 @@
 package com.nokcha.efbe.domain.user.entity;
 
-public enum UserSignUpInterestType {
-    INTEREST,
+public enum UserSignUpKeywordType {
+    KEYWORD,
     IDEAL
 }

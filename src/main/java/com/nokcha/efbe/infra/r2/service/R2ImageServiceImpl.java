@@ -34,6 +34,18 @@ public class R2ImageServiceImpl implements R2ImageService {
     @Value("${cloud.r2.public-url}")
     private String publicUrl;
 
+    // dev 환경에서 R2 endpoint 가 없을 때 실제 업로드를 건너뛰고 placeholder URL 만 저장. application-dev.yml 에서 true 로 설정.
+    /*
+      운영 시 원복
+
+        R2 계정 발급 받은 후:
+        1. application-dev.yml(또는 prod)의 endpoint/access-key/secret-key/public-url을 실제 값으로 채우기
+        2. bypass-upload: false 또는 라인 자체 삭제
+        3. 재시작 → 정상 업로드 동작
+     */
+    @Value("${cloud.r2.bypass-upload:false}")
+    private boolean bypassUpload;
+
     // 프로필 이미지 업로드
     @Override
     public ProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder) {
@@ -43,20 +55,22 @@ public class R2ImageServiceImpl implements R2ImageService {
         String storedName = createStoredName(originalName);
         String objectKey = directory + "/" + storedName;
 
-        try {
-            s3Client.putObject(
-                    PutObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(objectKey)
-                            .contentType(multipartFile.getContentType())
-                            .build(),
-                    RequestBody.fromBytes(multipartFile.getBytes())
-            );
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE, e);
+        if (!bypassUpload) {
+            try {
+                s3Client.putObject(
+                        PutObjectRequest.builder()
+                                .bucket(bucket)
+                                .key(objectKey)
+                                .contentType(multipartFile.getContentType())
+                                .build(),
+                        RequestBody.fromBytes(multipartFile.getBytes())
+                );
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE, e);
+            }
         }
 
-        String imageUrl = publicUrl + "/" + objectKey;
+        String imageUrl = (publicUrl == null || publicUrl.isBlank() ? "https://dev-mock-r2.local" : publicUrl) + "/" + objectKey;
 
         ProfileImage profileImage = ProfileImage.builder()
                 .signUpSessionId(signUpSessionId)

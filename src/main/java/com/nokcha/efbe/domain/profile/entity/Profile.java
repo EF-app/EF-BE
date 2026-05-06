@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "profile")
+@Table(name = "user_profile")
 public class Profile {
 
     @Id
