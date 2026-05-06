@@ -4,6 +4,8 @@ import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.security.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.response.PostLikeRspDto;
 import com.nokcha.efbe.domain.postIt.service.PostLikeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// 포스트잇 좋아요 RESTful 컨트롤러
+@Tag(name = "PostIt Like", description = "포스트잇 좋아요 API")
 @RestController
 @RequestMapping("/v1/post-it/{postId}/likes")
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class PostLikeController {
 
     private final PostLikeService postLikeService;
 
-    // 좋아요 - 갱신된 likeCount/likedByMe 반환
+    @Operation(summary = "포스트잇 좋아요", description = "특정 포스트잇에 좋아요를 누릅니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
     @PostMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> createLike(@PathVariable Long postId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -30,7 +32,7 @@ public class PostLikeController {
                 .body(new RspTemplate<>(HttpStatus.CREATED, "좋아요 성공", data));
     }
 
-    // 좋아요 취소 - 갱신된 likeCount/likedByMe 반환
+    @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소합니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
     @DeleteMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> deleteLike(@PathVariable Long postId) {
         Long userId = SecurityUtil.getCurrentUserId();

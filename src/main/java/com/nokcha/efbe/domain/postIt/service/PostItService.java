@@ -2,9 +2,8 @@ package com.nokcha.efbe.domain.postIt.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-// TODO(merge-squash): main 의 CursorCodec/CursorPageResponse 미활성 — develop 의 cursor 페이지네이션 임시 비활성화
-// import com.nokcha.efbe.common.response.CursorPageResponse;
-// import com.nokcha.efbe.common.util.CursorCodec;
+import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
@@ -13,12 +12,10 @@ import com.nokcha.efbe.domain.payment.service.DailyUsageService;
 import com.nokcha.efbe.domain.postIt.dto.request.PostCreateReqDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostItRspDto;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
-import com.nokcha.efbe.domain.postIt.entity.PostChatRoom;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
-import com.nokcha.efbe.domain.postIt.repository.PostChatRoomRepository;
 import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
 import com.nokcha.efbe.domain.postIt.repository.PostLikeRepository;
-// import com.nokcha.efbe.domain.postIt.repository.projection.PostItCursor;
+import com.nokcha.efbe.domain.postIt.repository.projection.PostItCursor;
 import com.nokcha.efbe.domain.postIt.repository.projection.PostItRow;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
@@ -49,13 +46,12 @@ public class PostItService {
     private static final int MAX_FEED_SIZE = 50;
 
     private final PostItRepository postItRepository;
-    private final PostChatRoomRepository postChatRoomRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final AreaRepository areaRepository;
     private final DailyUsageService dailyUsageService;
     private final CodeItemRepository itemCatalogRepository;
-    // private final CursorCodec cursorCodec;
+    private final CursorCodec cursorCodec;
 
     // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 별도 카운터
     // 무료 한도: POST_WRITE 2회/일, POST_LIGHTNING 은 별도 카운터로 1회/일
@@ -96,8 +92,6 @@ public class PostItService {
         return PostItRspDto.fromOwnerView(saved, 0L, false, area.country, area.city);
     }
 
-    // TODO(merge-squash): cursor 페이지네이션 — main 의 CursorCodec 미활성으로 임시 비활성화. 원복 시 PostItController.getPostIts 도 같이 복구.
-    /*
     // 활성 피드 조회 (커서 기반, createTime DESC + id DESC, 만료/숨김/삭제 제외, 카테고리 옵션)
     // 메인 피드는 본인이어도 익명 글은 userId/nickname/age/location 마스킹 — frontend 에서 "from 익명" 표시.
     // viewerId == null (비로그인) 이면 likedByMe 는 모두 false.
@@ -111,14 +105,13 @@ public class PostItService {
         boolean hasMore = rows.size() > pageSize;
         List<PostItRow> page = hasMore ? rows.subList(0, pageSize) : rows;
 
-        List<PostItRspDto> items = page.stream().map(PostItRspDto::from).toList();
+        List<PostItRspDto> items = page.stream().map(row -> PostItRspDto.from(row, viewerId)).toList();
         if (!hasMore) return CursorPageResponse.last(items);
 
         PostItRow tail = page.get(page.size() - 1);
         String nextCursor = cursorCodec.encode(new PostItCursor(tail.createTime(), tail.id()));
         return CursorPageResponse.of(items, nextCursor);
     }
-    */
 
     private int clampSize(Integer size) {
         if (size == null || size <= 0) return DEFAULT_FEED_SIZE;
@@ -141,7 +134,8 @@ public class PostItService {
                         postLikeRepository.countByPostId(p.getId()),
                         postLikeRepository.existsByPostIdAndUserId(p.getId(), userId),
                         ownerArea.country,
-                        ownerArea.city
+                        ownerArea.city,
+                        userId
                 ));
     }
 
@@ -158,10 +152,10 @@ public class PostItService {
         AreaPair area = anonymous || post.getUser() == null
                 ? AreaPair.EMPTY
                 : resolveArea(post.getUser().getAreaId());
-        return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city);
+        return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city, viewerId);
     }
 
-    // Soft delete - 연결된 채팅방도 is_active=FALSE 로 전환
+    // Soft delete - 연결된 채팅방은 그대로 활성 유지 (기존 메시지 송수신 계속 가능, FE 가 진입 시 "원문이 삭제된 포스트잇입니다" 안내)
     @Transactional
     public void deletePostIt(Long postId, Long userId) {
         PostIt post = postItRepository.findById(postId)
@@ -170,9 +164,6 @@ public class PostItService {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
         }
         post.softDelete();
-
-        List<PostChatRoom> rooms = postChatRoomRepository.findByPostId(postId);
-        rooms.forEach(PostChatRoom::deactivate);
     }
 
     // 상단 고정 활성화 - POST_PIN 아이템 1회 소비 선행, 지속 시간은 마스터의 effect_duration_min

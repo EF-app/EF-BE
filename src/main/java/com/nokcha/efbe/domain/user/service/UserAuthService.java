@@ -377,6 +377,7 @@ public class UserAuthService {
         logSuccess(user.getId(), reqDto, request);
 
         return LoginRspDto.builder()
+                .userId(user.getId())
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .refreshToken(jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())

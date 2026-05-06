@@ -1,13 +1,14 @@
 package com.nokcha.efbe.domain.postIt.controller;
 
-// TODO(merge-squash): main 의 CursorCodec 미활성 — cursor 피드 엔드포인트 임시 비활성화
-// import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.security.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.request.PostCreateReqDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostItRspDto;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.service.PostItService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // 포스트잇 RESTful 컨트롤러
+@Tag(name = "PostIt Info", description = "포스트잇 API")
 @RestController
 @RequestMapping("/v1/post-it")
 @RequiredArgsConstructor
@@ -23,7 +25,7 @@ public class PostItController {
 
     private final PostItService postItService;
 
-    // 포스트잇 작성
+    @Operation(summary = "포스트잇 작성", description = "포스트잇을 작성합니다. 수정은 불가해요.")
     @PostMapping
     public ResponseEntity<RspTemplate<PostItRspDto>> createPostIt(@Valid @RequestBody PostCreateReqDto req) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -32,8 +34,7 @@ public class PostItController {
                 .body(new RspTemplate<>(HttpStatus.CREATED, "포스트잇 작성 성공", data));
     }
 
-    // TODO(merge-squash): 피드 조회 (커서 기반) — main 의 CursorCodec 미활성으로 임시 비활성화. 원복 시 PostItService.getPostIts 도 같이 복구.
-    /*
+    @Operation(summary = "포스트잇 피드 조회", description = "커서 기반, 카테고리 옵션")
     @GetMapping
     public ResponseEntity<RspTemplate<CursorPageResponse<PostItRspDto>>> getPostIts(
             @RequestParam(required = false) PostCategory categoryCode,
@@ -43,9 +44,8 @@ public class PostItController {
         CursorPageResponse<PostItRspDto> data = postItService.getPostIts(categoryCode, cursor, size, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 목록 조회 성공", data));
     }
-    */
 
-    // 내가 쓴 글
+    @Operation(summary = "내가 쓴 포스트잇 조회", description = "본인이 작성한 포스트잇 목록을 페이지네이션으로 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<RspTemplate<Page<PostItRspDto>>> getMyPosts(
             @RequestParam(defaultValue = "0") int page,
@@ -55,7 +55,7 @@ public class PostItController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 포스트잇 조회 성공", data));
     }
 
-    // 단건 상세 - permitAll, viewer 비로그인 가능
+    @Operation(summary = "포스트잇 단건 상세", description = "포스트잇 단건을 상세 조회합니다. 비로그인도 호출 가능합니다.")
     @GetMapping("/{postId}")
     public ResponseEntity<RspTemplate<PostItRspDto>> getOnePostIt(@PathVariable Long postId) {
         Long viewerId = SecurityUtil.getCurrentUserIdOrNull();
@@ -63,7 +63,7 @@ public class PostItController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 상세 조회 성공", data));
     }
 
-    // Soft delete
+    @Operation(summary = "포스트잇 삭제", description = "본인 포스트잇을 Soft delete 합니다. 연결된 채팅방은 활성 상태로 유지되어 기존 메시지 송수신은 계속 가능하며, 진입 시 '원문이 삭제된 포스트잇입니다' 안내가 표시됩니다.")
     @DeleteMapping("/{postId}")
     public ResponseEntity<RspTemplate<Void>> deletePostIt(@PathVariable Long postId) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -71,7 +71,7 @@ public class PostItController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 삭제 성공"));
     }
 
-    // 상단 고정 활성화 - POST_PIN 아이템 인벤토리 소비, 지속시간은 아이템 마스터 기준
+    @Operation(summary = "포스트잇 상단 고정", description = "POST_PIN 아이템을 소비해 본인 포스트잇을 일정 시간(마스터 기준) 동안 상단 고정합니다.")
     @PostMapping("/{postId}/pin")
     public ResponseEntity<RspTemplate<PostItRspDto>> activatePin(@PathVariable Long postId) {
         Long userId = SecurityUtil.getCurrentUserId();

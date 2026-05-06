@@ -31,6 +31,7 @@ public class PostChatService {
     // 무료 답장 한도 (5회/일 - 기획 기본값)
     private static final String ACTION_POST_REPLY = "POST_REPLY";
     private static final int FREE_POST_REPLY_LIMIT = 5;
+    private static final String ANONYMOUS_DISPLAY_NAME = "익명";
 
     private final PostChatRoomRepository postChatRoomRepository;
     private final PostChatMessageRepository postChatMessageRepository;
@@ -58,16 +59,19 @@ public class PostChatService {
         User partner = userRepository.findById(partnerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
+        // 첫 답장 시 결정한 익명 정책은 그 방에서 영원히 유지 (이후 토글 불가)
+        boolean partnerAnonymous = Boolean.TRUE.equals(req.getIsAnonymous());
         PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(postId, partnerId)
                 .orElseGet(() -> {
-                    // v1.6 닉네임 스냅샷 - 방 생성 시점의 표시 이름 고정
+                    // v1.6 닉네임 스냅샷 - 방 생성 시점의 표시 이름 고정. 익명이면 partnerDisplayName="익명".
                     PostChatRoom created = postChatRoomRepository.save(PostChatRoom.builder()
                             .uuid(UUID.randomUUID().toString())
                             .post(post)
                             .postOwner(post.getUser())
                             .partner(partner)
                             .ownerDisplayName(post.getUser().getNickname())
-                            .partnerDisplayName(partner.getNickname())
+                            .partnerDisplayName(partnerAnonymous ? ANONYMOUS_DISPLAY_NAME : partner.getNickname())
+                            .isPartnerAnonymous(partnerAnonymous)
                             .build());
                     post.increaseReplyCount();
                     return created;
