@@ -22,9 +22,9 @@ public class UserSignUpOptionController {
     private final UserSignUpOptionService userSignUpOptionService;
 
     @Operation(summary = "관심사 전체 항목 조회", description = "관심사 화면 렌더링용 전체 항목을 대분류별로 조회합니다.")
-    @GetMapping("/interests")
-    public RspTemplate<List<SignUpOptionGroupRspDto>> getInterestOptions() {
-        return new RspTemplate<>(HttpStatus.OK, "관심사 전체 항목 조회가 완료되었습니다.", userSignUpOptionService.getInterestOptions());
+    @GetMapping("/keywords")
+    public RspTemplate<List<SignUpOptionGroupRspDto>> getKeywordOptions() {
+        return new RspTemplate<>(HttpStatus.OK, "관심사 전체 항목 조회가 완료되었습니다.", userSignUpOptionService.getKeywordOptions());
     }
 
     @Operation(summary = "생활 습관 전체 항목 조회", description = "생활 습관 화면 렌더링용 전체 항목을 카테고리별로 조회합니다.")

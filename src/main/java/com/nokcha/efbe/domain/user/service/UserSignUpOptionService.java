@@ -1,13 +1,13 @@
 package com.nokcha.efbe.domain.user.service;
 
-import com.nokcha.efbe.domain.profile.entity.CodeInterest;
+import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.profile.entity.Mbti;
 import com.nokcha.efbe.domain.user.dto.response.SignUpOptionGroupRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpOptionItemRspDto;
 import com.nokcha.efbe.domain.user.entity.Job;
-import com.nokcha.efbe.domain.user.repository.InterestRepository;
+import com.nokcha.efbe.domain.user.repository.KeywordRepository;
 import com.nokcha.efbe.domain.user.repository.PersonalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -25,20 +25,20 @@ import java.util.Set;
 public class UserSignUpOptionService {
 
     private static final List<String> LIFESTYLE_CATEGORIES = List.of("음주", "선호 주종", "흡연", "흡연 종류", "타투유무");
-    private static final List<String> ABOUT_ME_CATEGORIES = List.of("종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
+    private static final List<String> ABOUT_ME_CATEGORIES = List.of("일상 유형","종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
     private static final List<String> IDEAL_CATEGORIES = List.of("머리", "체형", "키", "성향");
 
-    private final InterestRepository interestRepository;
+    private final KeywordRepository keywordRepository;
     private final PersonalRepository personalRepository;
 
     @Transactional(readOnly = true)
-    public List<SignUpOptionGroupRspDto> getInterestOptions() {
-        List<CodeInterest> interests = interestRepository.findAll(Sort.by(Sort.Order.asc("id")));
+    public List<SignUpOptionGroupRspDto> getKeywordOptions() {
+        List<CodeKeyword> keywords = keywordRepository.findAll(Sort.by(Sort.Order.asc("id")));
 
         Map<String, List<SignUpOptionItemRspDto>> grouped = new LinkedHashMap<>();
-        for (CodeInterest interest : interests) {
-            grouped.computeIfAbsent(interest.getBigCategory(), key -> new ArrayList<>())
-                    .add(codeItem(interest.getId(), interest.getSmallCategory()));
+        for (CodeKeyword keyword : keywords) {
+            grouped.computeIfAbsent(keyword.getBigCategory(), key -> new ArrayList<>())
+                    .add(codeItem(keyword.getId(), keyword.getSmallCategory()));
         }
 
         return toGroups(grouped);
@@ -139,7 +139,7 @@ public class UserSignUpOptionService {
 
     private List<SignUpOptionItemRspDto> getIdealPointItems() {
         return List.of(
-                enumItem(IdealPointType.INTEREST, "관심사"),
+                enumItem(IdealPointType.KEYWORD, "관심사"),
                 enumItem(IdealPointType.IDEAL_TYPE, "이상형"),
                 enumItem(IdealPointType.LIFE_STYLE, "생활 습관"),
                 enumItem(IdealPointType.AREA, "지역")

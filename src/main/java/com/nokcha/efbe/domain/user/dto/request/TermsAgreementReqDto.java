@@ -21,11 +21,11 @@ public class TermsAgreementReqDto {
     @Schema(description = "서비스 이용약관 버전", example = "v1.0")
     private String serviceTermsVersion;
 
-    @AssertTrue(message = "개인정보 처리방침 동의는 필수입니다.")
-    @Schema(description = "개인정보 처리방침 동의 여부", example = "true")
+    @AssertTrue(message = "개인정보 수집 및 이용 동의는 필수입니다.")
+    @Schema(description = "개인정보 수집 및 이용 동의 여부", example = "true")
     private boolean privacyPolicyAgreed;
 
-    @Schema(description = "개인정보 처리방침 버전", example = "v1.01")
+    @Schema(description = "개인정보 수집 및 이용 동의 버전", example = "v1.01")
     private String privacyPolicyVersion;
 
     @AssertTrue(message = "민감정보 수집 및 이용 동의는 필수입니다.")
@@ -35,12 +35,12 @@ public class TermsAgreementReqDto {
     @Schema(description = "민감정보 수집 및 이용 동의 버전", example = "v1.0")
     private String sensitiveInfoVersion;
 
-    @AssertTrue(message = "개인정보 관련 약관 동의는 필수입니다.")
-    @Schema(description = "개인정보 관련 약관 동의 여부", example = "true")
-    private boolean personalInformationAgreed;
+    @AssertTrue(message = "타인 정보 외부 유출 금지 약관 동의는 필수입니다.")
+    @Schema(description = "타인 정보 외부 유출 금지 약관 동의 여부", example = "true")
+    private boolean noDisclosureAgreed;
 
-    @Schema(description = "개인정보 관련 약관 버전", example = "v1.0")
-    private String personalInformationVersion;
+    @Schema(description = "타인 정보 외부 유출 금지 약관 버전", example = "v1.0")
+    private String noDisclosureVersion;
 
     @Schema(description = "위치정보 수집 및 이용 동의 여부", example = "true")
     private boolean locationAgreed;

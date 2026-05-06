@@ -71,6 +71,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/bal-game/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/post-it", "/v1/post-it/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/policies", "/v1/policies/*").permitAll()
                         .anyRequest().authenticated())
 //                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.user.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.domain.user.dto.request.*;
+import com.nokcha.efbe.domain.user.dto.response.AvailabilityRspDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
@@ -16,9 +17,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,11 +58,27 @@ public class UserAuthController {
         return new RspTemplate<>(HttpStatus.OK, "이메일 인증이 완료되었습니다.", userAuthService.verifyEmail(reqDto));
     }
 
+    // 아이디 중복 체크 (입력 중 실시간 호출)
+    @Operation(summary = "아이디 사용 가능 여부 확인", description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. (실시간 호출용 — keyboard blur 등)")
+    @GetMapping("/signup/check-login-id")
+    public RspTemplate<AvailabilityRspDto> checkLoginIdAvailability(@RequestParam String loginId) {
+        return new RspTemplate<>(HttpStatus.OK, "아이디 사용 가능 여부 조회 성공",
+                AvailabilityRspDto.of(userAuthService.isLoginIdAvailable(loginId)));
+    }
+
     // 아이디, 비밀번호 입력
     @Operation(summary = "아이디, 비밀번호 생성", description = "휴대폰 인증 완료 후 아이디와 비밀번호를 저장합니다.")
     @PostMapping("/signup/credentials")
     public RspTemplate<SignUpProgressRspDto> createCredentials(@Valid @RequestBody SignUpCredentialsReqDto reqDto) {
         return new RspTemplate<>(HttpStatus.OK, "아이디와 비밀번호 입력이 완료되었습니다.", userAuthService.createCredentials(reqDto));
+    }
+
+    // 닉네임 중복 체크 (입력 중 실시간 호출)
+    @Operation(summary = "닉네임 사용 가능 여부 확인", description = "입력한 닉네임이 이미 사용 중인지 확인합니다. (실시간 호출용 — keyboard blur 또는 디바운스 입력 멈춤)")
+    @GetMapping("/signup/check-nickname")
+    public RspTemplate<AvailabilityRspDto> checkNicknameAvailability(@RequestParam String nickname) {
+        return new RspTemplate<>(HttpStatus.OK, "닉네임 사용 가능 여부 조회 성공",
+                AvailabilityRspDto.of(userAuthService.isNicknameAvailable(nickname)));
     }
 
     // 닉네임 입력
@@ -85,9 +104,9 @@ public class UserAuthController {
 
     // 관심사 입력
     @Operation(summary = "관심사 입력", description = "관심사와 나만의 키워드를 저장합니다.")
-    @PostMapping("/signup/interests")
-    public RspTemplate<SignUpProfileRspDto> createInterests(@Valid @RequestBody SignUpInterestReqDto reqDto) {
-        return new RspTemplate<>(HttpStatus.OK, "관심사 입력이 완료되었습니다.", userSignUpProfileService.createInterests(reqDto));
+    @PostMapping("/signup/keywords")
+    public RspTemplate<SignUpProfileRspDto> createKeywords(@Valid @RequestBody SignUpKeywordReqDto reqDto) {
+        return new RspTemplate<>(HttpStatus.OK, "관심사 입력이 완료되었습니다.", userSignUpProfileService.createKeywords(reqDto));
     }
 
     // 생활습관 입력
