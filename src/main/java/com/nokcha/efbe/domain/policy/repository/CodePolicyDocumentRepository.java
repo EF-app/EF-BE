@@ -1,6 +1,6 @@
-package com.nokcha.efbe.domain.operation.repository;
+package com.nokcha.efbe.domain.policy.repository;
 
-import com.nokcha.efbe.domain.operation.entity.CodePolicyDocument;
+import com.nokcha.efbe.domain.policy.entity.CodePolicyDocument;
 import com.nokcha.efbe.domain.user.entity.TermType;
 import org.springframework.data.jpa.repository.JpaRepository;
 

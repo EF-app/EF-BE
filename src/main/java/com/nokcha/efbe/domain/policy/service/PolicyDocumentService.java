@@ -1,11 +1,11 @@
-package com.nokcha.efbe.domain.operation.service;
+package com.nokcha.efbe.domain.policy.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.operation.dto.response.PolicyDocumentDetailRspDto;
-import com.nokcha.efbe.domain.operation.dto.response.PolicyDocumentSummaryRspDto;
-import com.nokcha.efbe.domain.operation.entity.CodePolicyDocument;
-import com.nokcha.efbe.domain.operation.repository.CodePolicyDocumentRepository;
+import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentDetailRspDto;
+import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentSummaryRspDto;
+import com.nokcha.efbe.domain.policy.entity.CodePolicyDocument;
+import com.nokcha.efbe.domain.policy.repository.CodePolicyDocumentRepository;
 import com.nokcha.efbe.domain.user.entity.TermType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

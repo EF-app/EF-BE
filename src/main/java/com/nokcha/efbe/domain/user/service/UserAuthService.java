@@ -648,7 +648,7 @@ public class UserAuthService {
 
     // 유저 약관 동의 정보 저장
     private void saveUserTerms(Long userId, UserSignUpSession signUpSession) {
-        List<UserTerms> userTerms = new ArrayList<>();
+        List<UserPolicy> userTerms = new ArrayList<>();
         String consentIp = signUpSession.getLastConsentIp();
 
         userTerms.add(buildUserTerms(userId, TermType.TERMS_AGREE, signUpSession.getServiceTermsVersion(), signUpSession.getServiceTermsAgreedAt(), true, consentIp));
@@ -671,8 +671,8 @@ public class UserAuthService {
         userTermsRepository.saveAll(userTerms);
     }
 
-    private UserTerms buildUserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
-        return UserTerms.builder()
+    private UserPolicy buildUserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
+        return UserPolicy.builder()
                 .userId(userId)
                 .termType(termType)
                 .termsVer(termsVer)

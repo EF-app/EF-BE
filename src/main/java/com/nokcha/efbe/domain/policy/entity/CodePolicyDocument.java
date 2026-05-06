@@ -1,5 +1,6 @@
-package com.nokcha.efbe.domain.operation.entity;
+package com.nokcha.efbe.domain.policy.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import com.nokcha.efbe.domain.user.entity.TermType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "code_policy_document")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CodePolicyDocument {
+public class CodePolicyDocument extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,12 +60,6 @@ public class CodePolicyDocument {
 
     @Column(nullable = false)
     private Long createdByAdminId;
-
-    @Column(name = "create_time", insertable = false, updatable = false)
-    private LocalDateTime createTime;
-
-    @Column(name = "update_time", insertable = false, updatable = false)
-    private LocalDateTime updateTime;
 
     @Builder
     public CodePolicyDocument(TermType policyType, String version, String title, String content, String summary,

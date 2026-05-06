@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(
-        name = "user_terms",
+        name = "user_policy",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_user_terms_user_id_term_type", columnNames = {"user_id", "term_type"})
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserTerms extends BaseEntity {
+public class UserPolicy extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +44,7 @@ public class UserTerms extends BaseEntity {
     private String lastConsentIp;
 
     @Builder
-    public UserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
+    public UserPolicy(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
         this.userId = userId;
         this.termType = termType;
         this.termsVer = termsVer;

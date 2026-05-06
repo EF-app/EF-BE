@@ -1,9 +1,9 @@
-package com.nokcha.efbe.domain.operation.controller;
+package com.nokcha.efbe.domain.policy.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.domain.operation.dto.response.PolicyDocumentDetailRspDto;
-import com.nokcha.efbe.domain.operation.dto.response.PolicyDocumentSummaryRspDto;
-import com.nokcha.efbe.domain.operation.service.PolicyDocumentService;
+import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentDetailRspDto;
+import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentSummaryRspDto;
+import com.nokcha.efbe.domain.policy.service.PolicyDocumentService;
 import com.nokcha.efbe.domain.user.entity.TermType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

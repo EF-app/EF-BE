@@ -1,6 +1,6 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.operation.repository.CodePolicyDocumentRepository;
+import com.nokcha.efbe.domain.policy.repository.CodePolicyDocumentRepository;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
