@@ -16,9 +16,9 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "user_signup_interest")
+@Table(name = "user_signup_keyword")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserSignUpInterest extends BaseEntity {
+public class UserSignUpKeyword extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,16 +28,16 @@ public class UserSignUpInterest extends BaseEntity {
     private Long signUpSessionId;
 
     @Column(nullable = false)
-    private Long interestId;
+    private Long keywordId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private UserSignUpInterestType interestType;
+    private UserSignUpKeywordType keywordType;
 
     @Builder
-    public UserSignUpInterest(Long signUpSessionId, Long interestId, UserSignUpInterestType interestType) {
+    public UserSignUpKeyword(Long signUpSessionId, Long keywordId, UserSignUpKeywordType keywordType) {
         this.signUpSessionId = signUpSessionId;
-        this.interestId = interestId;
-        this.interestType = interestType;
+        this.keywordId = keywordId;
+        this.keywordType = keywordType;
     }
 }
