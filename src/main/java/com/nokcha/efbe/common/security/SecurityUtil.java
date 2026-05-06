@@ -1,5 +1,6 @@
 package com.nokcha.efbe.common.security;
 
+import com.nokcha.efbe.common.auth.model.AuthUserPrincipal;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import org.springframework.security.core.Authentication;
@@ -40,6 +41,7 @@ public final class SecurityUtil {
         if (authentication == null || !authentication.isAuthenticated()) return null;
         Object principal = authentication.getPrincipal();
         if (principal == null || "anonymousUser".equals(principal)) return null;
+        if (principal instanceof AuthUserPrincipal aup) return aup.getUserId();
         if (principal instanceof Long l) return l;
         if (principal instanceof Number n) return n.longValue();
         String name = authentication.getName();

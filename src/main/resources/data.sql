@@ -93,20 +93,6 @@ INSERT IGNORE INTO code_nickname_word (word, type, is_active) VALUES
 -- - 카테고리 / 구독 플랜 / 아이템 마스터 등 최소 세트
 -- ============================================================================
 
--- 테스트용 유저 (id=1 은 SecurityUtil 폴백과 매칭, id=2 는 상대역)
-INSERT IGNORE INTO users (id, uuid, login_id, password, phone, scode, nickname, age, job, is_withdraw, area_id, role)
-VALUES
-    (1, '00000000-0000-0000-0000-000000000001', 'alice', '$2a$10$dev', '+821011110001', '0001', 'alice',  25, 'OFFICE_WORKER', FALSE, 1, 'ROLE_USER'),
-    (2, '00000000-0000-0000-0000-000000000002', 'bob',   '$2a$10$dev', '+821011110002', '0002', 'bob',    27, 'OFFICE_WORKER', FALSE, 1, 'ROLE_USER'),
-    (9, '00000000-0000-0000-0000-000000000009', 'admin', '$2a$10$dev', '+821011110009', '0009', 'admin',  30, 'ETC',           FALSE, 1, 'ROLE_ADMIN');
-
--- 공통 카테고리
-INSERT IGNORE INTO categories (code, name, type) VALUES
-    ('BAL_LOVE',    '연애 밸런스',   'BALANCE'),
-    ('BAL_DAILY',   '일상 밸런스',   'BALANCE'),
-    ('POST_DAILY',  '일상 포스트잇', 'POST_IT'),
-    ('POST_LIGHTN', '번개',          'POST_IT');
-
 -- 구독 플랜 (v1.2: subscription_plan → code_subscription)
 INSERT IGNORE INTO code_subscription (plan_code, name, price, duration_days, is_active) VALUES
     ('BASIC',   '무료',     0,     0, TRUE),

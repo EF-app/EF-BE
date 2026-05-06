@@ -57,9 +57,14 @@ public class PostChatRoom extends BaseEntity {
     @Column(name = "is_closed", nullable = false)
     private Boolean isClosed = Boolean.FALSE;
 
+    // 첫 답장 시 결정 — true 면 partner 는 그 방에서 영원히 익명. 이후 변경 불가.
+    @Column(name = "is_partner_anonymous", nullable = false)
+    private Boolean isPartnerAnonymous = Boolean.FALSE;
+
     @Builder
     private PostChatRoom(String uuid, PostIt post, User postOwner, User partner,
-                         String ownerDisplayName, String partnerDisplayName) {
+                         String ownerDisplayName, String partnerDisplayName,
+                         Boolean isPartnerAnonymous) {
         this.uuid = uuid;
         this.post = post;
         this.postOwner = postOwner;
@@ -68,6 +73,7 @@ public class PostChatRoom extends BaseEntity {
         this.partnerDisplayName = partnerDisplayName;
         this.isActive = Boolean.TRUE;
         this.isClosed = Boolean.FALSE;
+        this.isPartnerAnonymous = Boolean.TRUE.equals(isPartnerAnonymous);
     }
 
     // 원글 Soft delete 시 비활성화 (진입 시 "원문이 삭제된 포스트잇입니다" 표시)
