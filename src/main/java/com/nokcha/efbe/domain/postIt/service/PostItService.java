@@ -105,7 +105,7 @@ public class PostItService {
         boolean hasMore = rows.size() > pageSize;
         List<PostItRow> page = hasMore ? rows.subList(0, pageSize) : rows;
 
-        List<PostItRspDto> items = page.stream().map(PostItRspDto::from).toList();
+        List<PostItRspDto> items = page.stream().map(row -> PostItRspDto.from(row, viewerId)).toList();
         if (!hasMore) return CursorPageResponse.last(items);
 
         PostItRow tail = page.get(page.size() - 1);
@@ -134,7 +134,8 @@ public class PostItService {
                         postLikeRepository.countByPostId(p.getId()),
                         postLikeRepository.existsByPostIdAndUserId(p.getId(), userId),
                         ownerArea.country,
-                        ownerArea.city
+                        ownerArea.city,
+                        userId
                 ));
     }
 
@@ -151,7 +152,7 @@ public class PostItService {
         AreaPair area = anonymous || post.getUser() == null
                 ? AreaPair.EMPTY
                 : resolveArea(post.getUser().getAreaId());
-        return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city);
+        return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city, viewerId);
     }
 
     // Soft delete - 연결된 채팅방은 그대로 활성 유지 (기존 메시지 송수신 계속 가능, FE 가 진입 시 "원문이 삭제된 포스트잇입니다" 안내)

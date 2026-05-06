@@ -43,14 +43,17 @@ public class PostItRspDto {
     private boolean likedByMe;
     private boolean hidden;
     private boolean deleted;
+    private boolean mine; // viewer 가 작성자 본인인지 (익명 글이어도 본인이면 true → FE 삭제버튼 노출용)
     private LocalDateTime createTime;
 
-    // viewing 기본값 — 익명이면 userId/nickname/age/location 마스킹
-    public static PostItRspDto from(PostIt p, long likeCount, boolean likedByMe, String areaCountry, String areaCity) {
+    // viewing 기본값 — 익명이면 userId/nickname/age/location 마스킹.
+    // viewerId 가 작성자와 같으면 mine=true (익명이어도 본인 식별용 — FE 삭제 버튼 등에 사용)
+    public static PostItRspDto from(PostIt p, long likeCount, boolean likedByMe, String areaCountry, String areaCity, Long viewerId) {
         boolean anonymous = Boolean.TRUE.equals(p.getIsAnonymous());
         Long authorId = p.getUser() == null ? null : p.getUser().getId();
         String authorNickname = p.getUser() == null ? null : p.getUser().getNickname();
         Integer authorAge = p.getUser() == null ? null : p.getUser().getAge();
+        boolean owner = viewerId != null && authorId != null && viewerId.equals(authorId);
         return PostItRspDto.builder()
                 .id(p.getId())
                 .userId(anonymous ? null : authorId)
@@ -69,13 +72,15 @@ public class PostItRspDto {
                 .likedByMe(likedByMe)
                 .hidden(Boolean.TRUE.equals(p.getIsHidden()))
                 .deleted(Boolean.TRUE.equals(p.getIsDeleted()))
+                .mine(owner)
                 .createTime(p.getCreateTime())
                 .build();
     }
 
     // Querydsl projection 기반 — 신규 피드 표준
     // 표시 정책 (삭제/숨김 치환) 을 row 단계에서 적용. 익명이면 userId/nickname/age/location 마스킹.
-    public static PostItRspDto from(PostItRow r) {
+    // viewerId 가 작성자와 같으면 mine=true.
+    public static PostItRspDto from(PostItRow r, Long viewerId) {
         boolean anonymous = Boolean.TRUE.equals(r.isAnonymous());
         boolean hidden = Boolean.TRUE.equals(r.isHidden());
         boolean deleted = Boolean.TRUE.equals(r.isDeleted());
@@ -83,6 +88,7 @@ public class PostItRspDto {
                 : deleted ? PostIt.DELETED_POST_TEXT
                 : r.content();
         boolean pinned = r.pinnedUntil() != null && r.pinnedUntil().isAfter(LocalDateTime.now());
+        boolean owner = viewerId != null && r.userId() != null && viewerId.equals(r.userId());
         return PostItRspDto.builder()
                 .id(r.id())
                 .userId(anonymous ? null : r.userId())
@@ -101,12 +107,14 @@ public class PostItRspDto {
                 .likedByMe(Boolean.TRUE.equals(r.likedByMe()))
                 .hidden(hidden)
                 .deleted(deleted)
+                .mine(owner)
                 .createTime(r.createTime())
                 .build();
     }
 
     // 작성/owner 액션 응답 — userId/nickname 은 익명이어도 노출 (본인 확인용),
     // 단 age/location 은 anonymous=true 면 노출하지 않음 (익명 정책 일관).
+    // 작성자 본인 액션이라 mine=true 항상.
     public static PostItRspDto fromOwnerView(PostIt p, long likeCount, boolean likedByMe, String areaCountry, String areaCity) {
         boolean anonymous = Boolean.TRUE.equals(p.getIsAnonymous());
         Long authorId = p.getUser() == null ? null : p.getUser().getId();
@@ -130,6 +138,7 @@ public class PostItRspDto {
                 .likedByMe(likedByMe)
                 .hidden(Boolean.TRUE.equals(p.getIsHidden()))
                 .deleted(Boolean.TRUE.equals(p.getIsDeleted()))
+                .mine(true)
                 .createTime(p.getCreateTime())
                 .build();
     }
