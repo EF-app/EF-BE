@@ -2,9 +2,8 @@ package com.nokcha.efbe.domain.balGame.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-// TODO(merge-squash): main 의 CursorCodec 미활성 — cursor 페이지네이션 임시 비활성화
-// import com.nokcha.efbe.common.response.CursorPageResponse;
-// import com.nokcha.efbe.common.util.CursorCodec;
+import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameDetailRspDto;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameSummaryRspDto;
 import com.nokcha.efbe.domain.balGame.dto.response.CommentRspDto;
@@ -17,7 +16,7 @@ import com.nokcha.efbe.domain.balGame.entity.BalVoteChoice;
 import com.nokcha.efbe.domain.balGame.repository.BalGameCommentRepository;
 import com.nokcha.efbe.domain.balGame.repository.BalGameRepository;
 import com.nokcha.efbe.domain.balGame.repository.BalVoteRepository;
-// import com.nokcha.efbe.domain.balGame.repository.projection.BalGameCursor;
+import com.nokcha.efbe.domain.balGame.repository.projection.BalGameCursor;
 import com.nokcha.efbe.domain.balGame.repository.projection.BalGameSummaryRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -44,10 +43,9 @@ public class BalGameService {
     private final BalGameRepository balGameRepository;
     private final BalGameCommentRepository balGameCommentRepository;
     private final BalVoteRepository balVoteRepository;
-    // private final CursorCodec cursorCodec;
+    private final CursorCodec cursorCodec;
 
-    // TODO(merge-squash): 공개된 게임 목록 조회 (커서 기반) — main 의 CursorCodec 미활성으로 임시 비활성화. 원복 시 BalGameController.getBalanceGames 도 같이 복구.
-    /*
+    // 공개된 게임 목록 조회 (커서 기반, createTime DESC + id DESC)
     @Transactional(readOnly = true)
     public CursorPageResponse<BalGameSummaryRspDto> getBalanceGames(BalCategoryCode categoryCode, String cursor, Integer size) {
         int pageSize = clampSize(size);
@@ -64,7 +62,6 @@ public class BalGameService {
         String nextCursor = cursorCodec.encode(new BalGameCursor(tail.createTime(), tail.id()));
         return CursorPageResponse.of(items, nextCursor);
     }
-    */
 
     private int clampSize(Integer size) {
         if (size == null || size <= 0) return DEFAULT_FEED_SIZE;
