@@ -9,12 +9,10 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
-// 피드백(버그신고/기능요청) 등록 요청
+// 피드백(버그신고/기능요청) 등록 요청 — multipart/form-data 의 "data" 파트로 전송
 @Getter
 @NoArgsConstructor
-@Schema(description = "피드백 등록 요청 — 버그신고/기능요청")
+@Schema(description = "피드백 등록 요청 — 버그신고/기능요청. multipart/form-data 의 \"data\" 파트로 JSON 전송")
 public class FeedbackCreateReqDto {
 
     @Schema(description = "피드백 유형", example = "BUG")
@@ -33,11 +31,6 @@ public class FeedbackCreateReqDto {
     @Schema(description = "상세 내용", example = "프로필 화면 진입 시 이미지가 회색 박스로 보입니다.")
     @NotBlank
     private String content;
-
-    // R2 업로드된 스크린샷 URL 배열 (옵션)
-    @Schema(description = "R2 업로드된 스크린샷 URL 배열 (옵션)",
-            example = "[\"https://cdn.example.com/a.png\",\"https://cdn.example.com/b.png\"]")
-    private List<String> screenshotUrls;
 
     @Schema(description = "앱 버전 (옵션)", example = "1.2.3", maxLength = 30)
     @Size(max = 30)

@@ -51,10 +51,6 @@ public class Feedback extends BaseEntity {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // R2 업로드된 스크린샷 URL 배열을 JSON 문자열로 저장
-    @Column(name = "screenshot_urls", columnDefinition = "JSON")
-    private String screenshotUrls;
-
     @Column(name = "app_version", length = 30)
     private String appVersion;
 
@@ -85,7 +81,7 @@ public class Feedback extends BaseEntity {
 
     @Builder
     private Feedback(User reporter, FeedbackType feedbackType, FeedbackCategoryCode categoryCode,
-                     String title, String content, String screenshotUrls,
+                     String title, String content,
                      String appVersion, String deviceInfo, String networkType,
                      FeedbackStatus status) {
         this.reporter = reporter;
@@ -93,7 +89,6 @@ public class Feedback extends BaseEntity {
         this.categoryCode = categoryCode;
         this.title = title;
         this.content = content;
-        this.screenshotUrls = screenshotUrls;
         this.appVersion = appVersion;
         this.deviceInfo = deviceInfo;
         this.networkType = networkType;

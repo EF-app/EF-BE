@@ -1,23 +1,23 @@
 package com.nokcha.efbe.domain.feedback.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.feedback.dto.request.FeedbackCreateReqDto;
 import com.nokcha.efbe.domain.feedback.dto.response.FeedbackRspDto;
 import com.nokcha.efbe.domain.feedback.entity.Feedback;
 import com.nokcha.efbe.domain.feedback.entity.FeedbackCategoryCode;
+import com.nokcha.efbe.domain.feedback.entity.FeedbackImage;
 import com.nokcha.efbe.domain.feedback.entity.FeedbackType;
 import com.nokcha.efbe.domain.feedback.repository.FeedbackRepository;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
+import com.nokcha.efbe.infra.r2.service.R2ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 // 피드백 등록 서비스
@@ -27,10 +27,10 @@ public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
+    private final R2ImageService r2ImageService;
 
     @Transactional
-    public FeedbackRspDto createFeedback(Long reporterId, FeedbackCreateReqDto req) {
+    public FeedbackRspDto createFeedback(Long reporterId, FeedbackCreateReqDto req, List<MultipartFile> images) {
         // 카테고리-유형 조합 검증
         FeedbackType type = req.getFeedbackType();
         FeedbackCategoryCode category = req.getCategoryCode();
@@ -41,43 +41,26 @@ public class FeedbackService {
         User reporter = userRepository.findById(reporterId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
-        String screenshotUrlsJson = serializeScreenshotUrls(req.getScreenshotUrls());
-
         Feedback saved = feedbackRepository.save(Feedback.builder()
                 .reporter(reporter)
                 .feedbackType(type)
                 .categoryCode(category)
                 .title(req.getTitle())
                 .content(req.getContent())
-                .screenshotUrls(screenshotUrlsJson)
                 .appVersion(req.getAppVersion())
                 .deviceInfo(req.getDeviceInfo())
                 .networkType(req.getNetworkType())
                 .build());
 
-        List<String> screenshotsForResponse = req.getScreenshotUrls() == null
-                ? Collections.emptyList()
-                : req.getScreenshotUrls();
-        return FeedbackRspDto.of(saved, screenshotsForResponse);
-    }
-
-    private String serializeScreenshotUrls(List<String> urls) {
-        if (urls == null || urls.isEmpty()) return null;
-        try {
-            return objectMapper.writeValueAsString(urls);
-        } catch (JsonProcessingException e) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        List<FeedbackImage> savedImages = new ArrayList<>();
+        if (images != null && !images.isEmpty()) {
+            int order = 0;
+            for (MultipartFile img : images) {
+                if (img == null || img.isEmpty()) continue;
+                savedImages.add(r2ImageService.uploadFeedbackImage(img, saved, order++));
+            }
         }
-    }
 
-    // 응답에서 다시 List<String> 으로 풀고 싶을 때 사용 (목록/상세 API 추가 시)
-    @SuppressWarnings("unused")
-    private List<String> deserializeScreenshotUrls(String json) {
-        if (json == null || json.isBlank()) return Collections.emptyList();
-        try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
-        } catch (JsonProcessingException e) {
-            return Collections.emptyList();
-        }
+        return FeedbackRspDto.of(saved, savedImages);
     }
 }

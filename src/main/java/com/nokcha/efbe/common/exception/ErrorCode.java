@@ -33,6 +33,7 @@ public enum ErrorCode {
     PROFILE_REQUIRED(400, "프로필 정보 입력이 필요합니다."),
     PROFILE_IMAGE_COUNT_EXCEEDED(400, "프로필 이미지는 최대 3장까지 등록할 수 있습니다."),
     INVALID_PROFILE_IMAGE(400, "유효하지 않은 프로필 이미지입니다."),
+    INVALID_FEEDBACK_IMAGE(400, "유효하지 않은 피드백 이미지입니다."),
     PERSONAL_REQUIRED(400, "성향 정보는 1개 이상 선택해야 합니다."),
     ALCOHOL_REQUIRED(400, "음주 여부는 필수입니다."),
     SMOKING_REQUIRED(400, "흡연 여부는 필수입니다."),
