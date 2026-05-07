@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "code_faq",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_faq_code", columnNames = "code")
-        },
         indexes = {
                 @Index(name = "idx_faq_category_active", columnList = "category, is_active, display_order"),
                 @Index(name = "idx_faq_popular", columnList = "is_popular, is_active, display_order")
@@ -27,10 +24,6 @@ public class CodeFaq {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    // FE 의 id 값("acc-1","match-1" 등) 보존 컬럼
-    @Column(name = "code", nullable = false, length = 40)
-    private String code;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 20)

@@ -7,17 +7,13 @@ import lombok.Builder;
 import lombok.Getter;
 
 // FAQ 단건 응답 — FE FaqItem { id, category, question, answer } 형태와 호환
-// id 필드는 FE 가 사용하는 문자열 키(code 컬럼)를 노출. DB pk 는 dbId 로 별도 노출.
 @Getter
 @Builder
 @Schema(description = "FAQ 항목")
 public class FaqRspDto {
 
-    @Schema(description = "FAQ 식별자 — FE 가 사용하는 문자열 키 (code_faq.code)", example = "acc-1")
-    private String id;
-
-    @Schema(description = "DB PK (code_faq.id)", example = "1")
-    private Long dbId;
+    @Schema(description = "FAQ PK (code_faq.id)", example = "1")
+    private Long id;
 
     @Schema(description = "카테고리 (소문자 키) — account/matching/message/payment/report/etc", example = "account")
     private String category;
@@ -38,8 +34,7 @@ public class FaqRspDto {
 
     public static FaqRspDto from(CodeFaq f) {
         return FaqRspDto.builder()
-                .id(f.getCode())
-                .dbId(f.getId())
+                .id(f.getId())
                 .category(f.getCategory().apiKey())
                 .question(f.getQuestion())
                 .answer(f.getAnswer())
