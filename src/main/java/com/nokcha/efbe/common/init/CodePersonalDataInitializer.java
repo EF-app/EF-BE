@@ -10,7 +10,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class PersonalDataInitializer {
+public class CodePersonalDataInitializer {
 
     private final PersonalRepository personalRepository;
 

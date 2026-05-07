@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
         name = "code_faq",
         indexes = {
                 @Index(name = "idx_faq_category_active", columnList = "category, is_active, display_order"),
-                @Index(name = "idx_faq_popular", columnList = "is_popular, is_active, display_order")
+                @Index(name = "idx_faq_popular",         columnList = "is_popular, is_active, display_order")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -26,27 +28,35 @@ public class CodeFaq {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false, length = 20)
+    @Column(name = "category", nullable = false,
+            columnDefinition = "ENUM('ACCOUNT','MATCHING','MESSAGE','PAYMENT','REPORT','ETC') NOT NULL")
     private FaqCategory category;
 
     @Column(name = "question", nullable = false, length = 500)
     private String question;
 
-    @Column(name = "answer", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "answer", nullable = false, columnDefinition = "TEXT NOT NULL")
     private String answer;
 
-    @Column(name = "display_order", nullable = false)
+    @Column(name = "display_order", nullable = false,
+            columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer displayOrder;
 
-    @Column(name = "is_popular", nullable = false)
+    @Column(name = "is_popular", nullable = false,
+            columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
     private Boolean isPopular;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "is_active", nullable = false,
+            columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
     private Boolean isActive;
 
-    @Column(name = "create_time", nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "create_time", nullable = false, updatable = false,
+            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createTime;
 
-    @Column(name = "update_time", nullable = false)
+    @UpdateTimestamp
+    @Column(name = "update_time", nullable = false,
+            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updateTime;
 }
