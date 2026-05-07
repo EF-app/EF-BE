@@ -14,7 +14,15 @@ import java.time.LocalDateTime;
 // 피드백(버그신고/기능요청) 엔티티 — feedback 테이블
 @Getter
 @Entity
-@Table(name = "feedback")
+@Table(
+        name = "feedback",
+        indexes = {
+                @Index(name = "idx_feedback_reporter", columnList = "reporter_id, create_time"),
+                @Index(name = "idx_feedback_category", columnList = "feedback_type, category_code, status"),
+                @Index(name = "idx_feedback_handler", columnList = "admin_handler_id, status"),
+                @Index(name = "idx_feedback_type_status", columnList = "feedback_type, status, create_time")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Feedback extends BaseEntity {
 
