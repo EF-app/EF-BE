@@ -31,10 +31,10 @@ public class FeedbackService {
 
     @Transactional
     public FeedbackRspDto createFeedback(Long reporterId, FeedbackCreateReqDto req) {
-        // 카테고리-유형 조합 검증 (ETC 는 등록 API 에서 거부)
+        // 카테고리-유형 조합 검증
         FeedbackType type = req.getFeedbackType();
         FeedbackCategoryCode category = req.getCategoryCode();
-        if (category == FeedbackCategoryCode.ETC || !type.allows(category)) {
+        if (!type.allows(category)) {
             throw new BusinessException(ErrorCode.INVALID_FEEDBACK_CATEGORY);
         }
 
