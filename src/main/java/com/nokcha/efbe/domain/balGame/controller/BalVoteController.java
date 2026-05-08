@@ -5,6 +5,8 @@ import com.nokcha.efbe.common.security.SecurityUtil;
 import com.nokcha.efbe.domain.balGame.dto.request.BalVoteReqDto;
 import com.nokcha.efbe.domain.balGame.dto.response.BalVoteRspDto;
 import com.nokcha.efbe.domain.balGame.service.BalVoteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // 밸런스 게임 투표 RESTful 컨트롤러
+@Tag(name = "BalGame Vote", description = "밸런스 게임 투표")
 @RestController
 @RequestMapping("/v1/bal-game/{gameId}/votes")
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class BalVoteController {
     private final BalVoteService balVoteService;
 
     // 신규 투표
+    @Operation(summary = "신규 투표")
     @PostMapping
     public ResponseEntity<RspTemplate<BalVoteRspDto>> createVote(@PathVariable Long gameId,
                                                                  @Valid @RequestBody BalVoteReqDto req) {
@@ -30,6 +34,7 @@ public class BalVoteController {
     }
 
     // 투표 변경
+    @Operation(summary = "투표 변경")
     @PutMapping
     public ResponseEntity<RspTemplate<BalVoteRspDto>> updateVote(@PathVariable Long gameId,
                                                                  @Valid @RequestBody BalVoteReqDto req) {
@@ -39,6 +44,7 @@ public class BalVoteController {
     }
 
     // 내 투표 결과 조회 (% 포함)
+    @Operation(summary = "내 투표 결과 조회", description = "% 포함")
     @GetMapping("/me")
     public ResponseEntity<RspTemplate<BalVoteRspDto>> getMyVote(@PathVariable Long gameId) {
         Long userId = SecurityUtil.getCurrentUserId();
