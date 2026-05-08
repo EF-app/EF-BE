@@ -1,13 +1,10 @@
 package com.nokcha.efbe.domain.faq.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 
 // 도움말/FAQ 마스터 — code_faq 테이블 (코드 마스터, 운영 SQL 로 데이터 주입)
 @Getter
@@ -20,7 +17,7 @@ import java.time.LocalDateTime;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CodeFaq {
+public class CodeFaq extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,14 +46,4 @@ public class CodeFaq {
     @Column(name = "is_active", nullable = false,
             columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
     private Boolean isActive;
-
-    @CreationTimestamp
-    @Column(name = "create_time", nullable = false, updatable = false,
-            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createTime;
-
-    @UpdateTimestamp
-    @Column(name = "update_time", nullable = false,
-            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private LocalDateTime updateTime;
 }
