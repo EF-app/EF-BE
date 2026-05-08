@@ -1,6 +1,8 @@
 package com.nokcha.efbe.domain.notice.dto.response;
 
+import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.Notice;
+import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,11 +28,23 @@ public class NoticeDetailRspDto {
     @Schema(description = "공지사항 내용", example = "2026년 4월 30일 오전 2시부터 4시까지 서비스 점검이 진행됩니다.")
     private String content;
 
+    @Schema(description = "공지사항 카테고리", example = "NOTICE")
+    private NoticeCategory category;
+
     @Schema(description = "공지사항 작성일시", example = "2026-04-23T12:00:00")
     private LocalDateTime createTime;
 
     @Schema(description = "공지사항 조회수", example = "11")
     private Long viewCount;
+
+    @Schema(description = "공지사항 상태", example = "PUBLISHED")
+    private NoticeStatus status;
+
+    @Schema(description = "예약 발행 시각", example = "2026-05-08T18:00:00")
+    private LocalDateTime scheduledAt;
+
+    @Schema(description = "실제 발행 시각", example = "2026-05-08T18:00:00")
+    private LocalDateTime publishedAt;
 
     public static NoticeDetailRspDto from(Notice notice, String authorNickname) {
         return NoticeDetailRspDto.builder()
@@ -38,8 +52,12 @@ public class NoticeDetailRspDto {
                 .title(notice.getTitle())
                 .author(authorNickname)
                 .content(notice.getContent())
+                .category(notice.getCategory())
                 .createTime(notice.getCreateTime())
                 .viewCount(notice.getViewCount())
+                .status(notice.getStatus())
+                .scheduledAt(notice.getScheduledAt())
+                .publishedAt(notice.getPublishedAt())
                 .build();
     }
 }

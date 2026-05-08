@@ -3,6 +3,8 @@ package com.nokcha.efbe.domain.notice.entity;
 import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -26,22 +30,69 @@ public class Notice extends BaseEntity {
     @Column(nullable = false, length = 2000)
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private NoticeCategory category;
+
     @Column(nullable = false)
     private Long viewCount;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private NoticeStatus status;
+
+    @Column
+    private LocalDateTime scheduledAt;
+
+    @Column
+    private LocalDateTime publishedAt;
+
     @Builder
-    public Notice(String title, String content, Long viewCount) {
+    public Notice(String title, String content, NoticeCategory category, Long viewCount, NoticeStatus status,
+                  LocalDateTime scheduledAt, LocalDateTime publishedAt) {
         this.title = title;
         this.content = content;
+        this.category = category;
         this.viewCount = viewCount;
+        this.status = status;
+        this.scheduledAt = scheduledAt;
+        this.publishedAt = publishedAt;
     }
 
-    public void update(String title, String content) {
+    public void update(String title, String content, NoticeCategory category, NoticeStatus status, LocalDateTime scheduledAt) {
         this.title = title;
         this.content = content;
+        this.category = category;
+        applyStatus(status, scheduledAt);
     }
 
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void publish(LocalDateTime publishedAt) {
+        this.status = NoticeStatus.PUBLISHED;
+        this.publishedAt = publishedAt;
+        this.scheduledAt = null;
+    }
+
+    private void applyStatus(NoticeStatus status, LocalDateTime scheduledAt) {
+        if (status == NoticeStatus.DRAFT) {
+            this.status = NoticeStatus.DRAFT;
+            this.scheduledAt = null;
+            this.publishedAt = null;
+            return;
+        }
+
+        if (status == NoticeStatus.SCHEDULED) {
+            this.status = NoticeStatus.SCHEDULED;
+            this.scheduledAt = scheduledAt;
+            this.publishedAt = null;
+            return;
+        }
+
+        this.status = NoticeStatus.PUBLISHED;
+        this.scheduledAt = null;
+        this.publishedAt = LocalDateTime.now();
     }
 }
