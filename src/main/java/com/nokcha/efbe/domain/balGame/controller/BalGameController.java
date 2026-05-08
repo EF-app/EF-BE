@@ -1,7 +1,6 @@
 package com.nokcha.efbe.domain.balGame.controller;
 
-// TODO(merge-squash): main 의 CursorCodec 미활성 — cursor 피드 엔드포인트 임시 비활성화
-// import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.security.SecurityUtil;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameDetailRspDto;
@@ -10,6 +9,7 @@ import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
 import com.nokcha.efbe.domain.balGame.service.BalGameService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 // 밸런스 게임 본문 RESTful 컨트롤러 (사용자 측 — 목록·상세 조회)
+@Tag(name = "BalGame", description = "밸런스 게임 본문 (사용자 측 — 목록·상세 조회)")
 @RestController
 @RequestMapping("/v1/bal-game")
 @RequiredArgsConstructor
@@ -25,8 +26,7 @@ public class BalGameController {
 
     private final BalGameService balGameService;
 
-    // TODO(merge-squash): 공개된 밸런스 게임 목록 (커서 기반) — main 의 CursorCodec 미활성으로 임시 비활성화. 원복 시 BalGameService.getBalanceGames 도 같이 복구.
-    /*
+    // 공개된 밸런스 게임 목록 (커서 기반, 카테고리 옵션)
     @Operation(summary = "밸런스 게임 목록 (커서 페이지네이션)")
     @GetMapping
     public ResponseEntity<RspTemplate<CursorPageResponse<BalGameSummaryRspDto>>> getBalanceGames(
@@ -36,7 +36,6 @@ public class BalGameController {
         CursorPageResponse<BalGameSummaryRspDto> data = balGameService.getBalanceGames(categoryCode, cursor, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "밸런스 게임 목록 조회 성공", data));
     }
-    */
 
     // 홈 화면 — 오늘의 밸런스게임 가로 스와이프용 배치.
     // PUBLISHED 상태, update_time DESC, 각 카드에 댓글 3개 + 내 투표 포함.
