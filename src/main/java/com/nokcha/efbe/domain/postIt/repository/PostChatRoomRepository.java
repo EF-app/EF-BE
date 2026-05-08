@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,7 @@ public interface PostChatRoomRepository extends JpaRepository<PostChatRoom, Long
 
     // 특정 글의 모든 채팅방 (원글 Soft delete 시 비활성화)
     List<PostChatRoom> findByPostId(Long postId);
+
+    // 일일 답장 한도 — partner 가 오늘 새로 만든 답장방 수 (= 답장한 distinct 포스트 수).
+    long countByPartnerIdAndCreateTimeBetween(Long partnerId, LocalDateTime start, LocalDateTime end);
 }

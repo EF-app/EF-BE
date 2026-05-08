@@ -21,6 +21,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 // 포스트잇 답장 채팅 서비스 (첫 답장 시 방 생성, 메시지 송수신/취소)
@@ -40,7 +43,7 @@ public class PostChatService {
     private final DailyUsageService dailyUsageService;
 
     // 첫 답장 - 채팅방 미존재 시 생성 + 첫 메시지 저장. 존재하면 메시지만 추가
-    // 무료 한도: POST_REPLY 5회/일
+    // 무료 한도: 답장 5회/일 (= 오늘 새로 만든 답장방 수). 자정 0시에 자동 리셋.
     @Transactional
     public PostChatMessageRspDto replyToPost(Long postId, Long partnerId, PostReplyReqDto req) {
         PostIt post = postItRepository.findById(postId)
@@ -54,7 +57,17 @@ public class PostChatService {
             throw new BusinessException(ErrorCode.SELF_ACTION_FORBIDDEN);
         }
 
-        dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);
+        // 일일 한도 체크 — partner 가 오늘 만든 답장방(post_chat_room) 수로 카운트
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
+        long todayReplies = postChatRoomRepository.countByPartnerIdAndCreateTimeBetween(
+                partnerId, todayStart, todayEnd);
+        if (todayReplies >= FREE_POST_REPLY_LIMIT) {
+            throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+        }
+        // [v1.2 deprecated] 월 단위 카운터(UserMonthlyUsage) 기반 — post_chat_room COUNT 로 전환 (2026-05-08)
+        // dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);
 
         User partner = userRepository.findById(partnerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));

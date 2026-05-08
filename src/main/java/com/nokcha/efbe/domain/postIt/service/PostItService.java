@@ -25,7 +25,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,8 +55,8 @@ public class PostItService {
     private final CodeItemRepository itemCatalogRepository;
     private final CursorCodec cursorCodec;
 
-    // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 별도 카운터
-    // 무료 한도: POST_WRITE 2회/일, POST_LIGHTNING 은 별도 카운터로 1회/일
+    // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 post_it COUNT 기반
+    // 무료 한도: 일반 10회/일, 번개 2회/일. 자정 0시에 자동 리셋.
     @Transactional
     public PostItRspDto createPostIt(Long userId, PostCreateReqDto req) {
         User user = userRepository.findById(userId)
@@ -67,12 +69,30 @@ public class PostItService {
             throw new BusinessException(ErrorCode.POST_LIGHTNING_ANONYMOUS);
         }
 
-        // 일일 한도 체크 (번개는 별도 카운터, 일반글은 공통 카운터)
+        // 일일 한도 체크 — post_it 테이블에서 오늘 작성 수 직접 카운트.
+        // is_deleted 무관 (삭제한 글도 카운트해서 도배 후 삭제 반복 차단).
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
         if (lightning) {
-            dailyUsageService.consume(userId, ACTION_POST_LIGHTNING, FREE_POST_LIGHTNING_LIMIT);
+            long todayLightning = postItRepository.countByUserIdAndCategoryCodeAndCreateTimeBetween(
+                    userId, PostCategory.LIGHTN, todayStart, todayEnd);
+            if (todayLightning >= FREE_POST_LIGHTNING_LIMIT) {
+                throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+            }
         } else {
-            dailyUsageService.consume(userId, ACTION_POST_WRITE, FREE_POST_WRITE_LIMIT);
+            long todayWrite = postItRepository.countByUserIdAndCategoryCodeNotAndCreateTimeBetween(
+                    userId, PostCategory.LIGHTN, todayStart, todayEnd);
+            if (todayWrite >= FREE_POST_WRITE_LIMIT) {
+                throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+            }
         }
+        // [v1.2 deprecated] 월 단위 카운터(UserMonthlyUsage) 기반 — post_it COUNT 로 전환 (2026-05-08)
+        // if (lightning) {
+        //     dailyUsageService.consume(userId, ACTION_POST_LIGHTNING, FREE_POST_LIGHTNING_LIMIT);
+        // } else {
+        //     dailyUsageService.consume(userId, ACTION_POST_WRITE, FREE_POST_WRITE_LIMIT);
+        // }
 
         int hours = Boolean.TRUE.equals(req.getPremiumDuration()) ? PREMIUM_EXPIRE_HOURS : FREE_EXPIRE_HOURS;
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(hours);
