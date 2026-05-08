@@ -7,8 +7,8 @@ import com.nokcha.efbe.domain.profile.entity.Mbti;
 import com.nokcha.efbe.domain.user.dto.response.SignUpOptionGroupRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpOptionItemRspDto;
 import com.nokcha.efbe.domain.user.entity.Job;
-import com.nokcha.efbe.domain.user.repository.KeywordRepository;
-import com.nokcha.efbe.domain.user.repository.PersonalRepository;
+import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
+import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -28,12 +28,12 @@ public class UserSignUpOptionService {
     private static final List<String> ABOUT_ME_CATEGORIES = List.of("일상 유형","종교", "이쪽 지인", "커밍아웃 정도", "머리", "체형", "키", "성향", "패션 스타일", "꾸미는 스타일");
     private static final List<String> IDEAL_CATEGORIES = List.of("머리", "체형", "키", "성향");
 
-    private final KeywordRepository keywordRepository;
-    private final PersonalRepository personalRepository;
+    private final CodeKeywordRepository codeKeywordRepository;
+    private final CodePersonalRepository codePersonalRepository;
 
     @Transactional(readOnly = true)
     public List<SignUpOptionGroupRspDto> getKeywordOptions() {
-        List<CodeKeyword> keywords = keywordRepository.findAll(Sort.by(Sort.Order.asc("id")));
+        List<CodeKeyword> keywords = codeKeywordRepository.findAll(Sort.by(Sort.Order.asc("id")));
 
         Map<String, List<SignUpOptionItemRspDto>> grouped = new LinkedHashMap<>();
         for (CodeKeyword keyword : keywords) {
@@ -66,7 +66,7 @@ public class UserSignUpOptionService {
     }
 
     private List<SignUpOptionGroupRspDto> getPersonalGroups(List<String> categoryOrder) {
-        List<CodePersonal> personals = personalRepository.findAll(Sort.by(Sort.Order.asc("id")));
+        List<CodePersonal> personals = codePersonalRepository.findAll(Sort.by(Sort.Order.asc("id")));
 
         Set<String> categorySet = Set.copyOf(categoryOrder);
         Map<String, List<SignUpOptionItemRspDto>> grouped = new LinkedHashMap<>();

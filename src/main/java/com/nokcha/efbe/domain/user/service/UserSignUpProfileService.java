@@ -18,8 +18,8 @@ import com.nokcha.efbe.domain.user.entity.UserSignUpKeywordType;
 import com.nokcha.efbe.domain.user.entity.UserSignUpPersonal;
 import com.nokcha.efbe.domain.user.entity.UserSignUpProfile;
 import com.nokcha.efbe.domain.user.entity.UserSignUpSession;
-import com.nokcha.efbe.domain.user.repository.KeywordRepository;
-import com.nokcha.efbe.domain.user.repository.PersonalRepository;
+import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
+import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpCustomKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpKeywordRepository;
@@ -57,8 +57,8 @@ public class UserSignUpProfileService {
     private final UserSignUpCustomKeywordRepository userSignUpCustomKeywordRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
     private final ProfileImageRepository profileImageRepository;
-    private final KeywordRepository keywordRepository;
-    private final PersonalRepository personalRepository;
+    private final CodeKeywordRepository codeKeywordRepository;
+    private final CodePersonalRepository codePersonalRepository;
     private final R2ImageService r2ImageService;
 
     // 관심사 정보 저장
@@ -207,7 +207,7 @@ public class UserSignUpProfileService {
             return;
         }
 
-        List<CodeKeyword> codeKeywords = keywordRepository.findAllById(keywordIds);
+        List<CodeKeyword> codeKeywords = codeKeywordRepository.findAllById(keywordIds);
 
         if (codeKeywords.size() != keywordIds.size()) {
             throw new BusinessException(ErrorCode.INTEREST_NOT_FOUND);
@@ -220,7 +220,7 @@ public class UserSignUpProfileService {
             return Collections.emptyList();
         }
 
-        List<CodePersonal> codePersonals = personalRepository.findAllById(personalIds);
+        List<CodePersonal> codePersonals = codePersonalRepository.findAllById(personalIds);
 
         if (codePersonals.size() != personalIds.size()) {
             throw new BusinessException(ErrorCode.PERSONAL_NOT_FOUND);
@@ -363,7 +363,7 @@ public class UserSignUpProfileService {
                 .map(UserSignUpPersonal::getPersonalId)
                 .collect(Collectors.toSet());
 
-        List<CodePersonal> existingCodePersonals = existingSelfIds.isEmpty() ? Collections.emptyList() : personalRepository.findAllById(existingSelfIds);
+        List<CodePersonal> existingCodePersonals = existingSelfIds.isEmpty() ? Collections.emptyList() : codePersonalRepository.findAllById(existingSelfIds);
 
         Set<Long> removableIds = existingCodePersonals.stream()
                 .filter(codePersonal -> categories.contains(codePersonal.getBigCategory()))

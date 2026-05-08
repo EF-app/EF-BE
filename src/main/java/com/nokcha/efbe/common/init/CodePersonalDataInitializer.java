@@ -1,7 +1,7 @@
 package com.nokcha.efbe.common.init;
 
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
-import com.nokcha.efbe.domain.user.repository.PersonalRepository;
+import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CodePersonalDataInitializer {
 
-    private final PersonalRepository personalRepository;
+    private final CodePersonalRepository codePersonalRepository;
 
     @PostConstruct
     public void initialize() {
@@ -73,11 +73,11 @@ public class CodePersonalDataInitializer {
     // 대분류 기준 성향 데이터 등록
     private void registerCategory(String bigCategory, List<String> smallCategories) {
         for (String smallCategory : smallCategories) {
-            if (personalRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
+            if (codePersonalRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
                 continue;
             }
 
-            personalRepository.save(CodePersonal.builder()
+            codePersonalRepository.save(CodePersonal.builder()
                     .bigCategory(bigCategory)
                     .smallCategory(smallCategory)
                     .build());
