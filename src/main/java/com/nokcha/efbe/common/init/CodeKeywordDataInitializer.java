@@ -10,7 +10,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class KeywordDataInitializer {
+public class CodeKeywordDataInitializer {
 
     private final KeywordRepository keywordRepository;
 
