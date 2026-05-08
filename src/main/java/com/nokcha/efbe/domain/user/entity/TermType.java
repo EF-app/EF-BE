@@ -7,5 +7,6 @@ public enum TermType {
     NO_DISCLOSURE_AGREE, // 타인 정보 외부 유출 금지 동의
     MARKETING_AGREE,    // 마케팅
     PUSH_AGREE,     // 푸시 알림
-    LOCATION_AGREE  // 위치 정보
+    LOCATION_AGREE, // 위치 정보
+    PRIVACY_POLICY  // 개인정보 처리방침 (정보 제공용, 동의 토글 X)
 }
