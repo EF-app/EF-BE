@@ -21,11 +21,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class BaseEntity {
     @CreatedDate
-    @Column(updatable = false, name = "create_time")
+    @Column(name = "create_time", nullable = false, updatable = false,
+            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createTime;
 
     @LastModifiedDate
-    @Column(nullable = false, name = "update_time")
+    @Column(name = "update_time", nullable = false,
+            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updateTime;
 
     @CreatedBy
@@ -33,6 +35,7 @@ public class BaseEntity {
     private Long createUser;
 
     @LastModifiedBy
-    @Column(nullable = false, name = "update_user")
+    @Column(nullable = false, name = "update_user",
+            columnDefinition = "BIGINT NOT NULL DEFAULT 0")
     private Long updateUser;
 }
