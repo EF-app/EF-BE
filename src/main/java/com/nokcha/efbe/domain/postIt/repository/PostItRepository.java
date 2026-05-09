@@ -42,11 +42,4 @@ public interface PostItRepository extends JpaRepository<PostIt, Long>, PostItQue
     @Query("select p from PostIt p where p.pinnedUntil is not null and p.pinnedUntil <= :now")
     List<PostIt> findExpiredPins(@Param("now") LocalDateTime now);
 
-    // 일일 한도 — 카테고리 일치 (번개) 기준. is_deleted 무관 (삭제한 글도 카운트해서 도배 방지).
-    long countByUserIdAndCategoryCodeAndCreateTimeBetween(
-            Long userId, PostCategory categoryCode, LocalDateTime start, LocalDateTime end);
-
-    // 일일 한도 — 카테고리 불일치 (번개 제외 = 일반) 기준.
-    long countByUserIdAndCategoryCodeNotAndCreateTimeBetween(
-            Long userId, PostCategory categoryCode, LocalDateTime start, LocalDateTime end);
 }
