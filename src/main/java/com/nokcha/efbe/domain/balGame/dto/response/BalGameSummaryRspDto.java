@@ -4,6 +4,7 @@ import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
 import com.nokcha.efbe.domain.balGame.entity.BalGame;
 import com.nokcha.efbe.domain.balGame.entity.BalGameStatus;
 import com.nokcha.efbe.domain.balGame.repository.projection.BalGameSummaryRow;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,19 +13,46 @@ import java.time.LocalDateTime;
 // 밸런스 게임 목록용 요약 응답 DTO
 @Getter
 @Builder
+@Schema(description = "밸런스 게임 목록용 요약")
 public class BalGameSummaryRspDto {
+
+    @Schema(description = "게임 PK", example = "1")
     private Long id;
+
+    @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
+
+    @Schema(description = "옵션 B 텍스트", example = "이어폰")
     private String optionB;
+
+    @Schema(description = "옵션 A 표시용 이모지", example = "💳")
     private String optionAEmoji;
+
+    @Schema(description = "옵션 B 표시용 이모지", example = "🎧")
     private String optionBEmoji;
+
+    @Schema(description = "카테고리", example = "DAILY")
     private BalCategoryCode categoryCode;
+
+    @Schema(description = "게시 상태", example = "PUBLISHED")
     private BalGameStatus status;
+
+    @Schema(description = "총 투표수 (a_count + b_count)", example = "1000")
     private Integer totalCount;
+
+    @Schema(description = "옵션 A 투표수", example = "620")
     private Integer aCount;
+
+    @Schema(description = "옵션 B 투표수", example = "380")
     private Integer bCount;
+
+    @Schema(description = "댓글 총 개수", example = "328")
     private Integer commentCount;
+
+    @Schema(description = "예약 게시 시각")
     private LocalDateTime scheduledAt;
+
+    @Schema(description = "최초 등록 시각")
     private LocalDateTime createTime;
 
     public static BalGameSummaryRspDto from(BalGame g) {

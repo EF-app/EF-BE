@@ -1,7 +1,7 @@
 package com.nokcha.efbe.common.init;
 
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
-import com.nokcha.efbe.domain.user.repository.KeywordRepository;
+import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -10,9 +10,9 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class KeywordDataInitializer {
+public class CodeKeywordDataInitializer {
 
-    private final KeywordRepository keywordRepository;
+    private final CodeKeywordRepository codeKeywordRepository;
 
     @PostConstruct
     public void initialize() {
@@ -55,11 +55,11 @@ public class KeywordDataInitializer {
         for (int index = 0; index < smallCategories.size(); index++) {
             String smallCategory = smallCategories.get(index);
 
-            if (keywordRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
+            if (codeKeywordRepository.findByBigCategoryAndSmallCategory(bigCategory, smallCategory).isPresent()) {
                 continue;
             }
 
-            keywordRepository.save(CodeKeyword.builder()
+            codeKeywordRepository.save(CodeKeyword.builder()
                     .bigCategory(bigCategory)
                     .smallCategory(smallCategory)
                     .sortOrder(index + 1)

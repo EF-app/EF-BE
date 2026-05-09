@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.balGame.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -11,13 +12,13 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "code_nickname_word",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_code_nickword_word", columnNames = "word")
+                @UniqueConstraint(name = "uk_nickword_word", columnNames = "word")
         },
         indexes = {
-                @Index(name = "idx_code_nickword_type_active", columnList = "type, is_active")
+                @Index(name = "idx_nickword_type_active", columnList = "type, is_active")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CodeNicknameWord {
+public class CodeNicknameWord extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,10 +29,12 @@ public class CodeNicknameWord {
     private String word;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 10)
+    @Column(name = "type", nullable = false,
+            columnDefinition = "ENUM('ADJ','ANIMAL','FOOD','NATURE') NOT NULL")
     private CodeNicknameWordType type;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "is_active", nullable = false,
+            columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
     private Boolean isActive = Boolean.TRUE;
 
     @Builder

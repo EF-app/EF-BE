@@ -1,6 +1,6 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.area.repository.AreaRepository;
+import com.nokcha.efbe.domain.balGame.repository.CodeNicknameWordRepository;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
@@ -10,17 +10,22 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class CodeAreaDataInitializer {
+public class CodeNicknameWordInitializer {
 
-    private final AreaRepository areaRepository;
+    private final CodeNicknameWordRepository codeNicknameWordRepository;
     private final DataSource dataSource;
 
     @PostConstruct
     public void initialize() {
-        if (areaRepository.count() > 0) return;
+        long existing;
+        try {
+            existing = codeNicknameWordRepository.count();
+        } catch (Exception e) {
+            existing = 0;
+        }
+        if (existing > 0) return;
 
-        ClassPathResource resource = new ClassPathResource("sql/code_area.sql");
-
+        ClassPathResource resource = new ClassPathResource("sql/code_nickname_word.sql");
         if (!resource.exists()) return;
 
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator(resource);

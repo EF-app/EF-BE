@@ -8,6 +8,8 @@ import com.nokcha.efbe.domain.balGame.dto.response.BalApplyRspDto;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameSummaryRspDto;
 import com.nokcha.efbe.domain.balGame.entity.BalApplyStatus;
 import com.nokcha.efbe.domain.balGame.service.BalApplyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // 밸런스 게임 신청/승인 RESTful 컨트롤러
+@Tag(name = "BalGame Apply", description = "밸런스 게임 신청/승인")
 @RestController
 @RequestMapping("/v1/bal-apply")
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class BalApplyController {
     private final BalApplyService balApplyService;
 
     // 유저: 게임 신청
+    @Operation(summary = "유저: 밸런스 게임 신청")
     @PostMapping
     public ResponseEntity<RspTemplate<BalApplyRspDto>> createApply(@Valid @RequestBody BalApplyCreateReqDto req) {
         Long userId = SecurityUtil.getCurrentUserId();
@@ -33,6 +37,7 @@ public class BalApplyController {
     }
 
     // 관리자: 신청 목록
+    @Operation(summary = "관리자: 밸런스 게임 신청 목록 조회", description = "status 로 필터링 가능 (페이지네이션)")
     @GetMapping
     public ResponseEntity<RspTemplate<Page<BalApplyRspDto>>> getApplies(
             @RequestParam(required = false) BalApplyStatus status,
@@ -43,6 +48,7 @@ public class BalApplyController {
     }
 
     // 유저: 내 신청 목록
+    @Operation(summary = "유저: 내 밸런스 게임 신청 목록 조회")
     @GetMapping("/me")
     public ResponseEntity<RspTemplate<Page<BalApplyRspDto>>> getMyApplies(
             @RequestParam(defaultValue = "0") int page,
@@ -53,6 +59,8 @@ public class BalApplyController {
     }
 
     // 관리자: 승인/반려. 승인 시 BalGame DRAFT 생성됨
+    @Operation(summary = "관리자: 신청 승인/반려",
+            description = "승인 시 BalGame DRAFT 가 자동 생성됨")
     @PatchMapping("/{applyId}/decision")
     public ResponseEntity<RspTemplate<BalGameSummaryRspDto>> decideApply(
             @PathVariable Long applyId,
