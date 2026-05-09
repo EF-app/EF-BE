@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -158,5 +159,19 @@ public class UserAuthController {
     @PostMapping("/token/refresh")
     public RspTemplate<TokenRefreshRspDto> refreshAccessToken(@Valid @RequestBody RefreshTokenReqDto reqDto) {
         return new RspTemplate<>(HttpStatus.OK, "액세스 토큰 재발급이 완료되었습니다.", userAuthService.refreshAccessToken(reqDto));
+    }
+
+    // 로그아웃 — refresh + access 토큰을 서버 blacklist 에 등록.
+    // 멱등성: 검증 실패해도 200 OK (클라이언트는 어쨌든 로컬 store 비우면 됨).
+    @Operation(summary = "로그아웃",
+            description = "현재 access 토큰(Authorization 헤더)과 refresh 토큰(body)을 서버 블랙리스트에 등록. " +
+                    "이후 해당 토큰들은 만료 전이라도 모든 인증 요청·재발급에서 거부됨. " +
+                    "토큰 검증 실패해도 200 OK 반환 (멱등성 보장).")
+    @PostMapping("/logout")
+    public RspTemplate<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                    @Valid @RequestBody LogoutReqDto reqDto) {
+        String accessToken = (authHeader != null && authHeader.startsWith("Bearer ")) ? authHeader.substring(7) : null;
+        userAuthService.logout(accessToken, reqDto.getRefreshToken());
+        return new RspTemplate<>(HttpStatus.OK, "로그아웃이 완료되었습니다.");
     }
 }
