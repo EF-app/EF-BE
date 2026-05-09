@@ -16,16 +16,16 @@ import lombok.NoArgsConstructor;
 @Schema(description = "피드백 등록 요청 — 버그신고/기능요청. multipart/form-data 의 필드별 파트 컨테이너")
 public class FeedbackCreateReqDto {
 
-    @Schema(description = "피드백 유형", example = "BUG")
+    @Schema(description = "피드백 유형", example = "BUG", requiredMode = Schema.RequiredMode.REQUIRED)
     private FeedbackType feedbackType;
 
-    @Schema(description = "피드백 카테고리 (feedbackType 별 허용 목록 참고)", example = "UI_BROKEN")
+    @Schema(description = "피드백 카테고리 (feedbackType 별 허용 목록 참고)", example = "UI_BROKEN", requiredMode = Schema.RequiredMode.REQUIRED)
     private FeedbackCategoryCode categoryCode;
 
-    @Schema(description = "요약 제목", example = "프로필 이미지가 깨져서 보여요", maxLength = 200)
+    @Schema(description = "요약 제목", example = "프로필 이미지가 깨져서 보여요", maxLength = 200, requiredMode = Schema.RequiredMode.REQUIRED)
     private String title;
 
-    @Schema(description = "상세 내용", example = "프로필 화면 진입 시 이미지가 회색 박스로 보입니다.")
+    @Schema(description = "상세 내용", example = "프로필 화면 진입 시 이미지가 회색 박스로 보입니다.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
 
     @Schema(description = "앱 버전 (옵션)", example = "1.2.3", maxLength = 30)
