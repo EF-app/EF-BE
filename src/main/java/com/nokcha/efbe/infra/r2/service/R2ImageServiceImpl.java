@@ -2,6 +2,9 @@ package com.nokcha.efbe.infra.r2.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.feedback.entity.Feedback;
+import com.nokcha.efbe.domain.feedback.entity.FeedbackImage;
+import com.nokcha.efbe.domain.feedback.repository.FeedbackImageRepository;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +28,21 @@ public class R2ImageServiceImpl implements R2ImageService {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png");
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png");
 
+    // 피드백 이미지 — 5MB / 확장자 폭넓게 허용 (개수 제한 없음)
+    private static final long MAX_FEEDBACK_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
+    private static final Set<String> FEEDBACK_ALLOWED_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp"
+    );
+    private static final Set<String> FEEDBACK_ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "image/heic", "image/heif", "image/bmp"
+    );
+
+    private static final String FEEDBACK_DIRECTORY = "feedback";
+
     private final S3Client s3Client;
     private final ProfileImageRepository profileImageRepository;
+    private final FeedbackImageRepository feedbackImageRepository;
 
     @Value("${cloud.r2.bucket}")
     private String bucket;
@@ -37,7 +53,7 @@ public class R2ImageServiceImpl implements R2ImageService {
     // 프로필 이미지 업로드
     @Override
     public UserProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder) {
-        validateImage(multipartFile);
+        validateProfileImage(multipartFile);
 
         String originalName = multipartFile.getOriginalFilename();
         String storedName = createStoredName(originalName);
@@ -69,31 +85,80 @@ public class R2ImageServiceImpl implements R2ImageService {
         return profileImageRepository.save(userProfileImage);
     }
 
-    // 프로필 이미지 유효성 검증
-    private void validateImage(MultipartFile multipartFile) {
-        if (multipartFile == null || multipartFile.isEmpty() || multipartFile.getOriginalFilename() == null) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE);
+    // 피드백 첨부 이미지 업로드
+    @Override
+    public FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, Feedback feedback, int sortOrder) {
+        validateFeedbackImage(multipartFile);
+
+        String originalName = multipartFile.getOriginalFilename();
+        String storedName = createStoredName(originalName);
+        String objectKey = FEEDBACK_DIRECTORY + "/" + storedName;
+
+        try {
+            s3Client.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(objectKey)
+                            .contentType(multipartFile.getContentType())
+                            .build(),
+                    RequestBody.fromBytes(multipartFile.getBytes())
+            );
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_FEEDBACK_IMAGE, e);
         }
 
-        if (multipartFile.getSize() > MAX_PROFILE_IMAGE_SIZE_BYTES) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE);
+        String imageUrl = publicUrl + "/" + objectKey;
+
+        FeedbackImage feedbackImage = FeedbackImage.builder()
+                .feedback(feedback)
+                .originalName(originalName)
+                .storedName(storedName)
+                .sortOrder(sortOrder)
+                .url(imageUrl)
+                .build();
+
+        return feedbackImageRepository.save(feedbackImage);
+    }
+
+    // 프로필 이미지 유효성 검증
+    private void validateProfileImage(MultipartFile multipartFile) {
+        validateImage(multipartFile, MAX_PROFILE_IMAGE_SIZE_BYTES,
+                ALLOWED_EXTENSIONS, ALLOWED_CONTENT_TYPES, ErrorCode.INVALID_PROFILE_IMAGE);
+    }
+
+    // 피드백 이미지 유효성 검증
+    private void validateFeedbackImage(MultipartFile multipartFile) {
+        validateImage(multipartFile, MAX_FEEDBACK_IMAGE_SIZE_BYTES,
+                FEEDBACK_ALLOWED_EXTENSIONS, FEEDBACK_ALLOWED_CONTENT_TYPES, ErrorCode.INVALID_FEEDBACK_IMAGE);
+    }
+
+    // 이미지 공통 검증
+    private void validateImage(MultipartFile multipartFile, long maxSizeBytes,
+                               Set<String> allowedExtensions, Set<String> allowedContentTypes,
+                               ErrorCode errorCode) {
+        if (multipartFile == null || multipartFile.isEmpty() || multipartFile.getOriginalFilename() == null) {
+            throw new BusinessException(errorCode);
+        }
+
+        if (multipartFile.getSize() > maxSizeBytes) {
+            throw new BusinessException(errorCode);
         }
 
         String originalFilename = multipartFile.getOriginalFilename();
         int extensionIndex = originalFilename.lastIndexOf('.');
 
         if (extensionIndex < 0) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE);
+            throw new BusinessException(errorCode);
         }
 
         String extension = originalFilename.substring(extensionIndex + 1).toLowerCase(Locale.ROOT);
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE);
+        if (!allowedExtensions.contains(extension)) {
+            throw new BusinessException(errorCode);
         }
 
         String contentType = multipartFile.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE);
+        if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new BusinessException(errorCode);
         }
     }
 
