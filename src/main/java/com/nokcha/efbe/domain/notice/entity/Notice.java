@@ -47,9 +47,12 @@ public class Notice extends BaseEntity {
     @Column
     private LocalDateTime publishedAt;
 
+    @Column
+    private Long originalNoticeId;
+
     @Builder
     public Notice(String title, String content, NoticeCategory category, Long viewCount, NoticeStatus status,
-                  LocalDateTime scheduledAt, LocalDateTime publishedAt) {
+                  LocalDateTime scheduledAt, LocalDateTime publishedAt, Long originalNoticeId) {
         this.title = title;
         this.content = content;
         this.category = category;
@@ -57,6 +60,7 @@ public class Notice extends BaseEntity {
         this.status = status;
         this.scheduledAt = scheduledAt;
         this.publishedAt = publishedAt;
+        this.originalNoticeId = originalNoticeId;
     }
 
     public void update(String title, String content, NoticeCategory category, NoticeStatus status, LocalDateTime scheduledAt) {

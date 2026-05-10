@@ -38,15 +38,18 @@ public class NoticeService {
     @Transactional
     public NoticeDetailRspDto createNotice(NoticeReqDto reqDto) {
         securityUtil.validateCurrentAdmin();
+        NoticeCategory category = resolveCategory(reqDto);
+        validateOriginalNotice(reqDto, category);
 
         Notice notice = noticeRepository.save(Notice.builder()
                 .title(reqDto.getTitle())
                 .content(reqDto.getContent())
-                .category(resolveCategory(reqDto))
+                .category(category)
                 .viewCount(0L)
                 .status(resolveStatus(reqDto))
                 .scheduledAt(resolveScheduledAt(reqDto))
                 .publishedAt(resolvePublishedAt(reqDto))
+                .originalNoticeId(resolveOriginalNoticeId(reqDto, category))
                 .build());
 
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
@@ -59,6 +62,10 @@ public class NoticeService {
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
+
+        if (resolveCategory(reqDto) == NoticeCategory.AMEND && notice.getCategory() != NoticeCategory.AMEND) {
+            throw new BusinessException(ErrorCode.INVALID_AMEND_NOTICE_UPDATE);
+        }
 
         NoticeStatus status = resolveStatus(reqDto);
         LocalDateTime scheduledAt = resolveScheduledAt(reqDto);
@@ -138,6 +145,10 @@ public class NoticeService {
         return reqDto.getCategory() == null ? NoticeCategory.NOTICE : reqDto.getCategory();
     }
 
+    private Long resolveOriginalNoticeId(NoticeReqDto reqDto, NoticeCategory category) {
+        return category == NoticeCategory.AMEND ? reqDto.getOriginalNoticeId() : null;
+    }
+
     private LocalDateTime resolveScheduledAt(NoticeReqDto reqDto) {
         validateScheduledAt(resolveStatus(reqDto), reqDto.getScheduledAt());
         return resolveStatus(reqDto) == NoticeStatus.SCHEDULED ? reqDto.getScheduledAt() : null;
@@ -162,6 +173,22 @@ public class NoticeService {
 
         if (scheduledAt != null) {
             throw new BusinessException(ErrorCode.INVALID_SCHEDULED_AT);
+        }
+    }
+
+    private void validateOriginalNotice(NoticeReqDto reqDto, NoticeCategory category) {
+        if (category == NoticeCategory.AMEND) {
+            if (reqDto.getOriginalNoticeId() == null) {
+                throw new BusinessException(ErrorCode.ORIGINAL_NOTICE_REQUIRED);
+            }
+
+            noticeRepository.findById(reqDto.getOriginalNoticeId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
+            return;
+        }
+
+        if (reqDto.getOriginalNoticeId() != null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
 }

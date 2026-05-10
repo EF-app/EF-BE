@@ -31,6 +31,9 @@ public class NoticeDetailRspDto {
     @Schema(description = "공지사항 카테고리", example = "NOTICE")
     private NoticeCategory category;
 
+    @Schema(description = "정정 공지의 원본 공지 ID", example = "12")
+    private Long originalNoticeId;
+
     @Schema(description = "공지사항 작성일시", example = "2026-04-23T12:00:00")
     private LocalDateTime createTime;
 
@@ -53,6 +56,7 @@ public class NoticeDetailRspDto {
                 .author(authorNickname)
                 .content(notice.getContent())
                 .category(notice.getCategory())
+                .originalNoticeId(notice.getOriginalNoticeId())
                 .createTime(notice.getCreateTime())
                 .viewCount(notice.getViewCount())
                 .status(notice.getStatus())

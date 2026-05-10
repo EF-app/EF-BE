@@ -32,6 +32,9 @@ public class NoticeReqDto {
     @Schema(description = "공지사항 카테고리. 미입력 시 NOTICE", example = "UPDATE")
     private NoticeCategory category;
 
+    @Schema(description = "정정 공지인 경우 원본 공지 ID", example = "12")
+    private Long originalNoticeId;
+
     @Schema(description = "공지사항 상태. 미입력 시 PUBLISHED", example = "DRAFT")
     private NoticeStatus status;
 
