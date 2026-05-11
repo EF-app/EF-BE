@@ -33,6 +33,7 @@ public enum ErrorCode {
     PROFILE_REQUIRED(400, "프로필 정보 입력이 필요합니다."),
     PROFILE_IMAGE_COUNT_EXCEEDED(400, "프로필 이미지는 최대 3장까지 등록할 수 있습니다."),
     INVALID_PROFILE_IMAGE(400, "유효하지 않은 프로필 이미지입니다."),
+    INVALID_FEEDBACK_IMAGE(400, "유효하지 않은 피드백 이미지입니다."),
     PERSONAL_REQUIRED(400, "성향 정보는 1개 이상 선택해야 합니다."),
     ALCOHOL_REQUIRED(400, "음주 여부는 필수입니다."),
     SMOKING_REQUIRED(400, "흡연 여부는 필수입니다."),
@@ -98,7 +99,7 @@ public enum ErrorCode {
     NOT_FOUND_COMMENT(404, "댓글을 찾을 수 없습니다."),
     COMMENT_NOT_OWNER(403, "댓글 작성자만 수행할 수 있습니다."),
     NOT_FOUND_LIKE(404, "좋아요 정보를 찾을 수 없습니다."),
-    NOT_VOTED_FOR_COMMENT(400, "투표한 사용자만 댓글을 작성할 수 있습니다."),
+    NOT_VOTED_FOR_COMMENT(400, "투표 후 댓글에 참여할 수 있습니다."),
     NICKNAME_GENERATION_FAILED(500, "닉네임 생성에 실패했습니다."),
     NICKNAME_ALREADY_TAKEN(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_COOLDOWN(429, "닉네임 변경 쿨다운 기간입니다."),
@@ -131,8 +132,10 @@ public enum ErrorCode {
     NOT_FOUND_NOTICE(404, "존재하지 않는 공지사항입니다."),
     INVALID_SCHEDULED_AT(400, "예약 시각이 유효하지 않습니다."),
     ORIGINAL_NOTICE_REQUIRED(400, "정정 공지는 원본 공지 ID가 필요합니다."),
-    INVALID_AMEND_NOTICE_UPDATE(400, "정정 공지는 수정으로 전환할 수 없습니다.")
-    ;
+    INVALID_AMEND_NOTICE_UPDATE(400, "정정 공지는 수정으로 전환할 수 없습니다."),
+
+    // 피드백 (버그신고/기능요청)
+    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.");
 
     private final int code;
     private final String message;

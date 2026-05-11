@@ -3,8 +3,11 @@ package com.nokcha.efbe.domain.user.service;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.area.entity.CodeArea;
+import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.user.dto.request.UserScodeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.UserWithdrawalReqDto;
+import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
 import com.nokcha.efbe.domain.user.entity.WithdrawStatus;
@@ -23,7 +26,20 @@ public class UserInfoService {
 
     private final UserRepository userRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
+    private final AreaRepository areaRepository;
     private final SecurityUtil securityUtil;
+
+    // 내 정보 요약 — 닉네임 / 지역 / 나이. 글쓰기 화면 / My 탭 공용.
+    @Transactional(readOnly = true)
+    public UserSummaryRspDto getMySummary() {
+        Long userId = securityUtil.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
+        CodeArea area = user.getAreaId() == null
+                ? null
+                : areaRepository.findById(user.getAreaId()).orElse(null);
+        return UserSummaryRspDto.of(user, area);
+    }
 
     @Transactional
     public void updateScode(UserScodeReqDto reqDto) {
