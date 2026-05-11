@@ -2,6 +2,7 @@ package com.nokcha.efbe.common.auth.filter;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
+import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RevokedTokenRepository revokedTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -30,6 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             try {
                 if (jwtTokenProvider.validateToken(token) && jwtTokenProvider.isAccessToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // 폐기된(로그아웃 된) access 토큰 차단
+                    if (revokedTokenRepository.existsByJti(jwtTokenProvider.getJti(token))) {
+                        log.warn("[JWT] 폐기된 access 토큰 사용 시도");
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                     SecurityContextHolder.getContext().setAuthentication(jwtTokenProvider.getAuthentication(token));
                 }
             } catch (BusinessException e) {
