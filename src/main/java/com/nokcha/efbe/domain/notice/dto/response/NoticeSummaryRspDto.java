@@ -1,6 +1,8 @@
 package com.nokcha.efbe.domain.notice.dto.response;
 
+import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.Notice;
+import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,19 +25,31 @@ public class NoticeSummaryRspDto {
     @Schema(description = "공지사항 작성자 닉네임", example = "관리자")
     private String author;
 
+    @Schema(description = "공지사항 카테고리", example = "NOTICE")
+    private NoticeCategory category;
+
+    @Schema(description = "정정 공지의 원본 공지 ID", example = "12")
+    private Long originalNoticeId;
+
     @Schema(description = "공지사항 작성일시", example = "2026-04-23T12:00:00")
     private LocalDateTime createTime;
 
     @Schema(description = "공지사항 조회수", example = "10")
     private Long viewCount;
 
+    @Schema(description = "공지사항 상태", example = "PUBLISHED")
+    private NoticeStatus status;
+
     public static NoticeSummaryRspDto from(Notice notice, String authorNickname) {
         return NoticeSummaryRspDto.builder()
                 .id(notice.getId())
                 .title(notice.getTitle())
                 .author(authorNickname)
+                .category(notice.getCategory())
+                .originalNoticeId(notice.getOriginalNoticeId())
                 .createTime(notice.getCreateTime())
                 .viewCount(notice.getViewCount())
+                .status(notice.getStatus())
                 .build();
     }
 }

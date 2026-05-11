@@ -131,10 +131,11 @@ public enum ErrorCode {
     // 공지사항
     NOT_FOUND_NOTICE(404, "존재하지 않는 공지사항입니다."),
     INVALID_SCHEDULED_AT(400, "예약 시각이 유효하지 않습니다."),
+    ORIGINAL_NOTICE_REQUIRED(400, "정정 공지는 원본 공지 ID가 필요합니다."),
+    INVALID_AMEND_NOTICE_UPDATE(400, "정정 공지는 수정으로 전환할 수 없습니다."),
 
     // 피드백 (버그신고/기능요청)
-    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.")
-    ;
+    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.");
 
     private final int code;
     private final String message;
