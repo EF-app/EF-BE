@@ -53,8 +53,8 @@ public class PostItService {
     private final CodeItemRepository itemCatalogRepository;
     private final CursorCodec cursorCodec;
 
-    // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 별도 카운터
-    // 무료 한도: POST_WRITE 2회/일, POST_LIGHTNING 은 별도 카운터로 1회/일
+    // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 user_daily_usage 카운터 기반
+    // 무료 한도: 일반 10회/일(POST_WRITE), 번개 2회/일(POST_LIGHTNING). 번개 글은 두 카운터 모두 +1.
     @Transactional
     public PostItRspDto createPostIt(Long userId, PostCreateReqDto req) {
         User user = userRepository.findById(userId)
@@ -67,12 +67,11 @@ public class PostItService {
             throw new BusinessException(ErrorCode.POST_LIGHTNING_ANONYMOUS);
         }
 
-        // 일일 한도 체크 (번개는 별도 카운터, 일반글은 공통 카운터)
+        // 일일 한도 — 번개는 좁은 카운터(POST_LIGHTNING) 먼저 통과, 그다음 공통 카운터(POST_WRITE) 증가
         if (lightning) {
             dailyUsageService.consume(userId, ACTION_POST_LIGHTNING, FREE_POST_LIGHTNING_LIMIT);
-        } else {
-            dailyUsageService.consume(userId, ACTION_POST_WRITE, FREE_POST_WRITE_LIMIT);
         }
+        dailyUsageService.consume(userId, ACTION_POST_WRITE, FREE_POST_WRITE_LIMIT);
 
         int hours = Boolean.TRUE.equals(req.getPremiumDuration()) ? PREMIUM_EXPIRE_HOURS : FREE_EXPIRE_HOURS;
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(hours);

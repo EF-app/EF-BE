@@ -40,7 +40,8 @@ public class PostChatService {
     private final DailyUsageService dailyUsageService;
 
     // 첫 답장 - 채팅방 미존재 시 생성 + 첫 메시지 저장. 존재하면 메시지만 추가
-    // 무료 한도: POST_REPLY 5회/일
+    // 무료 한도: 답장 5회/일 (POST_REPLY) — partner 기준. user_daily_usage 카운터 기반.
+    // 동일 방에 추가 메시지 보내는 건 한도 미차감 (consume 은 첫 답장 분기 안에서만).
     @Transactional
     public PostChatMessageRspDto replyToPost(Long postId, Long partnerId, PostReplyReqDto req) {
         PostIt post = postItRepository.findById(postId)
@@ -54,8 +55,6 @@ public class PostChatService {
             throw new BusinessException(ErrorCode.SELF_ACTION_FORBIDDEN);
         }
 
-        dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);
-
         User partner = userRepository.findById(partnerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
@@ -63,6 +62,8 @@ public class PostChatService {
         boolean partnerAnonymous = Boolean.TRUE.equals(req.getIsAnonymous());
         PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(postId, partnerId)
                 .orElseGet(() -> {
+                    // 새 방 생성 = 새 답장 → 한도 차감. 기존 방에 추가 메시지 보내는 건 미차감.
+                    dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);
                     // v1.6 닉네임 스냅샷 - 방 생성 시점의 표시 이름 고정. 익명이면 partnerDisplayName="익명".
                     PostChatRoom created = postChatRoomRepository.save(PostChatRoom.builder()
                             .uuid(UUID.randomUUID().toString())
