@@ -65,11 +65,12 @@ public class GlobalExceptionHandler {
         return createErrorResponse(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
-    // BusinessException을 상속한 다른 CustomException에도 적용
+    // BusinessException을 상속한 다른 CustomException에도 적용 — errorCode (enum 이름) 함께 전달
     @ExceptionHandler({BusinessException.class})
     public ResponseEntity<ErrorRspDto<String>> handleBusinessException(BusinessException e, HttpServletRequest request){
         printLog(e, request);
-        return createErrorResponse(e.getCode(), e.getHttpStatus(), e.getMessage());
+        ErrorRspDto<String> body = new ErrorRspDto<>(e.getCode(), e.getHttpStatus(), e.getErrorCode(), e.getMessage());
+        return ResponseEntity.status(e.getHttpStatus()).body(body);
     }
 
     // 정적 리소스/매핑 미존재

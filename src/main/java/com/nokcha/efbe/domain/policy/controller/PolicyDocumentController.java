@@ -29,7 +29,7 @@ public class PolicyDocumentController {
 
     private final PolicyDocumentService policyDocumentService;
 
-    @Operation(summary = "활성 약관 목록", description = "회원가입 약관 동의 화면용. 본문(content) 미포함, 목록만 가벼운 응답. ETag 매칭 시 304 응답.")
+    @Operation(summary = "활성 약관 목록", description = "회원가입 약관 동의 화면용. 본문(content) 미포함, 목록만 가벼운 응답. ETag 매칭 시 304 응답. 비로그인 호출 가능.")
     @GetMapping
     public ResponseEntity<RspTemplate<List<PolicyDocumentSummaryRspDto>>> getActivePolicies(WebRequest webRequest) {
         List<PolicyDocumentSummaryRspDto> data = policyDocumentService.getActivePolicies();
@@ -49,7 +49,7 @@ public class PolicyDocumentController {
                 .body(new RspTemplate<>(HttpStatus.OK, "활성 약관 목록 조회 성공", data));
     }
 
-    @Operation(summary = "약관 상세", description = "전문 보기 모달용. policyType 의 최신 활성 버전 본문 전체 반환. ETag 매칭 시 304 응답.")
+    @Operation(summary = "약관 상세", description = "전문 보기 모달용. policyType 의 최신 활성 버전 본문 전체 반환. ETag 매칭 시 304 응답. 비로그인 호출 가능. PRIVACY_POLICY(개인정보 처리방침) 포함.")
     @GetMapping("/{policyType}")
     public ResponseEntity<RspTemplate<PolicyDocumentDetailRspDto>> getPolicyDetail(
             @PathVariable TermType policyType,

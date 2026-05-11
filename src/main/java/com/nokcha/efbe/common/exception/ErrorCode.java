@@ -99,7 +99,7 @@ public enum ErrorCode {
     NOT_FOUND_COMMENT(404, "댓글을 찾을 수 없습니다."),
     COMMENT_NOT_OWNER(403, "댓글 작성자만 수행할 수 있습니다."),
     NOT_FOUND_LIKE(404, "좋아요 정보를 찾을 수 없습니다."),
-    NOT_VOTED_FOR_COMMENT(400, "투표한 사용자만 댓글을 작성할 수 있습니다."),
+    NOT_VOTED_FOR_COMMENT(400, "투표 후 댓글에 참여할 수 있습니다."),
     NICKNAME_GENERATION_FAILED(500, "닉네임 생성에 실패했습니다."),
     NICKNAME_ALREADY_TAKEN(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_COOLDOWN(429, "닉네임 변경 쿨다운 기간입니다."),
