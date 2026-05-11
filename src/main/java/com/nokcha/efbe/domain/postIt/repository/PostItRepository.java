@@ -41,4 +41,5 @@ public interface PostItRepository extends JpaRepository<PostIt, Long>, PostItQue
     // 고정 만료 배치
     @Query("select p from PostIt p where p.pinnedUntil is not null and p.pinnedUntil <= :now")
     List<PostIt> findExpiredPins(@Param("now") LocalDateTime now);
+
 }
