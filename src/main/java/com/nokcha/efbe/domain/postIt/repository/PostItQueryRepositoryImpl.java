@@ -124,6 +124,14 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                 .from(r)
                 .where(r.post.id.eq(p.id));
 
+        // 본인이 자기 글에 좋아요 누른 적 있는지 — exists 서브쿼리
+        QPostLike pl2 = new QPostLike("plMine");
+        Expression<Boolean> likedByMeExpr = JPAExpressions
+                .selectOne()
+                .from(pl2)
+                .where(pl2.post.id.eq(p.id), pl2.user.id.eq(ConstantImpl.create(userId)))
+                .exists();
+
         return query
                 .select(Projections.constructor(UserActivityPostItRow.class,
                         p.id,
@@ -136,6 +144,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                         p.replyCount,
                         likeCountSub,
                         chatCountSub,
+                        likedByMeExpr,
                         p.isHidden,
                         p.isDeleted,
                         p.createTime))

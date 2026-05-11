@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 // - 본인 글이지만 익명 글이면 nickname="익명", age/location=null (메인 피드 정책과 일관)
 // - userId 는 본인이므로 노출 (FE 본인 식별용)
 // - likeCount + chatCount 동시 노출
+// - likedByMe — 본인이 자기 글에 좋아요를 눌렀는지 (FE 하트 아이콘 outline/filled 분기용)
 @Getter
 @Builder
 @Schema(description = "내 활동 — 내가 붙인 포스트잇 카드")
@@ -65,6 +66,9 @@ public class UserActivityPostItRspDto {
     @Schema(description = "채팅방 수 (active/closed 무관 누적)", example = "4")
     private long chatCount;
 
+    @Schema(description = "내가 좋아요 눌렀는지", example = "false")
+    private boolean likedByMe;
+
     @Schema(description = "숨김 여부", example = "false")
     private boolean hidden;
 
@@ -105,6 +109,7 @@ public class UserActivityPostItRspDto {
                 .replyCount(r.replyCount())
                 .likeCount(r.likeCount() == null ? 0L : r.likeCount())
                 .chatCount(r.chatCount() == null ? 0L : r.chatCount())
+                .likedByMe(Boolean.TRUE.equals(r.likedByMe()))
                 .hidden(hidden)
                 .deleted(deleted)
                 .createTime(r.createTime())
