@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.postIt.repository.projection;
 
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
+import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ public record UserActivityReactedPostItRow(
         String areaCity,
         PostCategory categoryCode,
         String content,
+        PostItColor color,
         Boolean isAnonymous,
         LocalDateTime expiresAt,
         LocalDateTime pinnedUntil,

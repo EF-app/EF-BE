@@ -78,6 +78,7 @@ public class PostItService {
                 .user(user)
                 .categoryCode(categoryCode)
                 .content(req.getContent())
+                .color(req.getColor())
                 .isAnonymous(anonymous && !lightning)
                 .expiresAt(expiresAt)
                 .build();

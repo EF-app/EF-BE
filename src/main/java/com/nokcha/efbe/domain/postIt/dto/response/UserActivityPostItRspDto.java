@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.postIt.dto.response;
 
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
+import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 import com.nokcha.efbe.domain.postIt.repository.projection.UserActivityPostItRow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -41,6 +42,9 @@ public class UserActivityPostItRspDto {
 
     @Schema(description = "본문 (숨김/삭제 정책 치환 적용)")
     private String content;
+
+    @Schema(description = "포스트잇 색상 슬롯 (P1~P5). FE 가 슬롯별 hex 매핑.", example = "P1")
+    private PostItColor color;
 
     @Schema(description = "익명 여부", example = "false")
     private boolean anonymous;
@@ -101,6 +105,7 @@ public class UserActivityPostItRspDto {
                 .location(anonymous ? null : composeLocation(ownerAreaCountry, ownerAreaCity))
                 .categoryCode(r.categoryCode())
                 .content(content)
+                .color(r.color())
                 .anonymous(anonymous)
                 .lightning(r.categoryCode() == PostCategory.LIGHTN)
                 .expiresAt(r.expiresAt())
