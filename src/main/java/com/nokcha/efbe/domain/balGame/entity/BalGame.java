@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 // 밸런스 게임 본문 엔티티
-// total_count 는 DB Generated Column (a_count + b_count) — JPA 측 insert/update 금지
 @Getter
 @Entity
 @Table(name = "bal_game",
@@ -21,8 +20,7 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_game_status", columnList = "status"),
                 @Index(name = "idx_game_status_schedule", columnList = "status, scheduled_at"),
                 @Index(name = "idx_game_sched_end", columnList = "status, scheduled_end_at"),
-                @Index(name = "idx_game_applicant", columnList = "applicant_id, create_time DESC"),
-                @Index(name = "idx_game_total_count", columnList = "total_count DESC")
+                @Index(name = "idx_game_applicant", columnList = "applicant_id, create_time DESC")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BalGame extends BaseEntity {
@@ -79,10 +77,6 @@ public class BalGame extends BaseEntity {
 
     @Column(name = "b_count", nullable = false)
     private Integer bCount = 0;
-
-    // Generated Column — DB 가 (a_count + b_count) 으로 자동 갱신
-    @Column(name = "total_count", insertable = false, updatable = false)
-    private Integer totalCount;
 
     @Column(name = "comment_count", nullable = false)
     private Integer commentCount = 0;
