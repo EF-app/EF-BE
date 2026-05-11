@@ -49,7 +49,7 @@ public class User extends BaseEntity {
     @Column
     private String email;
 
-    @Column(length = 4)
+    @Column(length = 100)
     private String scode;
 
     @Column(nullable = false, length = 30, unique = true)
@@ -103,6 +103,11 @@ public class User extends BaseEntity {
     // 보안코드 설정/수정
     public void updateScode(String scode) {
         this.scode = scode;
+    }
+
+    // 비밀번호 수정 (인코딩된 값 전달)
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
     // 탈퇴

@@ -63,6 +63,10 @@ public enum ErrorCode {
     NOT_FOUND_USER(404, "존재하지 않는 사용자입니다."),
     NOT_FOUND_PROFILE(404, "프로필을 찾을 수 없습니다."),
     SCODE_CONFIRM_MISMATCH(400, "보안코드 확인이 일치하지 않습니다."),
+    WRONG_PASSWORD(401, "비밀번호가 일치하지 않습니다."),
+    WRONG_SCODE(401, "보안코드가 일치하지 않습니다."),
+    SAME_AS_OLD_PASSWORD(400, "기존 비밀번호와 동일합니다."),
+    SAME_AS_OLD_SCODE(400, "기존 보안코드와 동일합니다."),
 
     // 공통 — 페이지·커서·요청
     INVALID_CURSOR(400, "유효하지 않은 페이지 커서입니다."),
