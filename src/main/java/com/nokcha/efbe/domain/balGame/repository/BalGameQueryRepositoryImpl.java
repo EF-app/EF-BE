@@ -35,7 +35,6 @@ public class BalGameQueryRepositoryImpl implements BalGameQueryRepository {
                         g.optionBEmoji,
                         g.categoryCode,
                         g.status,
-                        g.totalCount,
                         g.aCount,
                         g.bCount,
                         g.commentCount,

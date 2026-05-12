@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,16 +42,6 @@ public class PostItController {
         Long viewerId = SecurityUtil.getCurrentUserIdOrNull();
         CursorPageResponse<PostItRspDto> data = postItService.getPostIts(categoryCode, cursor, size, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 목록 조회 성공", data));
-    }
-
-    @Operation(summary = "내가 쓴 포스트잇 조회", description = "본인이 작성한 포스트잇 목록을 페이지네이션으로 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<RspTemplate<Page<PostItRspDto>>> getMyPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Page<PostItRspDto> data = postItService.getMyPosts(userId, page, size);
-        return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 포스트잇 조회 성공", data));
     }
 
     @Operation(summary = "포스트잇 단건 상세", description = "포스트잇 단건을 상세 조회합니다. 비로그인도 호출 가능합니다.")

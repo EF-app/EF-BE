@@ -48,7 +48,7 @@ public class BalVoteService {
         int bDelta = choice == BalVoteChoice.B ? 1 : 0;
         balGameRepository.updateVoteCounts(gameId, aDelta, bDelta);
 
-        // total_count 는 DB Generated Column 이라 in-memory 엔티티에서 별도 계산
+        // totalCount 는 응답 DTO 에서 a + b 로 계산되므로 여기서는 a, b 만 갱신값으로 넘김
         int a = nz(game.getACount()) + aDelta;
         int b = nz(game.getBCount()) + bDelta;
         return BalVoteRspDto.of(gameId, choice, a + b, a, b);

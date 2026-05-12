@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 @Check(name = "chk_lightn_not_anon", constraints = "NOT (category_code = 'LIGHTN' AND is_anonymous = TRUE)")
 @Check(name = "chk_post_report_nn", constraints = "report_count >= 0")
 @Check(name = "chk_post_reply_nn", constraints = "reply_count >= 0")
+@Check(name = "chk_post_color", constraints = "color IN ('P1','P2','P3','P4','P5')")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostIt extends BaseEntity {
 
@@ -54,6 +55,11 @@ public class PostIt extends BaseEntity {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // 포스트잇 색상 슬롯 — 추상 코드(P1~P5), FE 가 hex 매핑
+    @Enumerated(EnumType.STRING)
+    @Column(name = "color", nullable = false, length = 16)
+    private PostItColor color = PostItColor.P1;
+
     @Column(name = "is_anonymous", nullable = false)
     private Boolean isAnonymous = Boolean.FALSE;
 
@@ -77,11 +83,12 @@ public class PostIt extends BaseEntity {
 
     @Builder
     private PostIt(String uuid, User user, PostCategory categoryCode, String content,
-                   Boolean isAnonymous, LocalDateTime expiresAt) {
+                   PostItColor color, Boolean isAnonymous, LocalDateTime expiresAt) {
         this.uuid = uuid;
         this.user = user;
         this.categoryCode = categoryCode;
         this.content = content;
+        this.color = color == null ? PostItColor.P1 : color;
         // 번개 카테고리는 익명 강제 불가
         this.isAnonymous = Boolean.TRUE.equals(isAnonymous) && categoryCode != PostCategory.LIGHTN;
         this.expiresAt = expiresAt;

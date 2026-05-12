@@ -2,12 +2,13 @@ package com.nokcha.efbe.domain.balGame.repository.projection;
 
 import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
 import com.nokcha.efbe.domain.balGame.entity.BalGameStatus;
+import com.nokcha.efbe.domain.balGame.entity.BalVoteChoice;
 
 import java.time.LocalDateTime;
 
-// 밸런스 게임 피드 카드 projection
-public record BalGameSummaryRow(
-        Long id,
+// "내가 투표한 밸런스게임" projection — bal_vote JOIN bal_game
+public record BalGameUserActivityEntryRow(
+        Long gameId,
         String optionA,
         String optionB,
         String optionAEmoji,
@@ -17,6 +18,8 @@ public record BalGameSummaryRow(
         Integer aCount,
         Integer bCount,
         Integer commentCount,
-        LocalDateTime scheduledAt,
-        LocalDateTime createTime
+        BalVoteChoice myChoice,
+        LocalDateTime myVotedAt,
+        Long voteId,
+        LocalDateTime gameCreateTime
 ) {}

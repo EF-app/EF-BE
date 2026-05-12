@@ -31,9 +31,6 @@ public interface PostItRepository extends JpaRepository<PostIt, Long>, PostItQue
     Page<PostIt> findActiveByCategory(@Param("categoryCode") PostCategory categoryCode,
                                       @Param("now") LocalDateTime now, Pageable pageable);
 
-    // 내가 쓴 글 목록
-    Page<PostIt> findByUserIdOrderByCreateTimeDesc(Long userId, Pageable pageable);
-
     // 만료 임박 배치 (만료 시각이 지난 활성 글)
     @Query("select p from PostIt p where p.expiresAt <= :now and p.isDeleted = false")
     List<PostIt> findExpired(@Param("now") LocalDateTime now);
