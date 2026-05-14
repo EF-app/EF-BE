@@ -15,6 +15,7 @@ import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class UserInfoService {
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final AreaRepository areaRepository;
     private final SecurityUtil securityUtil;
+    private final PasswordEncoder passwordEncoder;
 
     // 내 정보 요약 — 닉네임 / 지역 / 나이. 글쓰기 화면 / My 탭 공용.
     @Transactional(readOnly = true)
@@ -50,7 +52,7 @@ public class UserInfoService {
         User user = userRepository.findById(securityUtil.getCurrentUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
-        user.updateScode(reqDto.getScode());
+        user.updateScode(passwordEncoder.encode(reqDto.getScode()));
     }
 
     @Transactional
