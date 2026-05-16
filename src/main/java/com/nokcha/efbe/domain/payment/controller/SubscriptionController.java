@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.payment.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.payment.dto.response.SubscriptionPlanRspDto;
 import com.nokcha.efbe.domain.payment.dto.response.UserSubscriptionRspDto;
 import com.nokcha.efbe.domain.payment.service.SubscriptionService;
@@ -19,6 +19,7 @@ import java.util.List;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final SecurityUtil securityUtil;
 
     // 플랜 목록
     @GetMapping("/plans")
@@ -30,7 +31,7 @@ public class SubscriptionController {
     // 내 구독 조회
     @GetMapping("/me")
     public ResponseEntity<RspTemplate<UserSubscriptionRspDto>> getMySubscription() {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         UserSubscriptionRspDto data = subscriptionService.getMySubscription(userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 구독 조회 성공", data));
     }
@@ -38,7 +39,7 @@ public class SubscriptionController {
     // 자동 갱신 토글
     @PatchMapping("/me/auto-renew")
     public ResponseEntity<RspTemplate<UserSubscriptionRspDto>> setAutoRenew(@RequestParam boolean enabled) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         UserSubscriptionRspDto data = subscriptionService.setAutoRenew(userId, enabled);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "자동 갱신 설정 변경 성공", data));
     }
