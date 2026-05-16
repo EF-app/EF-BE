@@ -1,6 +1,5 @@
-package com.nokcha.efbe.domain.notice.dto.request;
+package com.nokcha.efbe.domain.admin.notice.dto.request;
 
-/*
 import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "공지사항 요청")
+@Schema(description = "공지사항 요청 (관리자)")
 public class NoticeReqDto {
 
     @NotBlank(message = "공지사항 제목은 필수입니다.")
@@ -42,4 +41,3 @@ public class NoticeReqDto {
     @Schema(description = "예약 발행 시각. status 가 SCHEDULED 일 때만 사용 (단위: 10분)", example = "2026-05-08T18:00:00")
     private LocalDateTime scheduledAt;
 }
-*/

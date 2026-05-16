@@ -57,17 +57,17 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/v1/notices").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/v1/notices/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/v1/notices/**").hasRole("ADMIN")
+                        // .requestMatchers(HttpMethod.POST, "/v1/notices").hasRole("ADMIN")
+                        // .requestMatchers(HttpMethod.PATCH, "/v1/notices/**").hasRole("ADMIN")
+                        // .requestMatchers(HttpMethod.DELETE, "/v1/notices/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/v1/users/signup/**",
                                 "/v1/users/login",
-                                "/v1/users/token/refresh",
-                                "/v1/admin/token/refresh",
-                                "/v1/admin/login"
+                                "/v1/users/token/refresh"
+                                // , "/v1/admin/token/refresh"
+                                // , "/v1/admin/login"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/bal-game/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/post-it", "/v1/post-it/*").permitAll()

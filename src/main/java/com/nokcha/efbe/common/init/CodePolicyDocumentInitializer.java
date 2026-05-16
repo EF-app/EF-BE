@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@DependsOn("adminInitializer")
 public class CodePolicyDocumentInitializer {
 
     private final CodePolicyDocumentRepository codePolicyDocumentRepository;
@@ -19,7 +18,6 @@ public class CodePolicyDocumentInitializer {
 
     @PostConstruct
     public void initialize() {
-        // 첫 부팅에는 ddl-auto=none 으로 테이블이 아직 없을 수 있어 count 호출이 실패할 수 있음 → 0 으로 간주.
         long existing;
         try {
             existing = codePolicyDocumentRepository.count();

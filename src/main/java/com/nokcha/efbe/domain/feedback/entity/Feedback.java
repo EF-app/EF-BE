@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.feedback.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
-import com.nokcha.efbe.domain.admin.entity.Admin;
+import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
 import com.nokcha.efbe.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -74,7 +74,7 @@ public class Feedback extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_handler_id",
             foreignKey = @ForeignKey(name = "fk_feedback_handler"))
-    private Admin adminHandler;
+    private AdminAccount adminHandler;
 
     @Column(name = "admin_internal_memo", length = 1000)
     private String adminInternalMemo;
