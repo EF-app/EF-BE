@@ -1,9 +1,9 @@
-package com.nokcha.efbe.domain.admin.auth.service;
+package com.nokcha.efbe.domain.admin.log.service;
 
-import com.nokcha.efbe.domain.admin.auth.entity.AdminLoginFailureReason;
-import com.nokcha.efbe.domain.admin.auth.entity.AdminLoginLog;
 import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
-import com.nokcha.efbe.domain.admin.auth.repository.AdminLoginLogRepository;
+import com.nokcha.efbe.domain.admin.log.entity.AdminLoginFailureReason;
+import com.nokcha.efbe.domain.admin.log.entity.AdminLoginLog;
+import com.nokcha.efbe.domain.admin.log.repository.AdminLoginLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,22 +13,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-// admin_login_log 적재 + 비밀번호 실패 누적 시 자동 잠금.
-// 로그 INSERT 자체가 실패해도 로그인 흐름은 막지 않고 silent 처리 (ERROR 로그로 모니터링 알람 트리거).
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminLoginLogService {
 
-    // 1시간 내 비밀번호 실패 5회 → 1시간 잠금.
-    private static final Duration LOCKOUT_WINDOW = Duration.ofHours(1);
+    private static final Duration LOCKOUT_WINDOW = Duration.ofHours(1); // 1시간 내 비번 불일치 5회 시 1시간 잠금
     private static final long LOCKOUT_THRESHOLD = 5;
     private static final Duration LOCKOUT_DURATION = Duration.ofHours(1);
 
     private final AdminLoginLogRepository adminLoginLogRepository;
     private final AdminAccountRepository adminAccountRepository;
-    // TODO(admin-audit 도메인 도입 시 활성화): private final AdminAuditLogService adminAuditLogService;
+    // TODO: 관리자 감사 도메인 도입 시 활성화
 
+    // 로그인 성공 기록
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordSuccess(String loginId, Long adminId, String ip, String userAgent) {
         try {
@@ -46,10 +44,9 @@ public class AdminLoginLogService {
         }
     }
 
-    // INVALID_ID / ACCOUNT_INACTIVE / ACCOUNT_LOCKED 등 잠금 분기가 필요 없는 실패.
+    // 로그인 실패 기록
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void recordFailure(String loginId, Long adminId, AdminLoginFailureReason reason,
-                              String ip, String userAgent) {
+    public void recordFailure(String loginId, Long adminId, AdminLoginFailureReason reason, String ip, String userAgent) {
         try {
             adminLoginLogRepository.save(AdminLoginLog.builder()
                     .loginIdAttempt(loginId)
@@ -66,7 +63,7 @@ public class AdminLoginLogService {
         }
     }
 
-    // 5회 누적이면 admin_account.locked_until 갱신
+    // 비번 5회 불일치 시 잠금
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPasswordFailureAndLock(String loginId, Long adminId, String ip, String userAgent) {
         LocalDateTime now = LocalDateTime.now();
@@ -93,14 +90,7 @@ public class AdminLoginLogService {
                     log.warn("admin lockout triggered. adminId={}, loginId={}, recentFailures={}, until={}",
                             adminId, loginId, recentFailures, until);
 
-                    // TODO(admin-audit 도메인 도입 시 활성화): audit_log 기록 — actor = 잠긴 admin 본인.
-                    // adminAuditLogService.record(
-                    //         adminId, "ADMIN_ACCOUNT_AUTO_LOCKED", "ADMIN_ACCOUNT", adminId,
-                    //         null,
-                    //         String.format("{\"lockedUntil\":\"%s\",\"trigger\":\"AUTO_5_FAILS_1H\",\"recentFailures\":%d}",
-                    //                 until, recentFailures),
-                    //         ip, userAgent
-                    // );
+                    // TODO: 관리자 감사 도메인 도입 시 활성화 - 감사 기록 — actor = 잠긴 admin 본인
                 });
             }
         } catch (Exception e) {

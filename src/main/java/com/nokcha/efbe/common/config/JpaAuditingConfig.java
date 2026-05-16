@@ -1,7 +1,6 @@
 package com.nokcha.efbe.common.config;
 
 import com.nokcha.efbe.common.auth.model.AuthUserPrincipal;
-import com.nokcha.efbe.common.auth.model.AuthAdminPrincipal;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -30,10 +29,6 @@ public class JpaAuditingConfig {
 
             if (principal instanceof AuthUserPrincipal authUserPrincipal) {
                 return Optional.ofNullable(authUserPrincipal.getUserId()).or(() -> Optional.of(0L));
-            }
-
-            if (principal instanceof AuthAdminPrincipal authAdminPrincipal) {
-                return Optional.ofNullable(authAdminPrincipal.adminId()).or(() -> Optional.of(0L));
             }
 
             return Optional.of(0L);

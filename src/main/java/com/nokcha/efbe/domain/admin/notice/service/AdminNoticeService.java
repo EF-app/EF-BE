@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 관리자 공지사항 서비스 — 작성/수정/삭제 + 예약 발행.
 @Service
 @RequiredArgsConstructor
 public class AdminNoticeService {
@@ -72,7 +71,7 @@ public class AdminNoticeService {
         noticeRepository.delete(notice);
     }
 
-    // 예약 발행 — NoticeScheduler 에서 호출 (시스템 자동 발행)
+    // 예약 발행
     @Transactional
     public void publishDueScheduledNotices() {
         LocalDateTime now = LocalDateTime.now();
@@ -82,9 +81,10 @@ public class AdminNoticeService {
         dueNotices.forEach(notice -> notice.publish(now));
     }
 
-    // 공지사항 작성자 닉네임 조회 — createUser = admin_account.id 매핑
+    // 공지사항 작성자 닉네임 조회
     private String getAuthorNickname(Notice notice) {
         if (notice.getCreateUser() == null) return "알 수 없음";
+
         return adminAccountRepository.findById(notice.getCreateUser())
                 .map(AdminAccount::getName)
                 .orElse("알 수 없음");

@@ -57,7 +57,6 @@ public class UserAuthService {
 
     private static final String USER_ROLE = "ROLE_USER";
 
-    // [DEPRECATED] private final AdminRepository adminRepository;
     private final AdminAccountRepository adminAccountRepository;
     private final UserRepository userRepository;
     private final UserSignUpSessionRepository userSignUpSessionRepository;
@@ -201,9 +200,7 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
         }
 
-        if (userRepository.existsByLoginId(reqDto.getLoginId())
-                /* || adminRepository.existsByLoginId(reqDto.getLoginId()) */
-                || adminAccountRepository.existsByLoginId(reqDto.getLoginId())) {
+        if (userRepository.existsByLoginId(reqDto.getLoginId()) || adminAccountRepository.existsByLoginId(reqDto.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -298,9 +295,7 @@ public class UserAuthService {
 
         validateSignUpSessionForCompletion(signUpSession);
 
-        if (userRepository.existsByLoginId(signUpSession.getLoginId())
-                /* || adminRepository.existsByLoginId(signUpSession.getLoginId()) */
-                || adminAccountRepository.existsByLoginId(signUpSession.getLoginId())) {
+        if (userRepository.existsByLoginId(signUpSession.getLoginId()) || adminAccountRepository.existsByLoginId(signUpSession.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
