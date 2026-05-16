@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.balGame.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.balGame.dto.request.BalApplyCreateReqDto;
 import com.nokcha.efbe.domain.balGame.dto.request.BalApplyDecisionReqDto;
 import com.nokcha.efbe.domain.balGame.dto.response.BalApplyRspDto;
@@ -25,12 +25,13 @@ import org.springframework.web.bind.annotation.*;
 public class BalApplyController {
 
     private final BalApplyService balApplyService;
+    private final SecurityUtil securityUtil;
 
     // 유저: 게임 신청
     @Operation(summary = "유저: 밸런스 게임 신청")
     @PostMapping
     public ResponseEntity<RspTemplate<BalApplyRspDto>> createApply(@Valid @RequestBody BalApplyCreateReqDto req) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         BalApplyRspDto data = balApplyService.createApply(userId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "신청 등록 성공", data));
@@ -53,7 +54,7 @@ public class BalApplyController {
     public ResponseEntity<RspTemplate<Page<BalApplyRspDto>>> getMyApplies(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         Page<BalApplyRspDto> data = balApplyService.getMyApplies(userId, page, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 신청 목록 조회 성공", data));
     }

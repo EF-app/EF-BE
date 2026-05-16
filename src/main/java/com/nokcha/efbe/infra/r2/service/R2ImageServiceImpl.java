@@ -38,8 +38,6 @@ public class R2ImageServiceImpl implements R2ImageService {
             "image/heic", "image/heif", "image/bmp"
     );
 
-    private static final String FEEDBACK_DIRECTORY = "feedback";
-
     private final S3Client s3Client;
     private final ProfileImageRepository profileImageRepository;
     private final FeedbackImageRepository feedbackImageRepository;
@@ -87,12 +85,12 @@ public class R2ImageServiceImpl implements R2ImageService {
 
     // 피드백 첨부 이미지 업로드
     @Override
-    public FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, Feedback feedback, int sortOrder) {
+    public FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, String directory, Feedback feedback, int sortOrder) {
         validateFeedbackImage(multipartFile);
 
         String originalName = multipartFile.getOriginalFilename();
         String storedName = createStoredName(originalName);
-        String objectKey = FEEDBACK_DIRECTORY + "/" + storedName;
+        String objectKey = directory + "/" + storedName;
 
         try {
             s3Client.putObject(

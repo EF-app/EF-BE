@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.postIt.controller;
 
 import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.response.UserActivityPostItRspDto;
 import com.nokcha.efbe.domain.postIt.dto.response.UserActivityReactedPostItRspDto;
 import com.nokcha.efbe.domain.postIt.service.PostItUserActivityService;
@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostItUserActivityController {
 
     private final PostItUserActivityService postItUserActivityService;
+    private final SecurityUtil securityUtil;
 
     @Operation(summary = "내가 붙인 포스트잇 목록",
             description = "현재 로그인 유저가 작성한 포스트잇을 커서 페이지네이션으로 반환합니다. " +
@@ -38,7 +39,7 @@ public class PostItUserActivityController {
             @RequestParam(required = false) String cursor,
             @Parameter(description = "한 번에 가져올 카드 수 (기본 20, 최대 50)")
             @RequestParam(required = false) Integer size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         CursorPageResponse<UserActivityPostItRspDto> data =
                 postItUserActivityService.getMyPosts(userId, cursor, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내가 붙인 포스트잇 목록 조회 성공", data));
@@ -55,7 +56,7 @@ public class PostItUserActivityController {
             @RequestParam(required = false) String cursor,
             @Parameter(description = "한 번에 가져올 카드 수 (기본 20, 최대 50)")
             @RequestParam(required = false) Integer size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         CursorPageResponse<UserActivityReactedPostItRspDto> data =
                 postItUserActivityService.getMyReactions(userId, cursor, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내가 반응한 포스트잇 목록 조회 성공", data));

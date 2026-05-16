@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.service;
 
+/*
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -55,3 +56,4 @@ public class AdminAuthService {
                 .build();
     }
 }
+*/

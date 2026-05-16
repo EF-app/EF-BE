@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.balGame.controller;
 
 import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameDetailRspDto;
 import com.nokcha.efbe.domain.balGame.dto.response.BalGameSummaryRspDto;
 import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
@@ -25,6 +25,7 @@ import java.util.List;
 public class BalGameController {
 
     private final BalGameService balGameService;
+    private final SecurityUtil securityUtil;
 
     // 공개된 밸런스 게임 목록 (커서 기반, 카테고리 옵션)
     @Operation(summary = "밸런스 게임 목록 (커서 페이지네이션)")
@@ -46,7 +47,7 @@ public class BalGameController {
     public ResponseEntity<RspTemplate<List<BalGameDetailRspDto>>> getHomeFeed(
             @Parameter(description = "한 번에 가져올 카드 수 (기본 5, 최대 20)")
             @RequestParam(required = false) Integer size) {
-        Long viewerId = SecurityUtil.getCurrentUserIdOrSystem();
+        Long viewerId = securityUtil.getCurrentUserIdOrSystem();
         List<BalGameDetailRspDto> data = balGameService.getHomeFeed(size, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "홈 밸런스 게임 조회 성공", data));
     }
@@ -55,7 +56,7 @@ public class BalGameController {
     @Operation(summary = "밸런스 게임 단건 상세")
     @GetMapping("/{gameId}")
     public ResponseEntity<RspTemplate<BalGameDetailRspDto>> getOneBalanceGame(@PathVariable Long gameId) {
-        Long viewerId = SecurityUtil.getCurrentUserIdOrSystem();
+        Long viewerId = securityUtil.getCurrentUserIdOrSystem();
         BalGameDetailRspDto data = balGameService.getOneBalanceGame(gameId, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "밸런스 게임 상세 조회 성공", data));
     }

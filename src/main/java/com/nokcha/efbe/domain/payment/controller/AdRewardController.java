@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.payment.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.payment.dto.request.AdRewardReqDto;
 import com.nokcha.efbe.domain.payment.service.AdRewardService;
 import jakarta.validation.Valid;
@@ -17,11 +17,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdRewardController {
 
     private final AdRewardService adRewardService;
+    private final SecurityUtil securityUtil;
 
     // 광고 보상 수령 (ad_tx_id 기반 멱등)
     @PostMapping
     public ResponseEntity<RspTemplate<Void>> claim(@Valid @RequestBody AdRewardReqDto req) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         adRewardService.claim(userId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "광고 보상 수령 성공"));

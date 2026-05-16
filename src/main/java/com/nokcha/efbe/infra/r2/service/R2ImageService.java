@@ -11,5 +11,5 @@ public interface R2ImageService {
     UserProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder);
 
     // 피드백 첨부 이미지 업로드
-    FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, Feedback feedback, int sortOrder);
+    FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, String directory, Feedback feedback, int sortOrder);
 }

@@ -1,6 +1,5 @@
 package com.nokcha.efbe.domain.notice.controller;
 
-import com.nokcha.efbe.domain.notice.dto.request.NoticeReqDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeDetailRspDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticePageRspDto;
 import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
@@ -8,10 +7,8 @@ import com.nokcha.efbe.domain.notice.service.NoticeService;
 import com.nokcha.efbe.common.response.RspTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Notice", description = "공지사항 API")
@@ -22,6 +19,7 @@ public class NoticeController {
 
     private final NoticeService noticeService;
 
+    /*
     // 공지사항 작성
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "공지사항 작성", description = "관리자만 공지사항을 작성할 수 있습니다.")
@@ -54,6 +52,7 @@ public class NoticeController {
         noticeService.deleteNotice(noticeId);
         return new RspTemplate<>(HttpStatus.OK, "공지사항 삭제가 완료되었습니다.");
     }
+    */
 
     // 공지사항 목록 조회
     @Operation(summary = "공지사항 목록 조회", description = "일반 유저와 관리자가 공지사항 목록을 조회할 수 있습니다.")

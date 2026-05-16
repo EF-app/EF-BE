@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.controller;
 
+/*
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.domain.admin.service.AdminAuthService;
 import com.nokcha.efbe.domain.user.dto.request.LoginReqDto;
@@ -24,7 +25,6 @@ public class AdminAuthController {
 
     private final AdminAuthService adminAuthService;
 
-    // 관리자 로그인
     @Operation(summary = "관리자 로그인", description = "관리자 계정으로 로그인하고 액세스 토큰을 발급합니다.")
     @PostMapping("/login")
     public RspTemplate<LoginRspDto> login(@Valid @RequestBody LoginReqDto reqDto) {
@@ -37,3 +37,4 @@ public class AdminAuthController {
         return new RspTemplate<>(HttpStatus.OK, "관리자 액세스 토큰 재발급이 완료되었습니다.", adminAuthService.refreshAccessToken(reqDto));
     }
 }
+*/

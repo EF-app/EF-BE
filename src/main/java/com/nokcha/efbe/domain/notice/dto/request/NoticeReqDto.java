@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.notice.dto.request;
 
+/*
 import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,3 +42,4 @@ public class NoticeReqDto {
     @Schema(description = "예약 발행 시각. status 가 SCHEDULED 일 때만 사용 (단위: 10분)", example = "2026-05-08T18:00:00")
     private LocalDateTime scheduledAt;
 }
+*/

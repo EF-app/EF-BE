@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.postIt.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.request.PostReplyReqDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostChatMessageRspDto;
 import com.nokcha.efbe.domain.postIt.service.PostChatService;
@@ -26,13 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostReplyController {
 
     private final PostChatService postChatService;
+    private final SecurityUtil securityUtil;
 
     @Operation(summary = "포스트잇 답장", description = "특정 포스트잇에 답장합니다. 첫 답장이면 채팅방이 lazy 생성되며, 이때 isAnonymous=true 면 그 방은 영원히 익명으로 유지됩니다.")
     @PostMapping("/{postId}/replies")
     public ResponseEntity<RspTemplate<PostChatMessageRspDto>> replyToPost(
             @PathVariable Long postId,
             @Valid @RequestBody PostReplyReqDto req) {
-        Long partnerId = SecurityUtil.getCurrentUserId();
+        Long partnerId = securityUtil.getCurrentUserId();
         PostChatMessageRspDto data = postChatService.replyToPost(postId, partnerId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "답장 성공", data));

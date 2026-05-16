@@ -1,7 +1,9 @@
 package com.nokcha.efbe.domain.notice.service;
 
-import com.nokcha.efbe.domain.admin.entity.Admin;
-import com.nokcha.efbe.domain.notice.dto.request.NoticeReqDto;
+// import com.nokcha.efbe.domain.admin.entity.Admin;
+import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
+import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
+// import com.nokcha.efbe.domain.notice.dto.request.NoticeReqDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeDetailRspDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticePageRspDto;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeSummaryRspDto;
@@ -9,7 +11,7 @@ import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.Notice;
 import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import com.nokcha.efbe.domain.notice.repository.NoticeRepository;
-import com.nokcha.efbe.domain.admin.repository.AdminRepository;
+// import com.nokcha.efbe.domain.admin.repository.AdminRepository;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -21,8 +23,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+// import java.time.LocalDateTime;
+// import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +34,13 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final SecurityUtil securityUtil;
-    private final AdminRepository adminRepository;
+    //private final AdminRepository adminRepository;
+    private final AdminAccountRepository adminAccountRepository;
 
+    /*
     // 공지사항 작성
     @Transactional
     public NoticeDetailRspDto createNotice(NoticeReqDto reqDto) {
-        securityUtil.validateCurrentAdmin();
         NoticeCategory category = resolveCategory(reqDto);
         validateOriginalNotice(reqDto, category);
 
@@ -58,7 +61,6 @@ public class NoticeService {
     // 공지사항 수정
     @Transactional
     public NoticeDetailRspDto updateNotice(Long noticeId, NoticeReqDto reqDto) {
-        securityUtil.validateCurrentAdmin();
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
@@ -78,13 +80,25 @@ public class NoticeService {
     // 공지사항 삭제
     @Transactional
     public void deleteNotice(Long noticeId) {
-        securityUtil.validateCurrentAdmin();
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_NOTICE));
 
         noticeRepository.delete(notice);
     }
+
+    // 예약 발행 메소드
+    @Transactional
+    public void publishDueScheduledNotices() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Notice> dueNotices = noticeRepository.findAllByStatusAndScheduledAtLessThanEqual(NoticeStatus.SCHEDULED, now);
+        if (dueNotices.isEmpty()) {
+            return;
+        }
+
+        dueNotices.forEach(notice -> notice.publish(now));
+    }
+    */
 
     // 공지사항 목록 조회
     @Transactional(readOnly = true)
@@ -116,27 +130,20 @@ public class NoticeService {
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
     }
 
-    // 예약 발행 메소드
-    @Transactional
-    public void publishDueScheduledNotices() {
-        LocalDateTime now = LocalDateTime.now();
-        List<Notice> dueNotices = noticeRepository.findAllByStatusAndScheduledAtLessThanEqual(NoticeStatus.SCHEDULED, now);
-        if (dueNotices.isEmpty()) {
-            return;
-        }
-
-        dueNotices.forEach(notice -> notice.publish(now));
-    }
-
     // 공지사항 작성자 닉네임 조회
     private String getAuthorNickname(Notice notice) {
         if (notice.getCreateUser() == null) return "알 수 없음";
-
+        return adminAccountRepository.findById(notice.getCreateUser())
+                .map(AdminAccount::getName)
+                .orElse("알 수 없음");
+        /*
         return adminRepository.findById(notice.getCreateUser())
                 .map(Admin::getNickname)
                 .orElse("알 수 없음");
+        */
     }
 
+    /*
     private NoticeStatus resolveStatus(NoticeReqDto reqDto) {
         return reqDto.getStatus() == null ? NoticeStatus.PUBLISHED : reqDto.getStatus();
     }
@@ -191,4 +198,5 @@ public class NoticeService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
+    */
 }
