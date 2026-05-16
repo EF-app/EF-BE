@@ -57,7 +57,7 @@ public class FeedbackService {
             int order = 0;
             for (MultipartFile img : images) {
                 if (img == null || img.isEmpty()) continue;
-                savedImages.add(r2ImageService.uploadFeedbackImage(img, saved, order++));
+                savedImages.add(r2ImageService.uploadFeedbackImage(img, "feedback", saved, order++));
             }
         }
 
