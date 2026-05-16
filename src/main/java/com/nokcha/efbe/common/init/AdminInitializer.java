@@ -1,5 +1,6 @@
 package com.nokcha.efbe.common.init;
 
+/*
 import com.nokcha.efbe.domain.admin.entity.Admin;
 import com.nokcha.efbe.domain.admin.repository.AdminRepository;
 import jakarta.annotation.PostConstruct;
@@ -31,3 +32,4 @@ public class AdminInitializer {
                 .build());
     }
 }
+*/

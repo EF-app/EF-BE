@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.entity;
 
+/*
 import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,3 +45,4 @@ public class Admin extends BaseEntity {
         this.nickname = nickname;
     }
 }
+*/
