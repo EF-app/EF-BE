@@ -21,8 +21,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "admin_account",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_admin_login_id", columnNames = "login_id"),
-                @UniqueConstraint(name = "uk_admin_uuid", columnNames = "uuid")
+                @UniqueConstraint(name = "uk_admin_login_id", columnNames = "login_id")
         },
         indexes = {
                 @Index(name = "idx_admin_role_active", columnList = "role, is_active")
