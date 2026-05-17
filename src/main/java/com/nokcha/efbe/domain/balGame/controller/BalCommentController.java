@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.balGame.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.balGame.dto.request.CommentCreateReqDto;
 import com.nokcha.efbe.domain.balGame.dto.response.CommentRspDto;
 import com.nokcha.efbe.domain.balGame.service.BalCommentLikeService;
@@ -25,6 +25,7 @@ public class BalCommentController {
 
     private final BalGameCommentService balGameCommentService;
     private final BalCommentLikeService balCommentLikeService;
+    private final SecurityUtil securityUtil;
 
     // 댓글/대댓글 작성 (parentId 가 있으면 대댓글)
     @Operation(summary = "댓글/대댓글 작성", description = "parentId 가 있으면 대댓글로 등록됨")
@@ -32,7 +33,7 @@ public class BalCommentController {
     public ResponseEntity<RspTemplate<CommentRspDto>> createComment(
             @PathVariable Long gameId,
             @Valid @RequestBody CommentCreateReqDto req) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         CommentRspDto data = balGameCommentService.createComment(gameId, userId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "댓글 작성 성공", data));
@@ -42,7 +43,7 @@ public class BalCommentController {
     @Operation(summary = "댓글 트리 조회", description = "오래된 순으로 정렬 — 맨 아래가 최신")
     @GetMapping
     public ResponseEntity<RspTemplate<List<CommentRspDto>>> getComments(@PathVariable Long gameId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         List<CommentRspDto> data = balGameCommentService.getComments(gameId, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "댓글 목록 조회 성공", data));
     }
@@ -54,7 +55,7 @@ public class BalCommentController {
     public ResponseEntity<RspTemplate<List<CommentRspDto>>> getRecentComments(
             @PathVariable Long gameId,
             @RequestParam(required = false) Integer size) {
-        Long viewerId = SecurityUtil.getCurrentUserIdOrSystem();
+        Long viewerId = securityUtil.getCurrentUserIdOrSystem();
         List<CommentRspDto> data = balGameCommentService.getRecentComments(gameId, viewerId, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "최신 댓글 조회 성공", data));
     }
@@ -64,7 +65,7 @@ public class BalCommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<RspTemplate<Void>> deleteComment(@PathVariable Long gameId,
                                                            @PathVariable Long commentId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         balGameCommentService.deleteComment(gameId, commentId, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "댓글 삭제 성공"));
     }
@@ -74,7 +75,7 @@ public class BalCommentController {
     @PostMapping("/{commentId}/likes")
     public ResponseEntity<RspTemplate<Void>> createLike(@PathVariable Long gameId,
                                                         @PathVariable Long commentId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         balCommentLikeService.createLike(commentId, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "좋아요 성공"));
@@ -85,7 +86,7 @@ public class BalCommentController {
     @DeleteMapping("/{commentId}/likes")
     public ResponseEntity<RspTemplate<Void>> deleteLike(@PathVariable Long gameId,
                                                         @PathVariable Long commentId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         balCommentLikeService.deleteLike(commentId, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "좋아요 취소 성공"));
     }

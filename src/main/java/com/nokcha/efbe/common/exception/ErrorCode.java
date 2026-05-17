@@ -14,6 +14,9 @@ public enum ErrorCode {
     COMMENT_REPLY_DEPTH_EXCEEDED(400, "허용된 댓글 깊이를 초과했습니다."),
     ADMIN_TOKEN_EXPIRED(401, "관리자 토큰이 만료되었습니다."),
     ADMIN_TOKEN_INVALID(401, "유효하지 않은 관리자 토큰입니다."),
+    ADMIN_UNAUTHORIZED(401, "관리자 인증이 필요합니다."),
+    ADMIN_FORBIDDEN(403, "관리자 권한이 없습니다."),
+    ADMIN_LOGIN_FAILED(401, "관리자 아이디 또는 비밀번호가 올바르지 않습니다."),
     ADMIN_NOT_FOUND(404, "존재하지 않는 관리자입니다."),
     ADMIN_ACCOUNT_DISABLED(403, "비활성화된 관리자 계정입니다."),
     ADMIN_ACCOUNT_LOCKED(403, "비밀번호 실패 누적으로 잠긴 계정입니다. 잠시 후 다시 시도해주세요."),
@@ -63,6 +66,10 @@ public enum ErrorCode {
     NOT_FOUND_USER(404, "존재하지 않는 사용자입니다."),
     NOT_FOUND_PROFILE(404, "프로필을 찾을 수 없습니다."),
     SCODE_CONFIRM_MISMATCH(400, "보안코드 확인이 일치하지 않습니다."),
+    WRONG_PASSWORD(401, "비밀번호가 일치하지 않습니다."),
+    WRONG_SCODE(401, "보안코드가 일치하지 않습니다."),
+    SAME_AS_OLD_PASSWORD(400, "기존 비밀번호와 동일합니다."),
+    SAME_AS_OLD_SCODE(400, "기존 보안코드와 동일합니다."),
 
     // 공통 — 페이지·커서·요청
     INVALID_CURSOR(400, "유효하지 않은 페이지 커서입니다."),
@@ -131,10 +138,11 @@ public enum ErrorCode {
     // 공지사항
     NOT_FOUND_NOTICE(404, "존재하지 않는 공지사항입니다."),
     INVALID_SCHEDULED_AT(400, "예약 시각이 유효하지 않습니다."),
+    ORIGINAL_NOTICE_REQUIRED(400, "정정 공지는 원본 공지 ID가 필요합니다."),
+    INVALID_AMEND_NOTICE_UPDATE(400, "정정 공지는 수정으로 전환할 수 없습니다."),
 
     // 피드백 (버그신고/기능요청)
-    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.")
-    ;
+    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.");
 
     private final int code;
     private final String message;

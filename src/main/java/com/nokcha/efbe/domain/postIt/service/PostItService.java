@@ -20,13 +20,10 @@ import com.nokcha.efbe.domain.postIt.repository.projection.PostItRow;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 // 포스트잇 게시글 서비스 (CRUD + 상단 고정 + 신고 숨김)
@@ -81,6 +78,7 @@ public class PostItService {
                 .user(user)
                 .categoryCode(categoryCode)
                 .content(req.getContent())
+                .color(req.getColor())
                 .isAnonymous(anonymous && !lightning)
                 .expiresAt(expiresAt)
                 .build();
@@ -116,26 +114,6 @@ public class PostItService {
         if (size == null || size <= 0) return DEFAULT_FEED_SIZE;
         if (size > MAX_FEED_SIZE) throw new BusinessException(ErrorCode.INVALID_PAGE_SIZE);
         return size;
-    }
-
-    // 내가 쓴 글 목록 — 쿼리에서 user_id 필터링되므로 모든 행이 본인 글.
-    // 응답 표기는 익명 정책 따라 마스킹 ("from 익명" 표시). 본인 식별은 목록 자체로 충분.
-    // 페이지 사이즈가 작아(<=10 기본) N+1 lookup 으로 좋아요 정보 채움 — 차후 batch projection 으로 교체 가능.
-    // viewer == owner 라 area 는 owner User 1회 lookup → 캐시 후 모든 행에 재사용.
-    @Transactional(readOnly = true)
-    public Page<PostItRspDto> getMyPosts(Long userId, int page, int size) {
-        AreaPair ownerArea = userRepository.findById(userId)
-                .map(u -> resolveArea(u.getAreaId()))
-                .orElse(AreaPair.EMPTY);
-        return postItRepository.findByUserIdOrderByCreateTimeDesc(userId, PageRequest.of(page, size))
-                .map(p -> PostItRspDto.from(
-                        p,
-                        postLikeRepository.countByPostId(p.getId()),
-                        postLikeRepository.existsByPostIdAndUserId(p.getId(), userId),
-                        ownerArea.country,
-                        ownerArea.city,
-                        userId
-                ));
     }
 
     // 단건 상세 조회 — 본인이어도 익명 글은 userId/nickname/age/location 마스킹 (피드 정책과 일관)

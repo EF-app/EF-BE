@@ -56,6 +56,9 @@ public class BalGameSummaryRspDto {
     private LocalDateTime createTime;
 
     public static BalGameSummaryRspDto from(BalGame g) {
+        int a = g.getACount() == null ? 0 : g.getACount();
+        int b = g.getBCount() == null ? 0 : g.getBCount();
+        int comments = g.getCommentCount() == null ? 0 : g.getCommentCount();
         return BalGameSummaryRspDto.builder()
                 .id(g.getId())
                 .optionA(g.getOptionA())
@@ -64,10 +67,10 @@ public class BalGameSummaryRspDto {
                 .optionBEmoji(g.getOptionBEmoji())
                 .categoryCode(g.getCategoryCode())
                 .status(g.getStatus())
-                .totalCount(g.getTotalCount())
-                .aCount(g.getACount())
-                .bCount(g.getBCount())
-                .commentCount(g.getCommentCount())
+                .totalCount(a + b)
+                .aCount(a)
+                .bCount(b)
+                .commentCount(comments)
                 .scheduledAt(g.getScheduledAt())
                 .createTime(g.getCreateTime())
                 .build();
@@ -75,6 +78,9 @@ public class BalGameSummaryRspDto {
 
     // Querydsl projection 기반 — 신규 피드 표준
     public static BalGameSummaryRspDto from(BalGameSummaryRow r) {
+        int a = r.aCount() == null ? 0 : r.aCount();
+        int b = r.bCount() == null ? 0 : r.bCount();
+        int comments = r.commentCount() == null ? 0 : r.commentCount();
         return BalGameSummaryRspDto.builder()
                 .id(r.id())
                 .optionA(r.optionA())
@@ -83,10 +89,10 @@ public class BalGameSummaryRspDto {
                 .optionBEmoji(r.optionBEmoji())
                 .categoryCode(r.categoryCode())
                 .status(r.status())
-                .totalCount(r.totalCount())
-                .aCount(r.aCount())
-                .bCount(r.bCount())
-                .commentCount(r.commentCount())
+                .totalCount(a + b)
+                .aCount(a)
+                .bCount(b)
+                .commentCount(comments)
                 .scheduledAt(r.scheduledAt())
                 .createTime(r.createTime())
                 .build();

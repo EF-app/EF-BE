@@ -14,7 +14,6 @@ public record BalGameSummaryRow(
         String optionBEmoji,
         BalCategoryCode categoryCode,
         BalGameStatus status,
-        Integer totalCount,
         Integer aCount,
         Integer bCount,
         Integer commentCount,

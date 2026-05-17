@@ -53,7 +53,7 @@ public class BalGameDetailRspDto {
     @Schema(description = "예약 종료 시각")
     private LocalDateTime scheduledEndAt;
 
-    @Schema(description = "총 투표수 (a_count + b_count, DB Generated Column)", example = "1000")
+    @Schema(description = "총 투표수 (a_count + b_count)", example = "1000")
     private Integer totalCount;
 
     @Schema(description = "옵션 A 투표수", example = "620")
@@ -90,9 +90,9 @@ public class BalGameDetailRspDto {
     private LocalDateTime updateTime;
 
     public static BalGameDetailRspDto of(BalGame g, BalVoteChoice myChoice, List<CommentRspDto> recent) {
-        int total = g.getTotalCount() == null ? 0 : g.getTotalCount();
         int a = g.getACount() == null ? 0 : g.getACount();
         int b = g.getBCount() == null ? 0 : g.getBCount();
+        int total = a + b;
         double aPct = total == 0 ? 0.0 : ((double) a / total) * 100.0;
         double bPct = total == 0 ? 0.0 : ((double) b / total) * 100.0;
         return BalGameDetailRspDto.builder()

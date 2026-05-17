@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.postIt.dto.response;
 
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
+import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 import com.nokcha.efbe.domain.postIt.repository.projection.PostItRow;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,6 +34,7 @@ public class PostItRspDto {
     private String location;     // 익명이면 null. 일반 글은 "country city" (예: "서울특별시 강남구")
     private PostCategory categoryCode;
     private String content;
+    private PostItColor color;
     private boolean anonymous;
     private boolean lightning;
     private LocalDateTime expiresAt;
@@ -62,6 +64,7 @@ public class PostItRspDto {
                 .location(anonymous ? null : composeLocation(areaCountry, areaCity))
                 .categoryCode(p.getCategoryCode())
                 .content(p.resolveDisplayContent())
+                .color(p.getColor())
                 .anonymous(anonymous)
                 .lightning(p.isLightning())
                 .expiresAt(p.getExpiresAt())
@@ -97,6 +100,7 @@ public class PostItRspDto {
                 .location(anonymous ? null : composeLocation(r.areaCountry(), r.areaCity()))
                 .categoryCode(r.categoryCode())
                 .content(content)
+                .color(r.color())
                 .anonymous(anonymous)
                 .lightning(r.categoryCode() == PostCategory.LIGHTN)
                 .expiresAt(r.expiresAt())
@@ -128,6 +132,7 @@ public class PostItRspDto {
                 .location(anonymous ? null : composeLocation(areaCountry, areaCity))
                 .categoryCode(p.getCategoryCode())
                 .content(p.resolveDisplayContent())
+                .color(p.getColor())
                 .anonymous(anonymous)
                 .lightning(p.isLightning())
                 .expiresAt(p.getExpiresAt())

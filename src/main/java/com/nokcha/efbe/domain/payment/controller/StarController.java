@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.payment.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.payment.dto.response.StarTransactionRspDto;
 import com.nokcha.efbe.domain.payment.dto.response.UserStarBalanceRspDto;
 import com.nokcha.efbe.domain.payment.service.StarService;
@@ -18,11 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class StarController {
 
     private final StarService starService;
+    private final SecurityUtil securityUtil;
 
     // 내 별 잔액
     @GetMapping("/me")
     public ResponseEntity<RspTemplate<UserStarBalanceRspDto>> getMyBalance() {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         UserStarBalanceRspDto data = starService.getMyBalance(userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "별 잔액 조회 성공", data));
     }
@@ -32,7 +33,7 @@ public class StarController {
     public ResponseEntity<RspTemplate<Page<StarTransactionRspDto>>> getTransactions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         Page<StarTransactionRspDto> data = starService.getTransactions(userId, page, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "별 거래 내역 조회 성공", data));
     }

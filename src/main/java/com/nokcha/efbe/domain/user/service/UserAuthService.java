@@ -3,7 +3,7 @@ package com.nokcha.efbe.domain.user.service;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.admin.repository.AdminRepository;
+import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.LoginFailureReason;
 import com.nokcha.efbe.domain.log.service.UserLoginLogService;
@@ -28,7 +28,9 @@ import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
 import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import com.nokcha.efbe.domain.user.entity.*;
+import com.nokcha.efbe.domain.user.entity.RevokedToken;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
+import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
 import com.nokcha.efbe.domain.user.repository.UserActivityStatusRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpCustomKeywordRepository;
@@ -55,7 +57,7 @@ public class UserAuthService {
 
     private static final String USER_ROLE = "ROLE_USER";
 
-    private final AdminRepository adminRepository;
+    private final AdminAccountRepository adminAccountRepository;
     private final UserRepository userRepository;
     private final UserSignUpSessionRepository userSignUpSessionRepository;
     private final AreaRepository areaRepository;
@@ -74,6 +76,7 @@ public class UserAuthService {
     private final UserLoginLogService userLoginLogService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RevokedTokenRepository revokedTokenRepository;
 
     // 로그인 아이디 사용 가능 여부 (실시간 중복 체크용 — 회원가입 전 단계 노출)
     @Transactional(readOnly = true)
@@ -197,7 +200,7 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
         }
 
-        if (userRepository.existsByLoginId(reqDto.getLoginId()) || adminRepository.existsByLoginId(reqDto.getLoginId())) {
+        if (userRepository.existsByLoginId(reqDto.getLoginId()) || adminAccountRepository.existsByLoginId(reqDto.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -292,7 +295,7 @@ public class UserAuthService {
 
         validateSignUpSessionForCompletion(signUpSession);
 
-        if (userRepository.existsByLoginId(signUpSession.getLoginId()) || adminRepository.existsByLoginId(signUpSession.getLoginId())) {
+        if (userRepository.existsByLoginId(signUpSession.getLoginId()) || adminAccountRepository.existsByLoginId(signUpSession.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -387,6 +390,11 @@ public class UserAuthService {
     @Transactional(readOnly = true)
     public TokenRefreshRspDto refreshAccessToken(RefreshTokenReqDto reqDto) {
         jwtTokenProvider.validateRefreshToken(reqDto.getRefreshToken());
+
+        // 폐기된(로그아웃 된) refresh 토큰 차단
+        if (revokedTokenRepository.existsByJti(jwtTokenProvider.getJti(reqDto.getRefreshToken()))) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
 
         if (!USER_ROLE.equals(jwtTokenProvider.getRole(reqDto.getRefreshToken()))) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
@@ -692,5 +700,31 @@ public class UserAuthService {
         }
 
         return request.getRemoteAddr();
+    }
+
+    // 로그아웃 — refresh + access 토큰 둘 다 jti 블랙리스트에 추가.
+    // 멱등성: 토큰 검증 실패(서명/만료/형식 오류) 해도 throw 하지 않고 200 OK 반환.
+    @Transactional
+    public void logout(String accessToken, String refreshToken) {
+        revokeQuietly(refreshToken, "REFRESH");
+        revokeQuietly(accessToken, "ACCESS");
+    }
+
+    // 토큰 1건을 blacklist 에 추가 — 어떤 예외도 무시 (멱등성 보장)
+    private void revokeQuietly(String token, String tokenType) {
+        if (token == null || token.isBlank()) return;
+        try {
+            String jti = jwtTokenProvider.getJti(token);
+            if (jti == null || revokedTokenRepository.existsByJti(jti)) return;
+
+            revokedTokenRepository.save(RevokedToken.builder()
+                    .jti(jti)
+                    .userId(jwtTokenProvider.getUserId(token))
+                    .tokenType(tokenType)
+                    .expiresAt(jwtTokenProvider.getExpiresAt(token))
+                    .build());
+        } catch (Exception e) {
+            log.debug("[Logout] {} 토큰 폐기 실패(무시): {}", tokenType, e.getMessage());
+        }
     }
 }

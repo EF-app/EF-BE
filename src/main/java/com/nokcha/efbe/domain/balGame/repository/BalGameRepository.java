@@ -37,7 +37,7 @@ public interface BalGameRepository extends JpaRepository<BalGame, Long>, BalGame
     @Query("select g from BalGame g where g.status = :status and g.scheduledAt is not null and g.scheduledAt <= :now")
     List<BalGame> findDueScheduled(@Param("status") BalGameStatus status, @Param("now") LocalDateTime now);
 
-    // a/b 카운트 원자적 갱신 (delta = -1, 0, +1). total_count 는 DB Generated Column 이므로 갱신 대상 아님.
+    // a/b 카운트 원자적 갱신 (delta = -1, 0, +1). 총합은 응답 DTO 에서 a + b 로 계산.
     //
     // [의도] update_time 을 의도적으로 갱신하지 않는다.
     //   - JPQL bulk UPDATE 는 Hibernate @PreUpdate / @LastModifiedDate 콜백을 우회한다.

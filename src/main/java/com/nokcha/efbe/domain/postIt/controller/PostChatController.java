@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.postIt.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.request.PostChatMessageReqDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostChatMessageRspDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostChatRoomRspDto;
@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class PostChatController {
 
     private final PostChatService postChatService;
+    private final SecurityUtil securityUtil;
 
     // 내 채팅방 목록
     @Operation(summary = "내 채팅방 목록", description = "본인이 참여 중인 포스트잇 답장 채팅방 목록을 페이지네이션으로 조회합니다.")
@@ -30,7 +31,7 @@ public class PostChatController {
     public ResponseEntity<RspTemplate<Page<PostChatRoomRspDto>>> getMyRooms(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         Page<PostChatRoomRspDto> data = postChatService.getMyRooms(userId, page, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "채팅방 목록 조회 성공", data));
     }
@@ -42,7 +43,7 @@ public class PostChatController {
             @PathVariable Long roomId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long viewerId = SecurityUtil.getCurrentUserId();
+        Long viewerId = securityUtil.getCurrentUserId();
         Page<PostChatMessageRspDto> data = postChatService.getMessages(roomId, viewerId, page, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "메시지 조회 성공", data));
     }
@@ -53,7 +54,7 @@ public class PostChatController {
     public ResponseEntity<RspTemplate<PostChatMessageRspDto>> sendMessage(
             @PathVariable Long roomId,
             @Valid @RequestBody PostChatMessageReqDto req) {
-        Long senderId = SecurityUtil.getCurrentUserId();
+        Long senderId = securityUtil.getCurrentUserId();
         PostChatMessageRspDto data = postChatService.sendMessage(roomId, senderId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "메시지 전송 성공", data));
@@ -63,7 +64,7 @@ public class PostChatController {
     @Operation(summary = "채팅 메시지 취소", description = "발신자 본인이 보낸 메시지를 Soft delete 합니다. 상대가 읽지 않은(read_at 없음) 경우에만 가능합니다.")
     @DeleteMapping("/post-chat-messages/{messageId}")
     public ResponseEntity<RspTemplate<Void>> cancelMessage(@PathVariable Long messageId) {
-        Long requesterId = SecurityUtil.getCurrentUserId();
+        Long requesterId = securityUtil.getCurrentUserId();
         postChatService.cancelMessage(messageId, requesterId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "메시지 취소 성공"));
     }

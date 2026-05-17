@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.payment.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.payment.dto.request.StarChargeReqDto;
 import com.nokcha.efbe.domain.payment.dto.request.SubscriptionOrderReqDto;
 import com.nokcha.efbe.domain.payment.dto.response.PaymentLogRspDto;
@@ -20,12 +20,13 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final SecurityUtil securityUtil;
 
     // 별 충전 결제 확정
     @PostMapping("/star-charges")
     public ResponseEntity<RspTemplate<PaymentLogRspDto>> confirmStarCharge(
             @Valid @RequestBody StarChargeReqDto req) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         PaymentLogRspDto data = paymentService.confirmStarCharge(userId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "별 충전 확정 성공", data));
@@ -35,7 +36,7 @@ public class PaymentController {
     @PostMapping("/subscriptions")
     public ResponseEntity<RspTemplate<PaymentLogRspDto>> confirmSubscription(
             @Valid @RequestBody SubscriptionOrderReqDto req) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         PaymentLogRspDto data = paymentService.confirmSubscription(userId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "구독 결제 확정 성공", data));
@@ -46,7 +47,7 @@ public class PaymentController {
     public ResponseEntity<RspTemplate<Page<PaymentLogRspDto>>> getMyPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         Page<PaymentLogRspDto> data = paymentService.getMyPayments(userId, page, size);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "결제 내역 조회 성공", data));
     }

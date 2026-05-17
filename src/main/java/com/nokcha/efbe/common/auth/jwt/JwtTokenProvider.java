@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
@@ -150,6 +151,21 @@ public class JwtTokenProvider {
 
     public String getRole(String token) {
         return getClaims(token).get(ROLE_CLAIM, String.class);
+    }
+
+    // 로그아웃 / blacklist 용 — 토큰 자체의 식별자(jti) 반환
+    public String getJti(String token) {
+        return getClaims(token).getId();
+    }
+
+    public Long getUserId(String token) {
+        return getClaims(token).get(USER_ID_CLAIM, Long.class);
+    }
+
+    public LocalDateTime getExpiresAt(String token) {
+        return getClaims(token).getExpiration().toInstant()
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 
     public boolean validateToken(String token) {

@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.postIt.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
-import com.nokcha.efbe.common.security.SecurityUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.postIt.dto.response.PostLikeRspDto;
 import com.nokcha.efbe.domain.postIt.service.PostLikeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,11 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostLikeController {
 
     private final PostLikeService postLikeService;
+    private final SecurityUtil securityUtil;
 
     @Operation(summary = "포스트잇 좋아요", description = "특정 포스트잇에 좋아요를 누릅니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
     @PostMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> createLike(@PathVariable Long postId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         PostLikeRspDto data = postLikeService.createLike(postId, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "좋아요 성공", data));
@@ -35,7 +36,7 @@ public class PostLikeController {
     @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소합니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
     @DeleteMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> deleteLike(@PathVariable Long postId) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = securityUtil.getCurrentUserId();
         PostLikeRspDto data = postLikeService.deleteLike(postId, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "좋아요 취소 성공", data));
     }

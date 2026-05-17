@@ -45,7 +45,7 @@ public class BalGameCommentService {
     public CommentRspDto createComment(Long gameId, Long userId, CommentCreateReqDto req) {
         BalGame game = balGameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
-        if (game.getStatus() != BalGameStatus.PUBLISHED && game.getStatus() != BalGameStatus.ARCHIVED) {
+        if (game.getStatus() != BalGameStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.GAME_NOT_PUBLISHED);
         }
         ensureVoter(gameId, userId);
