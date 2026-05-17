@@ -1,16 +1,18 @@
 package com.nokcha.efbe.domain.admin.auth.service;
 
+import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.admin.auth.dto.request.AdminLoginReqDto;
-import com.nokcha.efbe.domain.admin.auth.dto.request.AdminRefreshReqDto;
+import com.nokcha.efbe.common.util.LoginUtil;
+import com.nokcha.efbe.domain.admin.auth.dto.response.AdminInfoRspDto;
 import com.nokcha.efbe.domain.admin.auth.dto.response.AdminLoginRspDto;
-import com.nokcha.efbe.domain.admin.auth.dto.response.AdminSummaryDto;
-import com.nokcha.efbe.domain.admin.auth.dto.response.AdminTokenRspDto;
+import com.nokcha.efbe.domain.admin.log.service.AdminLoginLogService;
 import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
-import com.nokcha.efbe.domain.admin.auth.entity.AdminLoginFailureReason;
+import com.nokcha.efbe.domain.admin.log.entity.AdminLoginFailureReason;
 import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
-import com.nokcha.efbe.common.auth.jwt.AdminJwtTokenProvider;
+import com.nokcha.efbe.domain.user.dto.request.LoginReqDto;
+import com.nokcha.efbe.domain.user.dto.request.RefreshTokenReqDto;
+import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,99 +25,74 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AdminAuthService {
 
-    private static final String TOKEN_TYPE_BEARER = "Bearer";
+    private static final String ADMIN_ROLE = "ROLE_ADMIN";
+    private static final String USER_AGANT =  "User-Agent";
 
     private final AdminAccountRepository adminAccountRepository;
     private final AdminLoginLogService adminLoginLogService;
-    private final AdminJwtTokenProvider adminJwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final LoginUtil loginUtil;
 
-    // 아이디·비밀번호 검증 후 access + refresh 토큰 발급.
-    // 모든 분기에서 admin_login_log 기록 (실패 로그/잠금 갱신은 REQUIRES_NEW 로 외부 롤백과 분리).
-    @Transactional
-    public AdminLoginRspDto login(AdminLoginReqDto reqDto, HttpServletRequest request) {
+    public AdminLoginRspDto login(LoginReqDto reqDto, HttpServletRequest request) {
         String loginId = reqDto.getLoginId();
-        String ip = resolveClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
+        String ip = loginUtil.resolveClientIp(request);
         LocalDateTime now = LocalDateTime.now();
 
         AdminAccount admin = adminAccountRepository.findByLoginId(loginId)
                 .orElseThrow(() -> {
-                    adminLoginLogService.recordFailure(loginId, null, AdminLoginFailureReason.INVALID_ID, ip, userAgent);
+                    adminLoginLogService.recordFailure(loginId, null, AdminLoginFailureReason.INVALID_ID, ip, USER_AGANT);
                     return new BusinessException(ErrorCode.ADMIN_LOGIN_FAILED);
                 });
 
         if (!admin.isActive()) {
-            adminLoginLogService.recordFailure(loginId, admin.getId(), AdminLoginFailureReason.ACCOUNT_INACTIVE, ip, userAgent);
+            adminLoginLogService.recordFailure(loginId, admin.getId(), AdminLoginFailureReason.ACCOUNT_INACTIVE, ip, USER_AGANT);
             throw new BusinessException(ErrorCode.ADMIN_ACCOUNT_DISABLED);
         }
 
         if (admin.isLocked(now)) {
-            adminLoginLogService.recordFailure(loginId, admin.getId(), AdminLoginFailureReason.ACCOUNT_LOCKED, ip, userAgent);
+            adminLoginLogService.recordFailure(loginId, admin.getId(), AdminLoginFailureReason.ACCOUNT_LOCKED, ip, USER_AGANT);
             throw new BusinessException(ErrorCode.ADMIN_ACCOUNT_LOCKED);
         }
 
         if (!passwordEncoder.matches(reqDto.getPassword(), admin.getPassword())) {
-            adminLoginLogService.recordPasswordFailureAndLock(loginId, admin.getId(), ip, userAgent);
+            adminLoginLogService.recordPasswordFailureAndLock(loginId, admin.getId(), ip, USER_AGANT);
             throw new BusinessException(ErrorCode.ADMIN_LOGIN_FAILED);
         }
 
-        adminLoginLogService.recordSuccess(loginId, admin.getId(), ip, userAgent);
+        adminLoginLogService.recordSuccess(loginId, admin.getId(), ip, USER_AGANT);
 
-        String role = admin.getRole().name();
         return AdminLoginRspDto.builder()
-                .accessToken(adminJwtTokenProvider.createAccessToken(
-                        admin.getId(), admin.getLoginId(), admin.getName(), role))
-                .refreshToken(adminJwtTokenProvider.createRefreshToken(admin.getId()))
-                .tokenType(TOKEN_TYPE_BEARER)
+                .accessToken(jwtTokenProvider.createAccessToken(admin.getId(), admin.getLoginId(), ADMIN_ROLE))
+                .refreshToken(jwtTokenProvider.createRefreshToken(admin.getId(), admin.getLoginId(), ADMIN_ROLE))
                 .loginId(admin.getLoginId())
                 .name(admin.getName())
-                .role(role)
                 .build();
     }
 
-    @Transactional(readOnly = true)
-    public AdminTokenRspDto refresh(AdminRefreshReqDto reqDto) {
-        String refreshToken = reqDto.getRefreshToken();
-        if (!adminJwtTokenProvider.validateToken(refreshToken) || !adminJwtTokenProvider.isRefreshToken(refreshToken)) {
-            throw new BusinessException(ErrorCode.ADMIN_TOKEN_INVALID);
+    public TokenRefreshRspDto refreshAccessToken(RefreshTokenReqDto reqDto) {
+        jwtTokenProvider.validateRefreshToken(reqDto.getRefreshToken());
+
+        if (!ADMIN_ROLE.equals(jwtTokenProvider.getRole(reqDto.getRefreshToken()))) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        Long adminId = adminJwtTokenProvider.getAdminId(refreshToken);
-        AdminAccount admin = adminAccountRepository.findById(adminId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+        String loginId = jwtTokenProvider.getLoginId(reqDto.getRefreshToken());
+        AdminAccount admin = adminAccountRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
-        if (!admin.isActive()) {
-            throw new BusinessException(ErrorCode.ADMIN_ACCOUNT_DISABLED);
-        }
-
-        String accessToken = adminJwtTokenProvider.createAccessToken(
-                admin.getId(), admin.getLoginId(), admin.getName(), admin.getRole().name());
-
-        return AdminTokenRspDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
+        return TokenRefreshRspDto.builder()
+                .accessToken(jwtTokenProvider.createAccessToken(admin.getId(), admin.getLoginId(), ADMIN_ROLE))
+                .loginId(admin.getLoginId())
                 .build();
     }
 
-    // 현재 세션 관리자 정보 조회.
+    // 관리자 정보 조회
     @Transactional(readOnly = true)
-    public AdminSummaryDto getMe(Long adminId) {
+    public AdminInfoRspDto getAdmin(Long adminId) {
         AdminAccount admin = adminAccountRepository.findById(adminId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
-        return AdminSummaryDto.from(admin);
-    }
 
-    // 로그아웃
-    public void logout(Long adminId) {
-    }
-
-    private String resolveClientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            int comma = xff.indexOf(',');
-            return comma > 0 ? xff.substring(0, comma).trim() : xff.trim();
-        }
-        return request.getRemoteAddr();
+        return AdminInfoRspDto.from(admin);
     }
 }

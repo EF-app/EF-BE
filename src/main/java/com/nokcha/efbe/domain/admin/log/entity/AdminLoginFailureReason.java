@@ -1,6 +1,5 @@
-package com.nokcha.efbe.domain.admin.auth.entity;
+package com.nokcha.efbe.domain.admin.log.entity;
 
-// 관리자 로그인 실패 사유 (DDL admin_login_log.failure_reason ENUM).
 public enum AdminLoginFailureReason {
     INVALID_PASSWORD,
     INVALID_ID,

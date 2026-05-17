@@ -1,8 +1,7 @@
 package com.nokcha.efbe.common.init;
 
-/*
-import com.nokcha.efbe.domain.admin.entity.Admin;
-import com.nokcha.efbe.domain.admin.repository.AdminRepository;
+import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
+import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdminInitializer {
 
-    private final AdminRepository adminRepository;
+    private final AdminAccountRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${admin.password}")
@@ -21,15 +20,13 @@ public class AdminInitializer {
 
     @PostConstruct
     public void initialize() {
-        if (adminRepository.existsByLoginId("admin")) {
-            return;
-        }
+        if (adminRepository.existsByLoginId("admin")) return;
 
-        adminRepository.save(Admin.builder()
+        adminRepository.save(AdminAccount.builder()
                 .loginId("admin")
                 .password(passwordEncoder.encode(adminPassword))
-                .nickname("관리자")
+                .name("관리자")
+                .isActive(true)
                 .build());
     }
 }
-*/

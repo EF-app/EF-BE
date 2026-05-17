@@ -19,41 +19,6 @@ public class NoticeController {
 
     private final NoticeService noticeService;
 
-    /*
-    // 공지사항 작성
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "공지사항 작성", description = "관리자만 공지사항을 작성할 수 있습니다.")
-    @PostMapping
-    public RspTemplate<NoticeDetailRspDto> createNotice(@Valid @RequestBody NoticeReqDto reqDto) {
-        return new RspTemplate<>(
-                HttpStatus.CREATED,
-                "공지사항 작성이 완료되었습니다.",
-                noticeService.createNotice(reqDto)
-        );
-    }
-
-    // 공지사항 수정
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "공지사항 수정", description = "관리자만 공지사항을 수정할 수 있습니다.")
-    @PatchMapping("/{noticeId}")
-    public RspTemplate<NoticeDetailRspDto> updateNotice(@PathVariable Long noticeId, @Valid @RequestBody NoticeReqDto reqDto) {
-        return new RspTemplate<>(
-                HttpStatus.OK,
-                "공지사항 수정이 완료되었습니다.",
-                noticeService.updateNotice(noticeId, reqDto)
-        );
-    }
-
-    // 공지사항 삭제
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "공지사항 삭제", description = "관리자만 공지사항을 삭제할 수 있습니다.")
-    @DeleteMapping("/{noticeId}")
-    public RspTemplate<Void> deleteNotice(@PathVariable Long noticeId) {
-        noticeService.deleteNotice(noticeId);
-        return new RspTemplate<>(HttpStatus.OK, "공지사항 삭제가 완료되었습니다.");
-    }
-    */
-
     // 공지사항 목록 조회
     @Operation(summary = "공지사항 목록 조회", description = "일반 유저와 관리자가 공지사항 목록을 조회할 수 있습니다.")
     @GetMapping

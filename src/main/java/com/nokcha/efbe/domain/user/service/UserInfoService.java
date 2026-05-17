@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.user.service;
 
+import com.nokcha.efbe.common.util.LoginUtil;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -29,6 +30,7 @@ public class UserInfoService {
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final AreaRepository areaRepository;
     private final SecurityUtil securityUtil;
+    private final LoginUtil loginUtil;
     private final PasswordEncoder passwordEncoder;
 
     // 내 정보 요약 — 닉네임 / 지역 / 나이. 글쓰기 화면 / My 탭 공용.
@@ -77,7 +79,7 @@ public class UserInfoService {
                     .build();
         }
 
-        withdrawal.request(reqDto.getWithdrawReason(), reqDto.getDetailText(), resolveClientIp(request), now);
+        withdrawal.request(reqDto.getWithdrawReason(), reqDto.getDetailText(), loginUtil.resolveClientIp(request), now);
 
         userWithdrawalRepository.save(withdrawal);
     }
@@ -96,16 +98,5 @@ public class UserInfoService {
         }
 
         withdrawal.cancel(LocalDateTime.now(), null, null);
-    }
-
-    private String resolveClientIp(HttpServletRequest request) {
-        if (request == null) return null;
-
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
     }
 }
