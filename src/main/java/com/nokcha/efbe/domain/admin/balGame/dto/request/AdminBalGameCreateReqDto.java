@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.balGame.dto.request;
+package com.nokcha.efbe.domain.admin.balGame.dto.request;
 
 import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
 import com.nokcha.efbe.domain.balGame.entity.BalGameStatus;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @Schema(description = "밸런스 게임 생성 요청 (관리자용)")
-public class BalGameCreateReqDto {
+public class AdminBalGameCreateReqDto {
 
     @Schema(description = "옵션 A 텍스트", example = "교통카드", maxLength = 255)
     @NotBlank
@@ -35,7 +35,6 @@ public class BalGameCreateReqDto {
     @Size(max = 500)
     private String optionBDesc;
 
-    // 옵션 A/B 표시용 이모지 (선택)
     @Schema(description = "옵션 A 표시용 이모지 (선택)", example = "💳", maxLength = 8)
     @Size(max = 8)
     private String optionAEmoji;
@@ -44,12 +43,16 @@ public class BalGameCreateReqDto {
     @Size(max = 8)
     private String optionBEmoji;
 
-    @Schema(description = "게임 전체 배경 설명")
+    @Schema(description = "게임 전체 배경 설명", maxLength = 1000)
+    @Size(max = 1000)
     private String description;
 
     @Schema(description = "카테고리", example = "DAILY")
     @NotNull
     private BalCategoryCode categoryCode;
+
+    @Schema(description = "BAL-APPLY 기반 등록 시 신청 id. 있으면 BalApply 가 PENDING → APPROVED 처리되고 신청자가 applicant 로 연결됨. 어드민 자체 등록이면 생략.")
+    private Long applyId;
 
     @Schema(description = "게시 상태 (생략 시 DRAFT)", example = "PUBLISHED")
     private BalGameStatus status;

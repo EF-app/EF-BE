@@ -150,6 +150,28 @@ public class BalGame extends BaseEntity {
         this.scheduledAt = null;
     }
 
-    // 댓글 카운트 갱신은 BalGameRepository.updateCommentCount(...) JPQL bulk UPDATE 를 사용한다.
-    // entity setter 경로를 의도적으로 제거 — @PreUpdate 가 update_time 을 건드리는 것을 막아 홈 정렬을 관리자 큐레이션 only 로 유지.
+    // 어드민 부분 업데이트 — 일정 변경/클리어.
+    public void changeScheduledAt(LocalDateTime scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    public void changeScheduledEndAt(LocalDateTime scheduledEndAt) {
+        this.scheduledEndAt = scheduledEndAt;
+    }
+
+    // 어드민 부분 업데이트 — 내용 필드. null 인 필드는 건너뜀.
+    // DRAFT/SCHEDULED/HIDDEN 상태에서만.
+    public void editFields(String optionA, String optionB,
+                            String optionADesc, String optionBDesc,
+                            String optionAEmoji, String optionBEmoji,
+                            String description, BalCategoryCode categoryCode) {
+        if (optionA != null) this.optionA = optionA;
+        if (optionB != null) this.optionB = optionB;
+        if (optionADesc != null) this.optionADesc = optionADesc;
+        if (optionBDesc != null) this.optionBDesc = optionBDesc;
+        if (optionAEmoji != null) this.optionAEmoji = optionAEmoji;
+        if (optionBEmoji != null) this.optionBEmoji = optionBEmoji;
+        if (description != null) this.description = description;
+        if (categoryCode != null) this.categoryCode = categoryCode;
+    }
 }
