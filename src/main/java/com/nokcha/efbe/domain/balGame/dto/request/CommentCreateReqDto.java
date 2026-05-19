@@ -15,7 +15,7 @@ public class CommentCreateReqDto {
     @NotBlank
     private String content;
 
-    // 대댓글일 경우 부모 댓글 ID (없으면 null)
-    @Schema(description = "대댓글일 경우 부모 댓글 ID (없으면 null — top-level 댓글)", example = "12")
-    private Long parentId;
+    // 대댓글일 경우 부모 댓글 uuid (없으면 null) — 외부 노출 식별자 정책
+    @Schema(description = "대댓글일 경우 부모 댓글 uuid (없으면 null — top-level 댓글)")
+    private String parentId;
 }

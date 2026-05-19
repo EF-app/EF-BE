@@ -40,22 +40,24 @@ public class BalGameCommentService {
     private final UserRepository userRepository;
     private final NicknameService nicknameService;
 
-    // 댓글/대댓글 작성 (투표 완료자만 가능, 익명 닉네임 자동 부여)
+    // 댓글/대댓글 작성 — gameUuid 기반. 투표 완료자만 가능, 익명 닉네임 자동 부여.
     @Transactional
-    public CommentRspDto createComment(Long gameId, Long userId, CommentCreateReqDto req) {
-        BalGame game = balGameRepository.findById(gameId)
+    public CommentRspDto createComment(String gameUuid, Long userId, CommentCreateReqDto req) {
+        BalGame game = balGameRepository.findByUuid(gameUuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
         if (game.getStatus() != BalGameStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.GAME_NOT_PUBLISHED);
         }
+        Long gameId = game.getId();
         ensureVoter(gameId, userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
         BalGameComment parent = null;
-        if (req.getParentId() != null) {
-            parent = balGameCommentRepository.findById(req.getParentId())
+        if (req.getParentId() != null && !req.getParentId().isBlank()) {
+            // parentId 는 외부 노출 식별자(uuid)
+            parent = balGameCommentRepository.findByUuid(req.getParentId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
             // 대댓글의 대댓글 금지 (1단계 깊이)
             if (parent.getParent() != null) {
@@ -70,18 +72,17 @@ public class BalGameCommentService {
                 .nickname(nickname).content(req.getContent())
                 .build();
         BalGameComment saved = balGameCommentRepository.save(comment);
-        // 댓글 카운트는 JPQL bulk UPDATE 로 갱신 — entity setter 경로를 피해 update_time 비갱신 정책 유지
         balGameRepository.updateCommentCount(gameId, 1);
 
         return CommentRspDto.from(saved, userId, false);
     }
 
-    // 본인 댓글 삭제 (소프트 삭제 - 본문은 표시 정책으로 치환)
+    // 본인 댓글 삭제 — gameUuid + commentUuid. 소프트 삭제, 본문은 표시 정책으로 치환.
     @Transactional
-    public void deleteComment(Long gameId, Long commentId, Long userId) {
-        BalGameComment comment = balGameCommentRepository.findById(commentId)
+    public void deleteComment(String gameUuid, String commentUuid, Long userId) {
+        BalGameComment comment = balGameCommentRepository.findByUuid(commentUuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
-        if (!comment.getGame().getId().equals(gameId)) {
+        if (comment.getGame() == null || !gameUuid.equals(comment.getGame().getUuid())) {
             throw new BusinessException(ErrorCode.NOT_FOUND_COMMENT);
         }
         if (comment.getUser() == null || !comment.getUser().getId().equals(userId)) {
@@ -90,20 +91,18 @@ public class BalGameCommentService {
         if (Boolean.TRUE.equals(comment.getIsDeleted())) return;
         comment.softDelete();
 
-        // 댓글 카운트는 JPQL bulk UPDATE 로 갱신 (update_time 비갱신 정책 유지).
-        // comment.getGame() 은 LAZY 프록시이며 .getId() 는 추가 SELECT 없이 식별자만 꺼냄.
         Long commentGameId = comment.getGame() != null ? comment.getGame().getId() : null;
         if (commentGameId != null) {
             balGameRepository.updateCommentCount(commentGameId, -1);
         }
     }
 
-    // 게임 댓글 트리 조회 (오래된 순 - 맨 아래가 최신, 신고/숨김 필터 적용)
+    // 게임 댓글 트리 조회 — gameUuid 기반 (오래된 순, 신고/숨김 필터 적용)
     @Transactional(readOnly = true)
-    public List<CommentRspDto> getComments(Long gameId, Long viewerId) {
-        if (!balGameRepository.existsById(gameId)) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_GAME);
-        }
+    public List<CommentRspDto> getComments(String gameUuid, Long viewerId) {
+        BalGame game = balGameRepository.findByUuid(gameUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
+        Long gameId = game.getId();
         ensureVoter(gameId, viewerId);
 
         List<BalGameComment> visible = balGameCommentRepository.findVisibleCommentsAsc(gameId, viewerId);
@@ -136,13 +135,13 @@ public class BalGameCommentService {
         return roots;
     }
 
-    // 메인홈용 — 특정 게임의 최신 top-level 댓글 N개 (기본 3, 최대 10).
-    // 투표 여부와 무관하게 메인홈 카드에서 미리보기로 노출되므로 ensureVoter 호출하지 않음.
+    // 메인홈용 — gameUuid 기반 최신 top-level 댓글 N개 (기본 3, 최대 10).
+    // 투표 여부와 무관하게 메인홈 카드에서 미리보기로 노출
     @Transactional(readOnly = true)
-    public List<CommentRspDto> getRecentComments(Long gameId, Long viewerId, Integer size) {
-        if (!balGameRepository.existsById(gameId)) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_GAME);
-        }
+    public List<CommentRspDto> getRecentComments(String gameUuid, Long viewerId, Integer size) {
+        BalGame game = balGameRepository.findByUuid(gameUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
+        Long gameId = game.getId();
         int limit = (size == null || size <= 0) ? HOME_RECENT_DEFAULT_SIZE
                 : Math.min(size, HOME_RECENT_MAX_SIZE);
         List<BalGameComment> recent = balGameCommentRepository.findRecentTopComments(

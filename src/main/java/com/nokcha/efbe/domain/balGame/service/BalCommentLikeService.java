@@ -22,14 +22,15 @@ public class BalCommentLikeService {
     private final BalGameCommentRepository balGameCommentRepository;
     private final UserRepository userRepository;
 
-    // 좋아요 추가 - 카운트 1 증가, 중복 시 예외
+    // 좋아요 추가 - commentUuid 기반, 카운트 1 증가, 중복 시 예외
     @Transactional
-    public void createLike(Long commentId, Long userId) {
+    public void createLike(String commentUuid, Long userId) {
+        BalGameComment comment = balGameCommentRepository.findByUuid(commentUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
+        Long commentId = comment.getId();
         if (balCommentLikeRepository.existsByCommentIdAndUserId(commentId, userId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_LIKE);
         }
-        BalGameComment comment = balGameCommentRepository.findById(commentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
         try {
@@ -40,14 +41,15 @@ public class BalCommentLikeService {
         comment.increaseLikes();
     }
 
-    // 좋아요 취소 - 카운트 1 감소
+    // 좋아요 취소 - commentUuid 기반, 카운트 1 감소
     @Transactional
-    public void deleteLike(Long commentId, Long userId) {
+    public void deleteLike(String commentUuid, Long userId) {
+        BalGameComment comment = balGameCommentRepository.findByUuid(commentUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
+        Long commentId = comment.getId();
         BalCommentLike like = balCommentLikeRepository.findByCommentIdAndUserId(commentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_LIKE));
         balCommentLikeRepository.delete(like);
-        BalGameComment comment = balGameCommentRepository.findById(commentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
         comment.decreaseLikes();
     }
 }

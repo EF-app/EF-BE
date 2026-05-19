@@ -19,11 +19,20 @@ public class BalGameSummaryRspDto {
     @Schema(description = "게임 PK", example = "1")
     private Long id;
 
+    @Schema(description = "외부 노출 식별자")
+    private String uuid;
+
     @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
 
     @Schema(description = "옵션 B 텍스트", example = "이어폰")
     private String optionB;
+
+    @Schema(description = "옵션 A 부가 설명 (어드민 편집·카드 표시용)")
+    private String optionADesc;
+
+    @Schema(description = "옵션 B 부가 설명 (어드민 편집·카드 표시용)")
+    private String optionBDesc;
 
     @Schema(description = "옵션 A 표시용 이모지", example = "💳")
     private String optionAEmoji;
@@ -61,8 +70,11 @@ public class BalGameSummaryRspDto {
         int comments = g.getCommentCount() == null ? 0 : g.getCommentCount();
         return BalGameSummaryRspDto.builder()
                 .id(g.getId())
+                .uuid(g.getUuid())
                 .optionA(g.getOptionA())
                 .optionB(g.getOptionB())
+                .optionADesc(g.getOptionADesc())
+                .optionBDesc(g.getOptionBDesc())
                 .optionAEmoji(g.getOptionAEmoji())
                 .optionBEmoji(g.getOptionBEmoji())
                 .categoryCode(g.getCategoryCode())
@@ -83,6 +95,7 @@ public class BalGameSummaryRspDto {
         int comments = r.commentCount() == null ? 0 : r.commentCount();
         return BalGameSummaryRspDto.builder()
                 .id(r.id())
+                .uuid(r.uuid())
                 .optionA(r.optionA())
                 .optionB(r.optionB())
                 .optionAEmoji(r.optionAEmoji())

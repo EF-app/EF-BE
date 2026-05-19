@@ -116,14 +116,15 @@ public class BalGameService {
         return size;
     }
 
-    // 단건 상세 조회 (홈 진입 - 최신 댓글 3개 + 내 투표 정보 포함)
+    // 단건 상세 조회 — 외부 노출 식별자(gameUuid) 기반 (홈 진입 - 최신 댓글 3개 + 내 투표 정보 포함)
     @Transactional(readOnly = true)
-    public BalGameDetailRspDto getOneBalanceGame(Long gameId, Long viewerId) {
-        BalGame game = balGameRepository.findById(gameId)
+    public BalGameDetailRspDto getOneBalanceGame(String gameUuid, Long viewerId) {
+        BalGame game = balGameRepository.findByUuid(gameUuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
         if (game.getStatus() != BalGameStatus.PUBLISHED && game.getStatus() != BalGameStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.GAME_NOT_PUBLISHED);
         }
+        Long gameId = game.getId();
 
         BalVoteChoice myChoice = (viewerId == null) ? null
                 : balVoteRepository.findByGameIdAndUserId(gameId, viewerId).map(BalVote::getChoice).orElse(null);

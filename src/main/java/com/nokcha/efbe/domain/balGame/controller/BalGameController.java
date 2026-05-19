@@ -52,12 +52,12 @@ public class BalGameController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "홈 밸런스 게임 조회 성공", data));
     }
 
-    // 단건 상세 조회
+    // 단건 상세 조회 — 외부 노출 식별자(gameUuid) 기반
     @Operation(summary = "밸런스 게임 단건 상세")
-    @GetMapping("/{gameId}")
-    public ResponseEntity<RspTemplate<BalGameDetailRspDto>> getOneBalanceGame(@PathVariable Long gameId) {
+    @GetMapping("/{gameUuid}")
+    public ResponseEntity<RspTemplate<BalGameDetailRspDto>> getOneBalanceGame(@PathVariable String gameUuid) {
         Long viewerId = securityUtil.getCurrentUserIdOrSystem();
-        BalGameDetailRspDto data = balGameService.getOneBalanceGame(gameId, viewerId);
+        BalGameDetailRspDto data = balGameService.getOneBalanceGame(gameUuid, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "밸런스 게임 상세 조회 성공", data));
     }
 }

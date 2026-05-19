@@ -29,6 +29,7 @@ public class BalGameQueryRepositoryImpl implements BalGameQueryRepository {
         return query
                 .select(Projections.constructor(BalGameSummaryRow.class,
                         g.id,
+                        g.uuid,
                         g.optionA,
                         g.optionB,
                         g.optionAEmoji,

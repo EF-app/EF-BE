@@ -20,6 +20,9 @@ public class BalGameDetailRspDto {
     @Schema(description = "게임 PK", example = "1")
     private Long id;
 
+    @Schema(description = "외부 노출 식별자")
+    private String uuid;
+
     @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
 
@@ -97,6 +100,7 @@ public class BalGameDetailRspDto {
         double bPct = total == 0 ? 0.0 : ((double) b / total) * 100.0;
         return BalGameDetailRspDto.builder()
                 .id(g.getId())
+                .uuid(g.getUuid())
                 .optionA(g.getOptionA())
                 .optionADesc(g.getOptionADesc())
                 .optionAEmoji(g.getOptionAEmoji())
