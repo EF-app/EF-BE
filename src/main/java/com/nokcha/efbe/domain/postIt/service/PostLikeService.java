@@ -24,14 +24,15 @@ public class PostLikeService {
     private final PostItRepository postItRepository;
     private final UserRepository userRepository;
 
-    // 좋아요 추가 (중복 시 예외)
+    // 좋아요 추가 (중복 시 예외) — 외부 uuid 식별자 기반
     @Transactional
-    public PostLikeRspDto createLike(Long postId, Long userId) {
+    public PostLikeRspDto createLike(String uuid, Long userId) {
+        PostIt post = postItRepository.findByUuid(uuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
+        Long postId = post.getId();
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_LIKE);
         }
-        PostIt post = postItRepository.findById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
         try {
@@ -46,9 +47,12 @@ public class PostLikeService {
                 .build();
     }
 
-    // 좋아요 취소
+    // 좋아요 취소 — 외부 uuid 식별자 기반
     @Transactional
-    public PostLikeRspDto deleteLike(Long postId, Long userId) {
+    public PostLikeRspDto deleteLike(String uuid, Long userId) {
+        PostIt post = postItRepository.findByUuid(uuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
+        Long postId = post.getId();
         PostLike like = postLikeRepository.findByPostIdAndUserId(postId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_LIKE));
         postLikeRepository.delete(like);

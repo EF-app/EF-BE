@@ -25,6 +25,9 @@ public class UserActivityPostItRspDto {
     @Schema(description = "포스트잇 PK", example = "1")
     private Long id;
 
+    @Schema(description = "외부 노출 식별자")
+    private String uuid;
+
     @Schema(description = "작성자 user_id (본인)", example = "10")
     private Long userId;
 
@@ -99,6 +102,7 @@ public class UserActivityPostItRspDto {
 
         return UserActivityPostItRspDto.builder()
                 .id(r.id())
+                .uuid(r.uuid())
                 .userId(r.userId())
                 .nickname(anonymous ? ANONYMOUS_NICKNAME : (ownerNickname == null ? ANONYMOUS_NICKNAME : ownerNickname))
                 .age(anonymous ? null : ownerAge)

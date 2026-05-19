@@ -43,8 +43,8 @@ public class PostChatService {
     // 무료 한도: 답장 5회/일 (POST_REPLY) — partner 기준. user_daily_usage 카운터 기반.
     // 동일 방에 추가 메시지 보내는 건 한도 미차감 (consume 은 첫 답장 분기 안에서만).
     @Transactional
-    public PostChatMessageRspDto replyToPost(Long postId, Long partnerId, PostReplyReqDto req) {
-        PostIt post = postItRepository.findById(postId)
+    public PostChatMessageRspDto replyToPost(String uuid, Long partnerId, PostReplyReqDto req) {
+        PostIt post = postItRepository.findByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (Boolean.TRUE.equals(post.getIsDeleted())) {
             throw new BusinessException(ErrorCode.NOT_FOUND_POST);
@@ -60,7 +60,7 @@ public class PostChatService {
 
         // 첫 답장 시 결정한 익명 정책은 그 방에서 영원히 유지 (이후 토글 불가)
         boolean partnerAnonymous = Boolean.TRUE.equals(req.getIsAnonymous());
-        PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(postId, partnerId)
+        PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(post.getId(), partnerId)
                 .orElseGet(() -> {
                     // 새 방 생성 = 새 답장 → 한도 차감. 기존 방에 추가 메시지 보내는 건 미차감.
                     dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 // - likeCount = post_like 전체, chatCount = post_chat_room 전체 (active/closed 무관)
 public record UserActivityReactedPostItRow(
         Long id,
+        String uuid,
         Long userId,
         String nickname,
         Integer age,

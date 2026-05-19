@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 // - likedByMe = post_like 본인 EXISTS (본인이 자기 글에 좋아요 누른 경우 true)
 public record UserActivityPostItRow(
         Long id,
+        String uuid,
         Long userId,
         PostCategory categoryCode,
         String content,

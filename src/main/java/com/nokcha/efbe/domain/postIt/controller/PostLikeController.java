@@ -17,27 +17,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "PostIt Like", description = "포스트잇 좋아요 API")
 @RestController
-@RequestMapping("/v1/post-it/{postId}/likes")
+@RequestMapping("/v1/post-it/{uuid}/likes")
 @RequiredArgsConstructor
 public class PostLikeController {
 
     private final PostLikeService postLikeService;
     private final SecurityUtil securityUtil;
 
-    @Operation(summary = "포스트잇 좋아요", description = "특정 포스트잇에 좋아요를 누릅니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
+    @Operation(summary = "포스트잇 좋아요", description = "uuid 식별자로 좋아요. 갱신된 likeCount/likedByMe 반환.")
     @PostMapping
-    public ResponseEntity<RspTemplate<PostLikeRspDto>> createLike(@PathVariable Long postId) {
+    public ResponseEntity<RspTemplate<PostLikeRspDto>> createLike(@PathVariable String uuid) {
         Long userId = securityUtil.getCurrentUserId();
-        PostLikeRspDto data = postLikeService.createLike(postId, userId);
+        PostLikeRspDto data = postLikeService.createLike(uuid, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "좋아요 성공", data));
     }
 
-    @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소합니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
+    @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소. 갱신된 likeCount/likedByMe 반환.")
     @DeleteMapping
-    public ResponseEntity<RspTemplate<PostLikeRspDto>> deleteLike(@PathVariable Long postId) {
+    public ResponseEntity<RspTemplate<PostLikeRspDto>> deleteLike(@PathVariable String uuid) {
         Long userId = securityUtil.getCurrentUserId();
-        PostLikeRspDto data = postLikeService.deleteLike(postId, userId);
+        PostLikeRspDto data = postLikeService.deleteLike(uuid, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "좋아요 취소 성공", data));
     }
 }

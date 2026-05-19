@@ -45,27 +45,27 @@ public class PostItController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 목록 조회 성공", data));
     }
 
-    @Operation(summary = "포스트잇 단건 상세", description = "포스트잇 단건을 상세 조회합니다. 비로그인도 호출 가능합니다.")
-    @GetMapping("/{postId}")
-    public ResponseEntity<RspTemplate<PostItRspDto>> getOnePostIt(@PathVariable Long postId) {
+    @Operation(summary = "포스트잇 단건 상세", description = "포스트잇 단건을 외부 식별자(uuid)로 상세 조회합니다. 비로그인도 호출 가능.")
+    @GetMapping("/{uuid}")
+    public ResponseEntity<RspTemplate<PostItRspDto>> getOnePostIt(@PathVariable String uuid) {
         Long viewerId = securityUtil.getCurrentUserIdOrNull();
-        PostItRspDto data = postItService.getOnePostIt(postId, viewerId);
+        PostItRspDto data = postItService.getOnePostIt(uuid, viewerId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 상세 조회 성공", data));
     }
 
-    @Operation(summary = "포스트잇 삭제", description = "본인 포스트잇을 Soft delete 합니다. 연결된 채팅방은 활성 상태로 유지되어 기존 메시지 송수신은 계속 가능하며, 진입 시 '원문이 삭제된 포스트잇입니다' 안내가 표시됩니다.")
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<RspTemplate<Void>> deletePostIt(@PathVariable Long postId) {
+    @Operation(summary = "포스트잇 삭제", description = "본인 포스트잇을 uuid 로 Soft delete. 연결된 채팅방은 활성 유지.")
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<RspTemplate<Void>> deletePostIt(@PathVariable String uuid) {
         Long userId = securityUtil.getCurrentUserId();
-        postItService.deletePostIt(postId, userId);
+        postItService.deletePostIt(uuid, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "포스트잇 삭제 성공"));
     }
 
-    @Operation(summary = "포스트잇 상단 고정", description = "POST_PIN 아이템을 소비해 본인 포스트잇을 일정 시간(마스터 기준) 동안 상단 고정합니다.")
-    @PostMapping("/{postId}/pin")
-    public ResponseEntity<RspTemplate<PostItRspDto>> activatePin(@PathVariable Long postId) {
+    @Operation(summary = "포스트잇 상단 고정", description = "POST_PIN 아이템을 소비해 본인 포스트잇(uuid)을 일정 시간 동안 상단 고정.")
+    @PostMapping("/{uuid}/pin")
+    public ResponseEntity<RspTemplate<PostItRspDto>> activatePin(@PathVariable String uuid) {
         Long userId = securityUtil.getCurrentUserId();
-        PostItRspDto data = postItService.activatePin(postId, userId);
+        PostItRspDto data = postItService.activatePin(uuid, userId);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "상단 고정 성공", data));
     }
 }

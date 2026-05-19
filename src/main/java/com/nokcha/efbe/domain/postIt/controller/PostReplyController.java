@@ -28,13 +28,13 @@ public class PostReplyController {
     private final PostChatService postChatService;
     private final SecurityUtil securityUtil;
 
-    @Operation(summary = "포스트잇 답장", description = "특정 포스트잇에 답장합니다. 첫 답장이면 채팅방이 lazy 생성되며, 이때 isAnonymous=true 면 그 방은 영원히 익명으로 유지됩니다.")
-    @PostMapping("/{postId}/replies")
+    @Operation(summary = "포스트잇 답장", description = "uuid 포스트잇에 답장. 첫 답장이면 채팅방 lazy 생성, isAnonymous=true 면 영원히 익명 유지.")
+    @PostMapping("/{uuid}/replies")
     public ResponseEntity<RspTemplate<PostChatMessageRspDto>> replyToPost(
-            @PathVariable Long postId,
+            @PathVariable String uuid,
             @Valid @RequestBody PostReplyReqDto req) {
         Long partnerId = securityUtil.getCurrentUserId();
-        PostChatMessageRspDto data = postChatService.replyToPost(postId, partnerId, req);
+        PostChatMessageRspDto data = postChatService.replyToPost(uuid, partnerId, req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new RspTemplate<>(HttpStatus.CREATED, "답장 성공", data));
     }

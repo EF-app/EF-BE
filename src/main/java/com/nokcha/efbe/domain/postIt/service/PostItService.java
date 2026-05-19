@@ -116,14 +116,14 @@ public class PostItService {
         return size;
     }
 
-    // 단건 상세 조회 — 본인이어도 익명 글은 userId/nickname/age/location 마스킹 (피드 정책과 일관)
+    // 단건 상세 조회 — 외부 노출 식별자(uuid) 기반. 본인이어도 익명 글은 userId/nickname/age/location 마스킹
     // viewerId == null 이면 likedByMe=false.
     @Transactional(readOnly = true)
-    public PostItRspDto getOnePostIt(Long postId, Long viewerId) {
-        PostIt post = postItRepository.findById(postId)
+    public PostItRspDto getOnePostIt(String uuid, Long viewerId) {
+        PostIt post = postItRepository.findByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
-        long likeCount = postLikeRepository.countByPostId(postId);
-        boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(postId, viewerId);
+        long likeCount = postLikeRepository.countByPostId(post.getId());
+        boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(post.getId(), viewerId);
         // anonymous 면 area lookup 생략 — DTO 가 어차피 null 처리.
         boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
         AreaPair area = anonymous || post.getUser() == null
@@ -134,8 +134,8 @@ public class PostItService {
 
     // Soft delete - 연결된 채팅방은 그대로 활성 유지 (기존 메시지 송수신 계속 가능, FE 가 진입 시 "원문이 삭제된 포스트잇입니다" 안내)
     @Transactional
-    public void deletePostIt(Long postId, Long userId) {
-        PostIt post = postItRepository.findById(postId)
+    public void deletePostIt(String uuid, Long userId) {
+        PostIt post = postItRepository.findByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
@@ -145,21 +145,20 @@ public class PostItService {
 
     // 상단 고정 활성화 - POST_PIN 아이템 1회 소비 선행, 지속 시간은 마스터의 effect_duration_min
     @Transactional
-    public PostItRspDto activatePin(Long postId, Long userId) {
-        PostIt post = postItRepository.findById(postId)
+    public PostItRspDto activatePin(String uuid, Long userId) {
+        PostIt post = postItRepository.findByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
         }
         // TODO(v1.2 별 차감): SUPER_LIKE / PRE_MESSAGE / PROFILE_BOOST / UNDO 등을 user_star_balance 에서 직접 차감하는 로직 추가 예정
-        // (이전 InventoryService.consumeItemByCode(POST_PIN) 호출 자리 — 상단 고정 활성화 로직은 그대로 유지)
         int minutes = itemCatalogRepository.findByItemCode(CodeItem.CODE_POST_PIN)
                 .map(item -> item.getEffectDurationMin() == null ? 0 : item.getEffectDurationMin())
                 .orElse(0);
         post.activatePin(LocalDateTime.now().plusMinutes(minutes));
         // owner 액션 응답 — userId/nickname 노출. 좋아요/area lookup.
-        long likeCount = postLikeRepository.countByPostId(postId);
-        boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+        long likeCount = postLikeRepository.countByPostId(post.getId());
+        boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(post.getId(), userId);
         boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
         AreaPair area = anonymous ? AreaPair.EMPTY : resolveArea(post.getUser().getAreaId());
         return PostItRspDto.fromOwnerView(post, likeCount, likedByMe, area.country, area.city);

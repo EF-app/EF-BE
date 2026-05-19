@@ -24,6 +24,9 @@ public class UserActivityReactedPostItRspDto {
     @Schema(description = "포스트잇 PK", example = "1")
     private Long id;
 
+    @Schema(description = "외부 노출 식별자")
+    private String uuid;
+
     @Schema(description = "작성자 user_id — 익명 글이면 null", example = "10")
     private Long userId;
 
@@ -95,6 +98,7 @@ public class UserActivityReactedPostItRspDto {
 
         return UserActivityReactedPostItRspDto.builder()
                 .id(r.id())
+                .uuid(r.uuid())
                 .userId(anonymous ? null : r.userId())
                 .nickname(anonymous ? ANONYMOUS_NICKNAME : (r.nickname() == null ? ANONYMOUS_NICKNAME : r.nickname()))
                 .age(anonymous ? null : r.age())
