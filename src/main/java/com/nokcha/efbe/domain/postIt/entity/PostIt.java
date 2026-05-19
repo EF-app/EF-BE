@@ -133,6 +133,17 @@ public class PostIt extends BaseEntity {
         this.isDeleted = Boolean.TRUE;
     }
 
+    // 어드민 강제 숨김 — increaseReportAndHideIfThreshold 와 달리 신고 카운트 변경 없음
+    public void hideByAdmin() {
+        this.isHidden = Boolean.TRUE;
+    }
+
+    // 어드민 숨김 해제 — 신고 누적 카운트도 0 리셋 (FE 모달 명시: "해제 시 report_count 0")
+    public void restoreByAdmin() {
+        this.isHidden = Boolean.FALSE;
+        this.reportCount = 0;
+    }
+
     // 본문 표시 정책 적용 (삭제/숨김 우선 치환)
     public String resolveDisplayContent() {
         if (Boolean.TRUE.equals(this.isHidden)) return HIDDEN_POST_TEXT;
