@@ -74,7 +74,6 @@ public class PostItService {
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(hours);
 
         PostIt post = PostIt.builder()
-                .uuid(java.util.UUID.randomUUID().toString())
                 .user(user)
                 .categoryCode(categoryCode)
                 .content(req.getContent())
@@ -116,11 +115,11 @@ public class PostItService {
         return size;
     }
 
-    // 단건 상세 조회 — 외부 노출 식별자(uuid) 기반. 본인이어도 익명 글은 userId/nickname/age/location 마스킹
+    // 단건 상세 조회 — id 기반. 본인이어도 익명 글은 userId/nickname/age/location 마스킹
     // viewerId == null 이면 likedByMe=false.
     @Transactional(readOnly = true)
-    public PostItRspDto getOnePostIt(String uuid, Long viewerId) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public PostItRspDto getOnePostIt(Long postId, Long viewerId) {
+        PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         long likeCount = postLikeRepository.countByPostId(post.getId());
         boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(post.getId(), viewerId);
@@ -134,8 +133,8 @@ public class PostItService {
 
     // Soft delete - 연결된 채팅방은 그대로 활성 유지 (기존 메시지 송수신 계속 가능, FE 가 진입 시 "원문이 삭제된 포스트잇입니다" 안내)
     @Transactional
-    public void deletePostIt(String uuid, Long userId) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public void deletePostIt(Long postId, Long userId) {
+        PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
@@ -145,8 +144,8 @@ public class PostItService {
 
     // 상단 고정 활성화 - POST_PIN 아이템 1회 소비 선행, 지속 시간은 마스터의 effect_duration_min
     @Transactional
-    public PostItRspDto activatePin(String uuid, Long userId) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public PostItRspDto activatePin(Long postId, Long userId) {
+        PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);

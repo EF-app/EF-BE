@@ -28,7 +28,6 @@ public class PostItRspDto {
     public static final String ANONYMOUS_NICKNAME = "익명";
 
     private Long id;
-    private String uuid;         // 외부 노출용 식별자 (path 식별자도 uuid 기반으로 전환됨)
     private Long userId;         // 익명이면 null (단 fromOwnerView 경로는 노출)
     private String nickname;     // 익명이면 "익명", 일반 글은 작성자 nickname
     private Integer age;         // 익명이면 null. 일반 글은 users.age (한국 나이).
@@ -59,7 +58,6 @@ public class PostItRspDto {
         boolean owner = viewerId != null && authorId != null && viewerId.equals(authorId);
         return PostItRspDto.builder()
                 .id(p.getId())
-                .uuid(p.getUuid())
                 .userId(anonymous ? null : authorId)
                 .nickname(resolveNickname(anonymous, authorNickname))
                 .age(anonymous ? null : authorAge)
@@ -96,7 +94,6 @@ public class PostItRspDto {
         boolean owner = viewerId != null && r.userId() != null && viewerId.equals(r.userId());
         return PostItRspDto.builder()
                 .id(r.id())
-                .uuid(r.uuid())
                 .userId(anonymous ? null : r.userId())
                 .nickname(resolveNickname(anonymous, r.nickname()))
                 .age(anonymous ? null : r.age())
@@ -129,7 +126,6 @@ public class PostItRspDto {
         Integer authorAge = p.getUser() == null ? null : p.getUser().getAge();
         return PostItRspDto.builder()
                 .id(p.getId())
-                .uuid(p.getUuid())
                 .userId(authorId)
                 .nickname(authorNickname == null ? ANONYMOUS_NICKNAME : authorNickname)
                 .age(anonymous ? null : authorAge)

@@ -46,27 +46,27 @@ public class AdminPostItController {
     }
 
     @Operation(summary = "포스트잇 단건 상세",
-            description = "uuid 기준 단건. 모든 상태(숨김/삭제 포함) 노출. 본문은 치환 없이 원본.")
-    @GetMapping("/{uuid}")
-    public RspTemplate<AdminPostItRspDto> getPostIt(@PathVariable String uuid) {
+            description = "id 기준 단건. 모든 상태(숨김/삭제 포함) 노출. 본문은 치환 없이 원본.")
+    @GetMapping("/{id}")
+    public RspTemplate<AdminPostItRspDto> getPostIt(@PathVariable Long id) {
         return new RspTemplate<>(HttpStatus.OK, "포스트잇 상세를 조회했습니다.",
-                adminPostItService.getPostIt(uuid));
+                adminPostItService.getPostIt(id));
     }
 
     @Operation(summary = "포스트잇 숨김 처리",
             description = "is_hidden = true. 이미 삭제된 글은 거부.")
-    @PostMapping("/{uuid}/hide")
-    public RspTemplate<AdminPostItRspDto> hide(@PathVariable String uuid,
+    @PostMapping("/{id}/hide")
+    public RspTemplate<AdminPostItRspDto> hide(@PathVariable Long id,
                                                 @RequestBody(required = false) AdminPostItHideReqDto req) {
         return new RspTemplate<>(HttpStatus.OK, "포스트잇이 숨김 처리되었습니다.",
-                adminPostItService.hide(uuid, req));
+                adminPostItService.hide(id, req));
     }
 
     @Operation(summary = "포스트잇 숨김 해제",
             description = "is_hidden = false + report_count = 0 리셋. is_hidden=true 인 글만 가능.")
-    @PostMapping("/{uuid}/restore")
-    public RspTemplate<AdminPostItRspDto> restore(@PathVariable String uuid) {
+    @PostMapping("/{id}/restore")
+    public RspTemplate<AdminPostItRspDto> restore(@PathVariable Long id) {
         return new RspTemplate<>(HttpStatus.OK, "포스트잇 숨김이 해제되었습니다.",
-                adminPostItService.restore(uuid));
+                adminPostItService.restore(id));
     }
 }

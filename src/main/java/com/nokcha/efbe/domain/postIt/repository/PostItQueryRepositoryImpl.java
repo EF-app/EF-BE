@@ -63,7 +63,6 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
         return query
                 .select(Projections.constructor(PostItRow.class,
                         p.id,
-                        p.uuid,
                         p.user.id,
                         u.nickname,
                         u.age,
@@ -136,7 +135,6 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
         return query
                 .select(Projections.constructor(UserActivityPostItRow.class,
                         p.id,
-                        p.uuid,
                         p.user.id,
                         p.categoryCode,
                         p.content,
@@ -210,7 +208,6 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
         return query
                 .select(Projections.constructor(UserActivityReactedPostItRow.class,
                         p.id,
-                        p.uuid,
                         p.user.id,
                         u.nickname,
                         u.age,
@@ -280,7 +277,6 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
         List<AdminPostItRow> content = query
                 .select(Projections.constructor(AdminPostItRow.class,
                         p.id,
-                        p.uuid,
                         p.user.id,
                         u.uuid,
                         u.nickname,

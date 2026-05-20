@@ -39,18 +39,18 @@ public class AdminPostItService {
                 .map(AdminPostItRspDto::from);
     }
 
-    // 상세 — uuid 단건. 모든 상태 노출, 본문 치환 없이 원본.
+    // 상세 — id 단건. 모든 상태 노출, 본문 치환 없이 원본.
     @Transactional(readOnly = true)
-    public AdminPostItRspDto getPostIt(String uuid) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public AdminPostItRspDto getPostIt(Long id) {
+        PostIt post = postItRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         return buildEntityDto(post);
     }
 
     // 숨김 처리 — 이미 삭제된 글은 거부, 이미 숨김 상태면 멱등(현재 값 그대로 반환).
     @Transactional
-    public AdminPostItRspDto hide(String uuid, AdminPostItHideReqDto req) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public AdminPostItRspDto hide(Long id, AdminPostItHideReqDto req) {
+        PostIt post = postItRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (Boolean.TRUE.equals(post.getIsDeleted())) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
@@ -59,21 +59,21 @@ public class AdminPostItService {
             post.hideByAdmin();
         }
         String reason = req == null ? null : req.getReason();
-        log.info("[AdminPostIt] hide post uuid={} reason={}", uuid, reason);
+        log.info("[AdminPostIt] hide post id={} reason={}", id, reason);
         // TODO(audit-log): audit_log 테이블 신설 시 reason 영구 기록
         return buildEntityDto(post);
     }
 
     // 숨김 해제 — isHidden=true 인 글만. 성공 시 is_hidden=false + report_count=0 리셋.
     @Transactional
-    public AdminPostItRspDto restore(String uuid) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public AdminPostItRspDto restore(Long id) {
+        PostIt post = postItRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (!Boolean.TRUE.equals(post.getIsHidden())) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         post.restoreByAdmin();
-        log.info("[AdminPostIt] restore post uuid={}", uuid);
+        log.info("[AdminPostIt] restore post id={}", id);
         return buildEntityDto(post);
     }
 

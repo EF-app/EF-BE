@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "post_it",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_post_uuid", columnNames = "uuid")},
         indexes = {
                 @Index(name = "idx_post_active_feed", columnList = "is_hidden, is_deleted, create_time DESC"),
                 @Index(name = "idx_post_pinned", columnList = "is_hidden, is_deleted, pinned_until DESC"),
@@ -39,10 +38,6 @@ public class PostIt extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    // [v1.6] 외부 API path 용 UUID
-    @Column(name = "uuid", nullable = false, length = 36)
-    private String uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_post_user"))
@@ -82,9 +77,8 @@ public class PostIt extends BaseEntity {
     private Boolean isDeleted = Boolean.FALSE;
 
     @Builder
-    private PostIt(String uuid, User user, PostCategory categoryCode, String content,
+    private PostIt(User user, PostCategory categoryCode, String content,
                    PostItColor color, Boolean isAnonymous, LocalDateTime expiresAt) {
-        this.uuid = uuid;
         this.user = user;
         this.categoryCode = categoryCode;
         this.content = content;

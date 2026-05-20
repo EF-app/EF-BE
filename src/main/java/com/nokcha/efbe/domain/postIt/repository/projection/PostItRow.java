@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 // likeCount/likedByMe 는 피드 쿼리에서 집계·서브쿼리로 산출
 public record PostItRow(
         Long id,
-        String uuid,
         Long userId,
         String nickname,
         Integer age,

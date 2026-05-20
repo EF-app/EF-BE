@@ -10,15 +10,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 // 포스트잇 레포지토리
 // - 단순 CRUD/페이지네이션은 Spring Data JPA
 // - 동적 검색·커서·조인 프로젝션은 PostItQueryRepository (Querydsl) 로 위임
 public interface PostItRepository extends JpaRepository<PostIt, Long>, PostItQueryRepository {
-
-    // 외부 노출 path 용 UUID 단건 조회 (어드민 상세/숨김/해제 등)
-    Optional<PostIt> findByUuid(String uuid);
 
     // 활성 포스트잇 피드 (숨김/삭제/만료 제외, 상단고정 우선, 최신순)
     @Query("select p from PostIt p " +

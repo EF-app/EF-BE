@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 // 익명 마스킹 없음 — 어드민용이라 작성자 정보 원본 그대로 운반.
 public record AdminPostItRow(
         Long id,
-        String postUuid,
         Long userId,
         String userUuid,
         String userNickname,

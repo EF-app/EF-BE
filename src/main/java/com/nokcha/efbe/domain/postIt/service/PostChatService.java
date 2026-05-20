@@ -43,8 +43,8 @@ public class PostChatService {
     // 무료 한도: 답장 5회/일 (POST_REPLY) — partner 기준. user_daily_usage 카운터 기반.
     // 동일 방에 추가 메시지 보내는 건 한도 미차감 (consume 은 첫 답장 분기 안에서만).
     @Transactional
-    public PostChatMessageRspDto replyToPost(String uuid, Long partnerId, PostReplyReqDto req) {
-        PostIt post = postItRepository.findByUuid(uuid)
+    public PostChatMessageRspDto replyToPost(Long postId, Long partnerId, PostReplyReqDto req) {
+        PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
         if (Boolean.TRUE.equals(post.getIsDeleted())) {
             throw new BusinessException(ErrorCode.NOT_FOUND_POST);

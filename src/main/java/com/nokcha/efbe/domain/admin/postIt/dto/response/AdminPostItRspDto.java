@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 public class AdminPostItRspDto {
 
     private Long id;
-    private String uuid;
     private Long userId;
     private String userUuid;
     private String userNickname;
@@ -42,7 +41,6 @@ public class AdminPostItRspDto {
     public static AdminPostItRspDto from(AdminPostItRow r) {
         return AdminPostItRspDto.builder()
                 .id(r.id())
-                .uuid(r.postUuid())
                 .userId(r.userId())
                 .userUuid(r.userUuid())
                 .userNickname(r.userNickname())
@@ -69,7 +67,6 @@ public class AdminPostItRspDto {
         User user = p.getUser();
         return AdminPostItRspDto.builder()
                 .id(p.getId())
-                .uuid(p.getUuid())
                 .userId(user == null ? null : user.getId())
                 .userUuid(user == null ? null : user.getUuid())
                 .userNickname(user == null ? null : user.getNickname())
