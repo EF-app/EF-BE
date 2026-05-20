@@ -1,0 +1,263 @@
+package com.nokcha.efbe.domain.admin.user.service;
+
+import com.nokcha.efbe.common.exception.BusinessException;
+import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserDetailRspDto;
+import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserProfileRspDto;
+import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserSummaryRspDto;
+import com.nokcha.efbe.domain.area.entity.CodeArea;
+import com.nokcha.efbe.domain.area.repository.AreaRepository;
+import com.nokcha.efbe.domain.log.entity.UserLoginLog;
+import com.nokcha.efbe.domain.log.repository.UserLoginLogRepository;
+import com.nokcha.efbe.domain.payment.entity.UserStarBalance;
+import com.nokcha.efbe.domain.payment.entity.UserSubscription;
+import com.nokcha.efbe.domain.payment.repository.PaymentLogRepository;
+import com.nokcha.efbe.domain.payment.repository.UserStarBalanceRepository;
+import com.nokcha.efbe.domain.payment.repository.UserSubscriptionRepository;
+import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
+import com.nokcha.efbe.domain.profile.entity.CodePersonal;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
+import com.nokcha.efbe.domain.profile.entity.UserCustomKeyword;
+import com.nokcha.efbe.domain.profile.entity.UserKeyword;
+import com.nokcha.efbe.domain.profile.entity.UserPersonal;
+import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
+import com.nokcha.efbe.domain.profile.entity.UserProfile;
+import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
+import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
+import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
+import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
+import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
+import com.nokcha.efbe.domain.user.entity.BanStatus;
+import com.nokcha.efbe.domain.user.entity.User;
+import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
+import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
+import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
+import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
+import com.nokcha.efbe.domain.user.repository.UserRepository;
+import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+// 어드민 유저 관리 — 목록 / 단건 상세.
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AdminUserService {
+
+    private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
+    private final ProfileImageRepository profileImageRepository;
+    private final UserWithdrawalRepository userWithdrawalRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserStarBalanceRepository userStarBalanceRepository;
+    private final PaymentLogRepository paymentLogRepository;
+    private final UserLoginLogRepository userLoginLogRepository;
+    private final AreaRepository areaRepository;
+    private final UserKeywordRepository userKeywordRepository;
+    private final UserCustomKeywordRepository userCustomKeywordRepository;
+    private final CodeKeywordRepository codeKeywordRepository;
+    private final UserPersonalRepository userPersonalRepository;
+    private final CodePersonalRepository codePersonalRepository;
+
+    // code_keyword.big_category → FE ProfileKeywordSet 그룹 키
+    private static final Map<String, String> KEYWORD_GROUP = Map.of(
+            "라이프스타일", "lifestyle",
+            "취미", "hobby",
+            "외부 여가 활동", "outdoor",
+            "자기계발", "self_improve",
+            "음식", "food",
+            "운동", "sports",
+            "음악", "music",
+            "게임", "game"
+    );
+
+    // 목록 — keyword(닉네임/로그인ID/UUID LIKE) + status(FE UserStatus) 동적 필터.
+    @Transactional(readOnly = true)
+    public Page<AdminUserSummaryRspDto> getUsers(String keyword, String status, Pageable pageable) {
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        Page<User> page = userRepository.searchForAdmin(kw, resolveStatuses(status), pageable);
+
+        // 지역명 배치 조회 — areaId N개를 한 번에 (N+1 방지)
+        Map<Long, CodeArea> areaMap = loadAreaMap(page.getContent().stream()
+                .map(User::getAreaId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
+
+        return page.map(u -> AdminUserSummaryRspDto.from(u, composeArea(u.getAreaId(), areaMap)));
+    }
+
+    // 단건 상세 — 기본정보 + 지역 + 프로필(키워드/성향 포함) + 결제 집계 + 접속 이력.
+    @Transactional(readOnly = true)
+    public AdminUserDetailRspDto getUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
+
+        String area = user.getAreaId() == null ? null
+                : composeLocation(areaRepository.findById(user.getAreaId()).orElse(null));
+
+        UserProfile profile = profileRepository.findByUserId(id).orElse(null);
+        AdminUserProfileRspDto profileDto = buildProfile(id, profile);
+
+        List<UserProfileImage> photos = profileImageRepository.findByUserIdOrderBySortOrderAsc(id);
+        List<UserLoginLog> loginLogs = userLoginLogRepository.findTop20ByUserIdOrderByLoginAtDesc(id);
+        LocalDateTime withdrawAt = userWithdrawalRepository.findByUserId(id)
+                .map(UserWithdrawal::getRequestedAt)
+                .orElse(null);
+
+        BigDecimal paymentTotal = paymentLogRepository.sumSuccessAmountByUserId(id);
+
+        UserSubscription sub = userSubscriptionRepository.findByUserIdAndIsActiveTrue(id).orElse(null);
+        LocalDateTime premiumUntil = sub == null ? null : sub.getEndDate();
+        boolean premium = premiumUntil != null && premiumUntil.isAfter(LocalDateTime.now());
+
+        Integer inkBalance = userStarBalanceRepository.findById(id)
+                .map(UserStarBalance::getBalance)
+                .orElse(0);
+
+        return AdminUserDetailRspDto.of(user, area, profileDto, photos, loginLogs,
+                withdrawAt, paymentTotal, premium, premiumUntil, inkBalance);
+    }
+
+    // ── 프로필 조립 — user_profile + user_keyword + user_custom_keyword + user_personal ──
+    private AdminUserProfileRspDto buildProfile(Long userId, UserProfile profile) {
+        if (profile == null) return null;
+
+        // 관심사 키워드 (user_keyword → code_keyword, big_category 그룹핑)
+        List<UserKeyword> userKeywords = userKeywordRepository.findByUserId(userId);
+        Map<Long, CodeKeyword> kwCodes = codeKeywordRepository.findAllById(
+                        userKeywords.stream().map(UserKeyword::getKeywordId).distinct().toList())
+                .stream().collect(Collectors.toMap(CodeKeyword::getId, Function.identity()));
+        Map<String, List<String>> keywords = new LinkedHashMap<>();
+        for (UserKeyword uk : userKeywords) {
+            CodeKeyword ck = kwCodes.get(uk.getKeywordId());
+            if (ck == null) continue;
+            String groupKey = KEYWORD_GROUP.get(ck.getBigCategory());
+            if (groupKey == null) continue;
+            keywords.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(ck.getSmallCategory());
+        }
+
+        // 나만의 태그 (user_custom_keyword)
+        List<String> myTags = userCustomKeywordRepository.findByUserId(userId).stream()
+                .map(UserCustomKeyword::getKeyword)
+                .toList();
+
+        // 성향(SELF) / 이상형(IDEAL) (user_personal → code_personal, big_category 그룹핑)
+        List<UserPersonal> personals = userPersonalRepository.findByUserId(userId);
+        Map<Long, CodePersonal> pCodes = codePersonalRepository.findAllById(
+                        personals.stream().map(UserPersonal::getPersonalId).distinct().toList())
+                .stream().collect(Collectors.toMap(CodePersonal::getId, Function.identity()));
+        Map<String, List<String>> self = groupPersonal(personals, pCodes, UserPersonalType.SELF);
+        Map<String, List<String>> ideal = groupPersonal(personals, pCodes, UserPersonalType.IDEAL);
+
+        return AdminUserProfileRspDto.builder()
+                .mbti(profile.getMbti() == null ? null : profile.getMbti().name())
+                .matchPurpose(profile.getPurpose() == null ? null : profile.getPurpose().name())
+                .interestTarget(toInterestTarget(profile.getPurpose()))
+                .job(profile.getJob() == null ? null : profile.getJob().name())
+                .bioMessage(profile.getMessage())
+                .idealPoints(profile.getIdealPointTypes() == null ? List.of()
+                        : profile.getIdealPointTypes().stream().map(IdealPointType::name).toList())
+                .keywords(keywords)
+                .myTags(myTags)
+                .drinking(first(self.get("음주")))
+                .drinkTypes(self.getOrDefault("선호 주종", List.of()))
+                .smoking(first(self.get("흡연")))
+                .smokeTypes(self.getOrDefault("흡연 종류", List.of()))
+                .tattoo(first(self.get("타투유무")))
+                .hairStyle(first(self.get("머리")))
+                .bodyType(first(self.get("체형")))
+                .height(first(self.get("키")))
+                .vibe(first(self.get("성향")))
+                .dailyType(first(self.get("일상 유형")))
+                .religion(first(self.get("종교")))
+                .friendsAround(first(self.get("이쪽 지인")))
+                .comingOut(first(self.get("커밍아웃 정도")))
+                .fashion(first(self.get("패션 스타일")))
+                .grooming(first(self.get("꾸미는 스타일")))
+                .idealHair(first(ideal.get("머리")))
+                .idealBody(first(ideal.get("체형")))
+                .idealHeight(first(ideal.get("키")))
+                .idealVibe(first(ideal.get("성향")))
+                .build();
+    }
+
+    // user_personal 을 type 별로 big_category → small_category 목록으로 그룹핑.
+    private Map<String, List<String>> groupPersonal(List<UserPersonal> personals,
+                                                    Map<Long, CodePersonal> codeMap,
+                                                    UserPersonalType type) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (UserPersonal up : personals) {
+            if (up.getType() != type) continue;
+            CodePersonal cp = codeMap.get(up.getPersonalId());
+            if (cp == null) continue;
+            result.computeIfAbsent(cp.getBigCategory(), k -> new ArrayList<>()).add(cp.getSmallCategory());
+        }
+        return result;
+    }
+
+    private static String first(List<String> list) {
+        return (list == null || list.isEmpty()) ? null : list.get(0);
+    }
+
+    // BE Purpose → FE InterestTarget
+    private static String toInterestTarget(Purpose purpose) {
+        if (purpose == null) return null;
+        return switch (purpose) {
+            case LOVE -> "LOVER";
+            case FRIEND -> "ACQUAINTANCE";
+            case MIXED -> "ALL";
+        };
+    }
+
+    // FE UserStatus → BE BanStatus 목록. 필터 없으면 전체, WARNING 등 미지원 값은 빈 목록(빈 결과).
+    private List<BanStatus> resolveStatuses(String status) {
+        if (status == null || status.isBlank()) {
+            return List.of(BanStatus.values());
+        }
+        return switch (status) {
+            case "ACTIVE" -> List.of(BanStatus.NONE);
+            case "TEMP_SUSPENDED" -> List.of(BanStatus.SEVEN_DAYS, BanStatus.THIRTY_DAYS);
+            case "PERMANENTLY_SUSPENDED" -> List.of(BanStatus.FOREVER);
+            default -> List.of();
+        };
+    }
+
+    private Map<Long, CodeArea> loadAreaMap(List<Long> areaIds) {
+        if (areaIds.isEmpty()) return Map.of();
+        return areaRepository.findAllById(areaIds).stream()
+                .collect(Collectors.toMap(CodeArea::getId, Function.identity()));
+    }
+
+    private String composeArea(Long areaId, Map<Long, CodeArea> areaMap) {
+        if (areaId == null) return null;
+        return composeLocation(areaMap.get(areaId));
+    }
+
+    // CodeArea(country, city) → "서울특별시 강남구". 둘 중 하나만 있으면 그 값, 없으면 null.
+    private static String composeLocation(CodeArea area) {
+        if (area == null) return null;
+        String country = area.getCountry();
+        String city = area.getCity();
+        boolean hasCountry = country != null && !country.isBlank();
+        boolean hasCity = city != null && !city.isBlank();
+        if (!hasCountry && !hasCity) return null;
+        if (hasCountry && hasCity) return country + " " + city;
+        return hasCountry ? country : city;
+    }
+}
