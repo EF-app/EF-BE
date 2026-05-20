@@ -25,13 +25,12 @@ public class BalVoteService {
     private final BalVoteRepository balVoteRepository;
     private final UserRepository userRepository;
 
-    // 신규 투표 처리 - gameUuid 로 게임 행 락 후 카운트 + 투표 row 동시 처리
+    // 신규 투표 처리 - id 로 게임 행 락 후 카운트 + 투표 row 동시 처리
     @Transactional
-    public BalVoteRspDto createVote(String gameUuid, Long userId, BalVoteChoice choice) {
-        BalGame game = balGameRepository.findByUuidForUpdate(gameUuid)
+    public BalVoteRspDto createVote(Long gameId, Long userId, BalVoteChoice choice) {
+        BalGame game = balGameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
         ensurePublished(game);
-        Long gameId = game.getId();
 
         if (balVoteRepository.existsByGameIdAndUserId(gameId, userId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_VOTE);
@@ -57,11 +56,10 @@ public class BalVoteService {
 
     // 투표 변경 처리 - 기존 차감 + 신규 가산을 단일 트랜잭션에서 원자 처리
     @Transactional
-    public BalVoteRspDto updateVote(String gameUuid, Long userId, BalVoteChoice newChoice) {
-        BalGame game = balGameRepository.findByUuidForUpdate(gameUuid)
+    public BalVoteRspDto updateVote(Long gameId, Long userId, BalVoteChoice newChoice) {
+        BalGame game = balGameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
         ensurePublished(game);
-        Long gameId = game.getId();
 
         BalVote existing = balVoteRepository.findByGameIdAndUserId(gameId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_VOTE));
@@ -88,10 +86,9 @@ public class BalVoteService {
 
     // 내 투표 조회
     @Transactional(readOnly = true)
-    public BalVoteRspDto getMyVote(String gameUuid, Long userId) {
-        BalGame game = balGameRepository.findByUuid(gameUuid)
+    public BalVoteRspDto getMyVote(Long gameId, Long userId) {
+        BalGame game = balGameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
-        Long gameId = game.getId();
         BalVote vote = balVoteRepository.findByGameIdAndUserId(gameId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_VOTE));
         int a = nz(game.getACount());

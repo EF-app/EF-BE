@@ -14,8 +14,7 @@ import java.time.LocalDateTime;
 public class AdminBalCommentRspDto {
 
     private Long id;
-    private String uuid;
-    private String parentId;
+    private Long parentId;
     private String content;
     private Long authorUserId;
     private String authorUserNickname;     // users.nickname (BE JOIN)
@@ -33,8 +32,7 @@ public class AdminBalCommentRspDto {
                                             BalVoteChoice voteChoice) {
         return AdminBalCommentRspDto.builder()
                 .id(c.getId())
-                .uuid(c.getUuid())
-                .parentId(c.getParent() == null ? null : c.getParent().getUuid())
+                .parentId(c.getParent() == null ? null : c.getParent().getId())
                 .content(c.getContent())
                 .authorUserId(c.getUser() == null ? null : c.getUser().getId())
                 .authorUserNickname(authorUserNickname)

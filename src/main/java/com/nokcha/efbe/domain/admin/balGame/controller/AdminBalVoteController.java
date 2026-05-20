@@ -29,13 +29,13 @@ public class AdminBalVoteController {
     @Operation(summary = "투표자 목록 조회",
             description = "한 게임의 개별 투표자 목록 (페이지네이션). choice 옵션 필터. " +
                     "정렬은 createTime DESC, id DESC 고정 (Repository Querydsl).")
-    @GetMapping("/{gameUuid}/votes")
+    @GetMapping("/{gameId}/votes")
     public RspTemplate<Page<AdminBalVoteRspDto>> getVotes(
-            @PathVariable String gameUuid,
+            @PathVariable Long gameId,
             @RequestParam(required = false) BalVoteChoice choice,
             @PageableDefault(size = 50) Pageable pageable
     ) {
         return new RspTemplate<>(HttpStatus.OK, "투표자 목록을 조회했습니다.",
-                adminBalVoteService.getVotes(gameUuid, choice, pageable));
+                adminBalVoteService.getVotes(gameId, choice, pageable));
     }
 }

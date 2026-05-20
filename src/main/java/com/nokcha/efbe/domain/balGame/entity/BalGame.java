@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "bal_game",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_game_uuid", columnNames = "uuid")},
         indexes = {
                 @Index(name = "idx_game_category", columnList = "category_code, status"),
                 @Index(name = "idx_game_status", columnList = "status"),
@@ -29,10 +28,6 @@ public class BalGame extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    // 외부 API path 용 UUID (순차 스캔 공격 방어)
-    @Column(name = "uuid", nullable = false, length = 36)
-    private String uuid;
 
     @Column(name = "option_a", nullable = false, length = 255)
     private String optionA;
@@ -87,12 +82,11 @@ public class BalGame extends BaseEntity {
     private User applicant;
 
     @Builder
-    private BalGame(String uuid, String optionA, String optionB, String optionADesc, String optionBDesc,
+    private BalGame(String optionA, String optionB, String optionADesc, String optionBDesc,
                     String optionAEmoji, String optionBEmoji,
                     String description, BalCategoryCode categoryCode,
                     BalGameStatus status, LocalDateTime scheduledAt, LocalDateTime scheduledEndAt,
                     User applicant) {
-        this.uuid = uuid;
         this.optionA = optionA;
         this.optionB = optionB;
         this.optionADesc = optionADesc;

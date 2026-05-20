@@ -18,18 +18,10 @@ import java.util.Optional;
 
 public interface BalGameRepository extends JpaRepository<BalGame, Long>, BalGameQueryRepository {
 
-    // 외부 노출 식별자 단건 조회 (user uuid)
-    Optional<BalGame> findByUuid(String uuid);
-
     // 단건 조회 (PESSIMISTIC_WRITE 락 - 카운트 동시성 보호용)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select g from BalGame g where g.id = :id")
     Optional<BalGame> findByIdForUpdate(@Param("id") Long id);
-
-    // uuid 기반 PESSIMISTIC_WRITE 락 (user 투표 처리에서 사용)
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select g from BalGame g where g.uuid = :uuid")
-    Optional<BalGame> findByUuidForUpdate(@Param("uuid") String uuid);
 
     // 상태별 최신순 페이징
     Page<BalGame> findByStatusOrderByCreateTimeDesc(BalGameStatus status, Pageable pageable);

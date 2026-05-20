@@ -6,12 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BalGameCommentRepository extends JpaRepository<BalGameComment, Long> {
-
-    // 외부 노출 식별자 단건 조회 (user 측 댓글 path 식별자)
-    Optional<BalGameComment> findByUuid(String uuid);
 
     // 메인홈/상세 노출용 최신 댓글 N개 — 특정 게임의 top-level (대댓글/숨김/삭제 제외)
     @Query("select c from BalGameComment c " +

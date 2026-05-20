@@ -28,12 +28,13 @@ public class AdminBalVoteService {
     private final AdminBalVoteQueryRepository adminBalVoteQueryRepository;
     private final BalGameRepository balGameRepository;
 
-    // 개별 투표자 목록 — gameUuid 기반
+    // 개별 투표자 목록 — id 기반
     @Transactional(readOnly = true)
-    public Page<AdminBalVoteRspDto> getVotes(String gameUuid, BalVoteChoice choice, Pageable pageable) {
-        BalGame game = balGameRepository.findByUuid(gameUuid)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
-        return adminBalVoteQueryRepository.findAdminVotes(game.getId(), choice, pageable)
+    public Page<AdminBalVoteRspDto> getVotes(Long gameId, BalVoteChoice choice, Pageable pageable) {
+        if (!balGameRepository.existsById(gameId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_GAME);
+        }
+        return adminBalVoteQueryRepository.findAdminVotes(gameId, choice, pageable)
                 .map(AdminBalVoteRspDto::from);
     }
 

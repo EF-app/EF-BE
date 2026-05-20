@@ -19,9 +19,6 @@ public class BalGameSummaryRspDto {
     @Schema(description = "게임 PK", example = "1")
     private Long id;
 
-    @Schema(description = "외부 노출 식별자")
-    private String uuid;
-
     @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
 
@@ -70,7 +67,6 @@ public class BalGameSummaryRspDto {
         int comments = g.getCommentCount() == null ? 0 : g.getCommentCount();
         return BalGameSummaryRspDto.builder()
                 .id(g.getId())
-                .uuid(g.getUuid())
                 .optionA(g.getOptionA())
                 .optionB(g.getOptionB())
                 .optionADesc(g.getOptionADesc())
@@ -95,7 +91,6 @@ public class BalGameSummaryRspDto {
         int comments = r.commentCount() == null ? 0 : r.commentCount();
         return BalGameSummaryRspDto.builder()
                 .id(r.id())
-                .uuid(r.uuid())
                 .optionA(r.optionA())
                 .optionB(r.optionB())
                 .optionAEmoji(r.optionAEmoji())

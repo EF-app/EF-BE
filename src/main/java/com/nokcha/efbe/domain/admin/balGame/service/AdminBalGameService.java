@@ -58,10 +58,10 @@ public class AdminBalGameService {
                 .map(AdminBalGameSummaryRspDto::from);
     }
 
-    // 단건 상세 — gameUuid 기반. status 차단 없이 모든 상태 노출. voteStats(비율 + 연령대/지역 분포)
+    // 단건 상세 — id 기반. status 차단 없이 모든 상태 노출. voteStats(비율 + 연령대/지역 분포)
     @Transactional(readOnly = true)
-    public AdminBalGameDetailRspDto getGame(String gameUuid) {
-        BalGame game = balGameRepository.findByUuid(gameUuid)
+    public AdminBalGameDetailRspDto getGame(Long gameId) {
+        BalGame game = balGameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
         AdminBalVoteStatsRspDto stats = adminBalVoteService.getStats(game.getId());
         return AdminBalGameDetailRspDto.from(game, stats);
@@ -99,7 +99,6 @@ public class AdminBalGameService {
         }
 
         BalGame saved = balGameRepository.save(BalGame.builder()
-                .uuid(UUID.randomUUID().toString())
                 .optionA(req.getOptionA())
                 .optionB(req.getOptionB())
                 .optionADesc(req.getOptionADesc())
@@ -140,8 +139,8 @@ public class AdminBalGameService {
     }
 
     @Transactional
-    public AdminBalGameDetailRspDto updateGame(String gameUuid, AdminBalGameUpdateReqDto req) {
-        BalGame game = balGameRepository.findByUuid(gameUuid)
+    public AdminBalGameDetailRspDto updateGame(Long gameId, AdminBalGameUpdateReqDto req) {
+        BalGame game = balGameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
 
         // 1) PUBLISHED / ARCHIVED 수정 거부 (status/일정만 허용)
@@ -262,10 +261,10 @@ public class AdminBalGameService {
 
     // 댓글 목록 - 숨김/삭제 모두 노출
     @Transactional(readOnly = true)
-    public Page<AdminBalCommentRspDto> getComments(String gameUuid, Pageable pageable) {
-        BalGame game = balGameRepository.findByUuid(gameUuid)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
-        Long gameId = game.getId();
+    public Page<AdminBalCommentRspDto> getComments(Long gameId, Pageable pageable) {
+        if (!balGameRepository.existsById(gameId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_GAME);
+        }
 
         Page<BalGameComment> page = balGameCommentRepository.findByGameId(gameId, pageable);
         if (page.isEmpty()) return page.map(c -> AdminBalCommentRspDto.of(c, null, null));

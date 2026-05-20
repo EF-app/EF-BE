@@ -19,9 +19,6 @@ public class AdminBalGameDetailRspDto {
     @Schema(description = "게임 PK", example = "1")
     private Long id;
 
-    @Schema(description = "외부 노출 식별자 (uuid) — admin API path 호출에 사용")
-    private String uuid;
-
     @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
 
@@ -94,7 +91,6 @@ public class AdminBalGameDetailRspDto {
         User applicant = g.getApplicant();
         return AdminBalGameDetailRspDto.builder()
                 .id(g.getId())
-                .uuid(g.getUuid())
                 .optionA(g.getOptionA())
                 .optionADesc(g.getOptionADesc())
                 .optionAEmoji(g.getOptionAEmoji())

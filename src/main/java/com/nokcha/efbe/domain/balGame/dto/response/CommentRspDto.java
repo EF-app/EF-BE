@@ -18,11 +18,8 @@ public class CommentRspDto {
     @Schema(description = "댓글 PK", example = "10")
     private Long id;
 
-    @Schema(description = "외부 노출 식별자")
-    private String uuid;
-
-    @Schema(description = "부모 댓글 uuid — 대댓글일 경우만 채워짐 (top-level 이면 null)")
-    private String parentId;
+    @Schema(description = "부모 댓글 ID — 대댓글일 경우만 채워짐 (top-level 이면 null)", example = "5")
+    private Long parentId;
 
     @Schema(description = "작성자 닉네임", example = "용감한 다람쥐")
     private String nickname;
@@ -57,8 +54,7 @@ public class CommentRspDto {
         boolean owned = c.getUser() != null && viewerId != null && viewerId.equals(c.getUser().getId());
         return CommentRspDto.builder()
                 .id(c.getId())
-                .uuid(c.getUuid())
-                .parentId(c.getParent() == null ? null : c.getParent().getUuid())
+                .parentId(c.getParent() == null ? null : c.getParent().getId())
                 .nickname(c.getNickname())
                 .content(c.resolveDisplayContent())
                 .deleted(Boolean.TRUE.equals(c.getIsDeleted()))

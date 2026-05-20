@@ -48,10 +48,10 @@ public class AdminBalGameController {
     }
 
     @Operation(summary = "게임 단건 상세", description = "status 모든 상태 노출.")
-    @GetMapping("/{gameUuid}")
-    public RspTemplate<AdminBalGameDetailRspDto> getGame(@PathVariable String gameUuid) {
+    @GetMapping("/{gameId}")
+    public RspTemplate<AdminBalGameDetailRspDto> getGame(@PathVariable Long gameId) {
         return new RspTemplate<>(HttpStatus.OK, "밸런스 게임 상세를 조회했습니다.",
-                adminBalGameService.getGame(gameUuid));
+                adminBalGameService.getGame(gameId));
     }
 
     @Operation(summary = "게임 직접 등록 (어드민)",
@@ -70,23 +70,23 @@ public class AdminBalGameController {
     @Operation(summary = "게임 부분 업데이트 (PATCH)",
             description = "상태 / 일정 / 내용 부분 변경." +
                     "일정 클리어는 clearScheduledAt / clearScheduledEndAt 플래그로 명시.")
-    @PatchMapping("/{gameUuid}")
+    @PatchMapping("/{gameId}")
     public RspTemplate<AdminBalGameDetailRspDto> updateGame(
-            @PathVariable String gameUuid,
+            @PathVariable Long gameId,
             @Valid @RequestBody AdminBalGameUpdateReqDto req
     ) {
         return new RspTemplate<>(HttpStatus.OK, "밸런스 게임이 수정되었습니다.",
-                adminBalGameService.updateGame(gameUuid, req));
+                adminBalGameService.updateGame(gameId, req));
     }
 
     @Operation(summary = "게임 댓글 목록",
             description = "한 게임의 모든 댓글 (숨김/삭제 포함)")
-    @GetMapping("/{gameUuid}/comments")
+    @GetMapping("/{gameId}/comments")
     public RspTemplate<Page<AdminBalCommentRspDto>> getComments(
-            @PathVariable String gameUuid,
+            @PathVariable Long gameId,
             @PageableDefault(size = 50, sort = "createTime", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         return new RspTemplate<>(HttpStatus.OK, "밸런스 게임 댓글을 조회했습니다.",
-                adminBalGameService.getComments(gameUuid, pageable));
+                adminBalGameService.getComments(gameId, pageable));
     }
 }
