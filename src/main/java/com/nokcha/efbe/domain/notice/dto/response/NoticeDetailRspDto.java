@@ -49,8 +49,8 @@ public class NoticeDetailRspDto {
     @Schema(description = "실제 발행 시각", example = "2026-05-08T18:00:00")
     private LocalDateTime publishedAt;
 
-    @Schema(description = "고정 공지 여부", example = "true")
-    private boolean isPinned;
+    @Schema(description = "고정 공지 순서. null 이면 일반 공지", example = "2")
+    private Integer sortOrder;
 
     public static NoticeDetailRspDto from(Notice notice, String authorNickname) {
         return NoticeDetailRspDto.builder()
@@ -65,7 +65,7 @@ public class NoticeDetailRspDto {
                 .status(notice.getStatus())
                 .scheduledAt(notice.getScheduledAt())
                 .publishedAt(notice.getPublishedAt())
-                .isPinned(notice.isPinned())
+                .sortOrder(notice.getSortOrder())
                 .build();
     }
 }

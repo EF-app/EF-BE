@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,17 +30,10 @@ public class NoticeService {
     // 공지사항 목록 조회
     @Transactional(readOnly = true)
     public NoticePageRspDto getNotices(int page, NoticeCategory category) {
-        Pageable pageable = PageRequest.of(
-                page,
-                NOTICE_PAGE_SIZE,
-                Sort.by(
-                        Sort.Order.desc("isPinned"),
-                        Sort.Order.desc("createTime")
-                )
-        );
+        Pageable pageable = PageRequest.of(page, NOTICE_PAGE_SIZE);
         Page<Notice> noticePage = category == null
-                ? noticeRepository.findAllByStatus(NoticeStatus.PUBLISHED, pageable)
-                : noticeRepository.findAllByStatusAndCategory(NoticeStatus.PUBLISHED, category, pageable);
+                ? noticeRepository.findPublicNoticesByStatus(NoticeStatus.PUBLISHED, pageable)
+                : noticeRepository.findPublicNoticesByStatusAndCategory(NoticeStatus.PUBLISHED, category, pageable);
 
         return NoticePageRspDto.builder()
                 .notices(noticePage.getContent().stream()

@@ -40,8 +40,8 @@ public class NoticeSummaryRspDto {
     @Schema(description = "공지사항 상태", example = "PUBLISHED")
     private NoticeStatus status;
 
-    @Schema(description = "고정 공지 여부", example = "true")
-    private boolean isPinned;
+    @Schema(description = "고정 공지 순서. null 이면 일반 공지", example = "2")
+    private Integer sortOrder;
 
     public static NoticeSummaryRspDto from(Notice notice, String authorNickname) {
         return NoticeSummaryRspDto.builder()
@@ -53,7 +53,7 @@ public class NoticeSummaryRspDto {
                 .createTime(notice.getCreateTime())
                 .viewCount(notice.getViewCount())
                 .status(notice.getStatus())
-                .isPinned(notice.isPinned())
+                .sortOrder(notice.getSortOrder())
                 .build();
     }
 }

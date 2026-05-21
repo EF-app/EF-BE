@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,10 @@ public class AdminNoticeService {
     public NoticeDetailRspDto createNotice(NoticeReqDto reqDto) {
         NoticeCategory category = resolveCategory(reqDto);
         validateOriginalNotice(reqDto, category);
+        Integer sortOrder = normalizeSortOrder(reqDto.getSortOrder());
+
+        // 고정 항목인 경우 기존 고정 항목 +1
+        if (sortOrder != null) noticeRepository.incrementSortOrdersFrom(sortOrder);
 
         Notice notice = noticeRepository.save(Notice.builder()
                 .title(reqDto.getTitle())
@@ -47,7 +52,7 @@ public class AdminNoticeService {
                 .scheduledAt(resolveScheduledAt(reqDto))
                 .publishedAt(resolvePublishedAt(reqDto))
                 .originalNoticeId(resolveOriginalNoticeId(reqDto, category))
-                .isPinned(resolvePinned(reqDto))
+                .sortOrder(sortOrder)
                 .build());
 
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
@@ -66,8 +71,10 @@ public class AdminNoticeService {
         NoticeStatus status = resolveStatus(reqDto);
         LocalDateTime scheduledAt = resolveScheduledAt(reqDto);
         validateScheduledAt(status, scheduledAt);
+        Integer newSortOrder = normalizeSortOrderForUpdate(notice, reqDto.getSortOrder());
+        adjustSortOrder(notice, newSortOrder);
 
-        notice.update(reqDto.getTitle(), reqDto.getContent(), resolveCategory(reqDto), status, scheduledAt, resolvePinned(reqDto));
+        notice.update(reqDto.getTitle(), reqDto.getContent(), resolveCategory(reqDto), status, scheduledAt, newSortOrder);
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
     }
 
@@ -147,8 +154,49 @@ public class AdminNoticeService {
         return resolveStatus(reqDto) == NoticeStatus.PUBLISHED ? LocalDateTime.now() : null;
     }
 
-    private boolean resolvePinned(NoticeReqDto reqDto) {
-        return Boolean.TRUE.equals(reqDto.getIsPinned());
+    private Integer normalizeSortOrder(Integer requestedSortOrder) {
+        if (requestedSortOrder == null) return null;
+
+        int maxSortOrder = noticeRepository.findMaxSortOrder();
+        if (requestedSortOrder <= 1) return 1;
+        if (requestedSortOrder > maxSortOrder + 1) return maxSortOrder + 1;
+
+        return requestedSortOrder;
+    }
+
+    private Integer normalizeSortOrderForUpdate(Notice notice, Integer requestedSortOrder) {
+        if (requestedSortOrder == null) return null;
+
+        int maxSortOrder = noticeRepository.findMaxSortOrder();
+        if (notice.getSortOrder() != null) maxSortOrder--;
+
+        if (requestedSortOrder <= 1) return 1;
+        if (requestedSortOrder > maxSortOrder + 1) return maxSortOrder + 1;
+
+        return requestedSortOrder;
+    }
+
+    private void adjustSortOrder(Notice notice, Integer newSortOrder) {
+        Integer currentSortOrder = notice.getSortOrder();
+
+        if (Objects.equals(currentSortOrder, newSortOrder)) return;
+
+        if (currentSortOrder == null) {
+            if (newSortOrder != null) noticeRepository.incrementSortOrdersFrom(newSortOrder);
+            return;
+        }
+
+        if (newSortOrder == null) {
+            noticeRepository.decrementSortOrdersAfter(currentSortOrder);
+            return;
+        }
+
+        if (newSortOrder < currentSortOrder) {
+            noticeRepository.incrementSortOrdersBetween(newSortOrder, currentSortOrder);
+            return;
+        }
+
+        noticeRepository.decrementSortOrdersBetween(currentSortOrder, newSortOrder);
     }
 
     private void validateScheduledAt(NoticeStatus status, LocalDateTime scheduledAt) {
