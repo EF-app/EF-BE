@@ -94,4 +94,30 @@ public class Feedback extends BaseEntity {
         this.networkType = networkType;
         this.status = status == null ? FeedbackStatus.RECEIVED : status;
     }
+
+    // 어드민 처리 — 상태/답변/내부메모/담당자 갱신
+    public void applyAdminProcess(FeedbackStatus status, String adminReply,
+                                  String adminInternalMemo, AdminAccount handler) {
+        if (status != null) {
+            this.status = status;
+        }
+        if (adminReply != null) {
+            // 빈/공백 답변은 null 로 정규화해 저장 (빈 문자열 대신 null).
+            // FE 는 비우는 수정도 보내려고 빈 문자열을 전송하므로 여기서 null 로 변환한다.
+            String normalizedReply = adminReply.isBlank() ? null : adminReply;
+            // 답변 내용이 실제로 바뀔 때만 답변 시각 갱신 (비우면 시각도 제거)
+            boolean changed = !java.util.Objects.equals(this.adminReply, normalizedReply);
+            this.adminReply = normalizedReply;
+            if (changed) {
+                this.adminReplyAt = normalizedReply == null ? null : LocalDateTime.now();
+            }
+        }
+        if (adminInternalMemo != null) {
+            // 내부 메모도 동일하게 빈/공백은 null 로 정규화
+            this.adminInternalMemo = adminInternalMemo.isBlank() ? null : adminInternalMemo;
+        }
+        if (handler != null) {
+            this.adminHandler = handler;
+        }
+    }
 }
