@@ -51,11 +51,8 @@ public class BlockService {
             Block block = blockRepository.save(Block.builder()
                     .blocker(blocker)
                     .blocked(blocked)
-                    .reasonCategory(req.getReasonCategory())
-                    .detail(req.getDetail())
                     .build());
-            log.info("[Block] blocker={} blocked={} reason={}",
-                    blockerId, blockedId, block.getReasonCategory());
+            log.info("[Block] blocker={} blocked={}", blockerId, blockedId);
             return BlockRspDto.from(block);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATE_BLOCK, e);

@@ -2,7 +2,6 @@ package com.nokcha.efbe.domain.admin.block.service;
 
 import com.nokcha.efbe.domain.admin.block.dto.response.AdminBlockRspDto;
 import com.nokcha.efbe.domain.block.entity.Block;
-import com.nokcha.efbe.domain.block.entity.BlockReasonCategory;
 import com.nokcha.efbe.domain.block.repository.BlockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,11 +21,9 @@ public class AdminBlockService {
     private final BlockRepository blockRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminBlockRspDto> getBlocks(String keyword,
-                                            BlockReasonCategory reasonCategory,
-                                            Pageable pageable) {
+    public Page<AdminBlockRspDto> getBlocks(String keyword, Pageable pageable) {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        Page<Block> page = blockRepository.searchForAdmin(kw, reasonCategory, pageable);
+        Page<Block> page = blockRepository.searchForAdmin(kw, pageable);
 
         // 상호 차단(mutual) 판정 — 페이지 유저들 사이의 모든 차단 쌍을 한 번에 조회.
         Set<Long> userIds = new HashSet<>();

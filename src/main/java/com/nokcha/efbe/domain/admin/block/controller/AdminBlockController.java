@@ -3,7 +3,6 @@ package com.nokcha.efbe.domain.admin.block.controller;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.domain.admin.block.dto.response.AdminBlockRspDto;
 import com.nokcha.efbe.domain.admin.block.service.AdminBlockService;
-import com.nokcha.efbe.domain.block.entity.BlockReasonCategory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +26,13 @@ public class AdminBlockController {
     private final AdminBlockService adminBlockService;
 
     @Operation(summary = "차단 내역 목록 조회",
-            description = "keyword(차단자/피차단자 닉네임·UUID LIKE), reasonCategory 동적 필터. 최신순.")
+            description = "keyword(차단자/피차단자 닉네임·UUID LIKE) 동적 필터. 최신순.")
     @GetMapping
     public RspTemplate<Page<AdminBlockRspDto>> getBlocks(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) BlockReasonCategory reasonCategory,
             @PageableDefault(size = 20, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return new RspTemplate<>(HttpStatus.OK, "차단 내역을 조회했습니다.",
-                adminBlockService.getBlocks(keyword, reasonCategory, pageable));
+                adminBlockService.getBlocks(keyword, pageable));
     }
 }

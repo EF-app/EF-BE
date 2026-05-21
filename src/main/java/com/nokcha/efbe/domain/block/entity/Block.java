@@ -4,8 +4,6 @@ import com.nokcha.efbe.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -58,22 +56,13 @@ public class Block {
     @JoinColumn(name = "blocked_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ub_blocked"))
     private User blocked;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reason_category", nullable = false, length = 30)
-    private BlockReasonCategory reasonCategory;
-
-    @Column(name = "detail", length = 500)
-    private String detail;
-
     @CreatedDate
     @Column(name = "create_time", updatable = false)
     private LocalDateTime createTime;
 
     @Builder
-    private Block(User blocker, User blocked, BlockReasonCategory reasonCategory, String detail) {
+    private Block(User blocker, User blocked) {
         this.blocker = blocker;
         this.blocked = blocked;
-        this.reasonCategory = reasonCategory == null ? BlockReasonCategory.OTHER : reasonCategory;
-        this.detail = detail;
     }
 }
