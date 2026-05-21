@@ -52,13 +52,6 @@ public class UserAuthController {
         return new RspTemplate<>(HttpStatus.OK, "휴대폰 인증이 완료되었습니다.", userAuthService.verifyPhone(reqDto));
     }
 
-    // 이메일 인증
-    @Operation(summary = "이메일 인증", description = "휴대폰 인증 완료 후 이메일 인증 정보를 임시 저장합니다.")
-    @PostMapping("/signup/email-verification")
-    public RspTemplate<SignUpProgressRspDto> verifyEmail(@Valid @RequestBody EmailVerificationReqDto reqDto) {
-        return new RspTemplate<>(HttpStatus.OK, "이메일 인증이 완료되었습니다.", userAuthService.verifyEmail(reqDto));
-    }
-
     // 아이디 중복 체크 (입력 중 실시간 호출)
     @Operation(summary = "아이디 사용 가능 여부 확인", description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. (실시간 호출용 — keyboard blur 등)")
     @GetMapping("/signup/check-login-id")
@@ -72,6 +65,13 @@ public class UserAuthController {
     @PostMapping("/signup/credentials")
     public RspTemplate<SignUpProgressRspDto> createCredentials(@Valid @RequestBody SignUpCredentialsReqDto reqDto) {
         return new RspTemplate<>(HttpStatus.OK, "아이디와 비밀번호 입력이 완료되었습니다.", userAuthService.createCredentials(reqDto));
+    }
+
+    // 이메일 입력
+    @Operation(summary = "이메일 입력", description = "아이디와 비밀번호 입력 완료 후 이메일을 2회 입력받아 동일한지 검증하고 저장합니다. 생략 가능합니다.")
+    @PostMapping("/signup/email")
+    public RspTemplate<SignUpProgressRspDto> createEmail(@Valid @RequestBody EmailVerificationReqDto reqDto) {
+        return new RspTemplate<>(HttpStatus.OK, "이메일 입력이 완료되었습니다.", userAuthService.createEmail(reqDto));
     }
 
     // 닉네임 중복 체크 (입력 중 실시간 호출)

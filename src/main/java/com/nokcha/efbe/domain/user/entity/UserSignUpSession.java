@@ -130,10 +130,10 @@ public class UserSignUpSession extends BaseEntity {
     private LocalDateTime phoneVerifiedAt;
 
     @Column
-    private LocalDateTime emailVerifiedAt;
+    private LocalDateTime emailEnteredAt;
 
     @Builder
-    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyCollectionAgreed, boolean sensitiveInfoAgreed, boolean noDisclosureAgreed, boolean locationAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, boolean pushAgreed, String serviceTermsVersion, String privacyCollectionVersion, String sensitiveInfoVersion, String noDisclosureVersion, String locationVersion, String marketingVersion, LocalDateTime serviceTermsAgreedAt, LocalDateTime privacyCollectionAgreedAt, LocalDateTime sensitiveInfoAgreedAt, LocalDateTime noDisclosureAgreedAt, LocalDateTime locationAgreedAt, LocalDateTime marketingAgreedAt, LocalDateTime pushAgreedAt, String lastConsentIp, String phone, String email, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt, LocalDateTime emailVerifiedAt) {
+    public UserSignUpSession(boolean serviceTermsAgreed, boolean privacyCollectionAgreed, boolean sensitiveInfoAgreed, boolean noDisclosureAgreed, boolean locationAgreed, boolean ageConfirmed, boolean femaleConfirmed, boolean marketingAgreed, boolean pushAgreed, String serviceTermsVersion, String privacyCollectionVersion, String sensitiveInfoVersion, String noDisclosureVersion, String locationVersion, String marketingVersion, LocalDateTime serviceTermsAgreedAt, LocalDateTime privacyCollectionAgreedAt, LocalDateTime sensitiveInfoAgreedAt, LocalDateTime noDisclosureAgreedAt, LocalDateTime locationAgreedAt, LocalDateTime marketingAgreedAt, LocalDateTime pushAgreedAt, String lastConsentIp, String phone, String email, String loginId, String password, String nickname, Long areaId, Purpose purpose, SignUpStep signUpStep, LocalDateTime expiredAt, boolean completed, LocalDateTime phoneVerifiedAt, LocalDateTime emailEnteredAt) {
         this.serviceTermsAgreed = serviceTermsAgreed;
         this.privacyCollectionAgreed = privacyCollectionAgreed;
         this.sensitiveInfoAgreed = sensitiveInfoAgreed;
@@ -168,7 +168,7 @@ public class UserSignUpSession extends BaseEntity {
         this.expiredAt = expiredAt;
         this.completed = completed;
         this.phoneVerifiedAt = phoneVerifiedAt;
-        this.emailVerifiedAt = emailVerifiedAt;
+        this.emailEnteredAt = emailEnteredAt;
     }
 
     // 필수 약관 동의 여부 확인
@@ -195,11 +195,11 @@ public class UserSignUpSession extends BaseEntity {
         this.signUpStep = SignUpStep.PHONE_VERIFIED;
     }
 
-    // 이메일 인증 정보 저장
-    public void verifyEmail(String email, LocalDateTime emailVerifiedAt) {
+    // 이메일 입력 정보 저장
+    public void updateEmail(String email, LocalDateTime emailEnteredAt) {
         this.email = email;
-        this.emailVerifiedAt = emailVerifiedAt;
-        this.signUpStep = SignUpStep.EMAIL_VERIFIED;
+        this.emailEnteredAt = emailEnteredAt;
+        this.signUpStep = SignUpStep.EMAIL_COMPLETED;
     }
 
     // 아이디, 비밀번호 저장
