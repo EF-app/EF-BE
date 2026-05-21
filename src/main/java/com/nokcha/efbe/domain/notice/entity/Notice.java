@@ -50,9 +50,12 @@ public class Notice extends BaseEntity {
     @Column
     private Long originalNoticeId;
 
+    @Column(name = "is_pinned", nullable = false)
+    private boolean isPinned;
+
     @Builder
     public Notice(String title, String content, NoticeCategory category, Long viewCount, NoticeStatus status,
-                  LocalDateTime scheduledAt, LocalDateTime publishedAt, Long originalNoticeId) {
+                  LocalDateTime scheduledAt, LocalDateTime publishedAt, Long originalNoticeId, boolean isPinned) {
         this.title = title;
         this.content = content;
         this.category = category;
@@ -61,12 +64,15 @@ public class Notice extends BaseEntity {
         this.scheduledAt = scheduledAt;
         this.publishedAt = publishedAt;
         this.originalNoticeId = originalNoticeId;
+        this.isPinned = isPinned;
     }
 
-    public void update(String title, String content, NoticeCategory category, NoticeStatus status, LocalDateTime scheduledAt) {
+    public void update(String title, String content, NoticeCategory category, NoticeStatus status,
+                       LocalDateTime scheduledAt, boolean pinned) {
         this.title = title;
         this.content = content;
         this.category = category;
+        this.isPinned = pinned;
         applyStatus(status, scheduledAt);
     }
 

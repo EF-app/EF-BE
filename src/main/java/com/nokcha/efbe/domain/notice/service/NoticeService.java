@@ -31,7 +31,14 @@ public class NoticeService {
     // 공지사항 목록 조회
     @Transactional(readOnly = true)
     public NoticePageRspDto getNotices(int page, NoticeCategory category) {
-        Pageable pageable = PageRequest.of(page, NOTICE_PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createTime"));
+        Pageable pageable = PageRequest.of(
+                page,
+                NOTICE_PAGE_SIZE,
+                Sort.by(
+                        Sort.Order.desc("isPinned"),
+                        Sort.Order.desc("createTime")
+                )
+        );
         Page<Notice> noticePage = category == null
                 ? noticeRepository.findAllByStatus(NoticeStatus.PUBLISHED, pageable)
                 : noticeRepository.findAllByStatusAndCategory(NoticeStatus.PUBLISHED, category, pageable);

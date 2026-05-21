@@ -40,4 +40,7 @@ public class NoticeReqDto {
 
     @Schema(description = "예약 발행 시각. status 가 SCHEDULED 일 때만 사용 (단위: 10분)", example = "2026-05-08T18:00:00")
     private LocalDateTime scheduledAt;
+
+    @Schema(description = "고정 공지 여부", example = "true")
+    private Boolean isPinned;
 }

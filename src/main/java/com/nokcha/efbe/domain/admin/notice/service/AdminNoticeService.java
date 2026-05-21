@@ -47,6 +47,7 @@ public class AdminNoticeService {
                 .scheduledAt(resolveScheduledAt(reqDto))
                 .publishedAt(resolvePublishedAt(reqDto))
                 .originalNoticeId(resolveOriginalNoticeId(reqDto, category))
+                .isPinned(resolvePinned(reqDto))
                 .build());
 
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
@@ -66,7 +67,7 @@ public class AdminNoticeService {
         LocalDateTime scheduledAt = resolveScheduledAt(reqDto);
         validateScheduledAt(status, scheduledAt);
 
-        notice.update(reqDto.getTitle(), reqDto.getContent(), resolveCategory(reqDto), status, scheduledAt);
+        notice.update(reqDto.getTitle(), reqDto.getContent(), resolveCategory(reqDto), status, scheduledAt, resolvePinned(reqDto));
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
     }
 
@@ -144,6 +145,10 @@ public class AdminNoticeService {
 
     private LocalDateTime resolvePublishedAt(NoticeReqDto reqDto) {
         return resolveStatus(reqDto) == NoticeStatus.PUBLISHED ? LocalDateTime.now() : null;
+    }
+
+    private boolean resolvePinned(NoticeReqDto reqDto) {
+        return Boolean.TRUE.equals(reqDto.getIsPinned());
     }
 
     private void validateScheduledAt(NoticeStatus status, LocalDateTime scheduledAt) {
