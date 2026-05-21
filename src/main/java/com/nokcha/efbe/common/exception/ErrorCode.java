@@ -28,6 +28,7 @@ public enum ErrorCode {
     // 회원가입
     TERMS_AGREEMENT_REQUIRED(400, "필수 약관 동의가 필요합니다."),
     PASSWORD_CONFIRM_MISMATCH(400, "비밀번호 확인이 일치하지 않습니다."),
+    EMAIL_CONFIRM_MISMATCH(400, "이메일 확인이 일치하지 않습니다."),
     PHONE_VERIFICATION_REQUIRED(400, "휴대폰 인증이 필요합니다."),
     FEMALE_VERIFICATION_REQUIRED(400, "여성 인증이 필요합니다."),
     ADULT_VERIFICATION_REQUIRED(400, "성인 인증이 필요합니다."),
