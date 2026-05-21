@@ -38,7 +38,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
     private final JPAQueryFactory query;
 
     @Override
-    public List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId) {
+    public List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId, List<Long> blockedUserIds) {
         QPostIt p = QPostIt.postIt;
         QUser u = QUser.user;
         QCodeArea a = QCodeArea.codeArea;
@@ -89,7 +89,8 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                         p.isDeleted.isFalse(),
                         p.expiresAt.gt(now),
                         categoryEq(categoryCode),
-                        cursorAfter(cursor)
+                        cursorAfter(cursor),
+                        blockedNotIn(blockedUserIds)
                 )
                 .orderBy(p.createTime.desc(), p.id.desc())
                 .limit(size)
@@ -99,6 +100,12 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
     private BooleanExpression categoryEq(PostCategory categoryCode) {
         if (categoryCode == null) return null;
         return QPostIt.postIt.categoryCode.eq(categoryCode);
+    }
+
+    // 차단한 작성자 글 제외. 목록이 비면 null 반환 → Querydsl where 무시.
+    private BooleanExpression blockedNotIn(List<Long> blockedUserIds) {
+        if (blockedUserIds == null || blockedUserIds.isEmpty()) return null;
+        return QPostIt.postIt.user.id.notIn(blockedUserIds);
     }
 
     // 커서 이후 페이지: (createTime, id) DESC 정렬의 lexicographic next

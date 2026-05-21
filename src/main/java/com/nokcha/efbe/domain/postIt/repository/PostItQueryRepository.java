@@ -17,7 +17,8 @@ public interface PostItQueryRepository {
     // createTime DESC, id DESC
     // size+1 fetch 로 hasMore 판정 가능
     // viewerId == null 이면 likedByMe 는 모두 false
-    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId);
+    // blockedUserIds: 조회 유저가 차단한 작성자 id 목록 — 해당 작성자 글은 피드에서 제외 (비었으면 미적용)
+    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId, List<Long> blockedUserIds);
 
     // "내가 붙인" — userId 본인 작성 글 + likeCount + chatCount(post_chat_room 전체)
     // 정렬: post_it.create_time DESC, post_it.id DESC (안정 정렬)
