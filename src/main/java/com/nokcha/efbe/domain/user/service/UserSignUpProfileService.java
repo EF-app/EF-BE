@@ -151,7 +151,7 @@ public class UserSignUpProfileService {
 
     // 프로필 이미지 요청 값 검증
     private void validateProfileImages(List<MultipartFile> images) {
-        if (images == null || images.isEmpty() || images.size() > 3) {
+        if (images == null || images.isEmpty() || images.size() > 5) {
             throw new BusinessException(ErrorCode.PROFILE_IMAGE_COUNT_EXCEEDED);
         }
     }

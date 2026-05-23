@@ -24,12 +24,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class R2ImageServiceImpl implements R2ImageService {
 
-    private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
+    private static final long IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png");
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png");
-
-    // 피드백 이미지 — 5MB / 확장자 폭넓게 허용 (개수 제한 없음)
-    private static final long MAX_FEEDBACK_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
     private static final Set<String> FEEDBACK_ALLOWED_EXTENSIONS = Set.of(
             "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp"
     );
@@ -120,25 +117,25 @@ public class R2ImageServiceImpl implements R2ImageService {
 
     // 프로필 이미지 유효성 검증
     private void validateProfileImage(MultipartFile multipartFile) {
-        validateImage(multipartFile, MAX_PROFILE_IMAGE_SIZE_BYTES,
+        validateImage(multipartFile,
                 ALLOWED_EXTENSIONS, ALLOWED_CONTENT_TYPES, ErrorCode.INVALID_PROFILE_IMAGE);
     }
 
     // 피드백 이미지 유효성 검증
     private void validateFeedbackImage(MultipartFile multipartFile) {
-        validateImage(multipartFile, MAX_FEEDBACK_IMAGE_SIZE_BYTES,
+        validateImage(multipartFile,
                 FEEDBACK_ALLOWED_EXTENSIONS, FEEDBACK_ALLOWED_CONTENT_TYPES, ErrorCode.INVALID_FEEDBACK_IMAGE);
     }
 
     // 이미지 공통 검증
-    private void validateImage(MultipartFile multipartFile, long maxSizeBytes,
+    private void validateImage(MultipartFile multipartFile,
                                Set<String> allowedExtensions, Set<String> allowedContentTypes,
                                ErrorCode errorCode) {
         if (multipartFile == null || multipartFile.isEmpty() || multipartFile.getOriginalFilename() == null) {
             throw new BusinessException(errorCode);
         }
 
-        if (multipartFile.getSize() > maxSizeBytes) {
+        if (multipartFile.getSize() > R2ImageServiceImpl.IMAGE_SIZE_BYTES) {
             throw new BusinessException(errorCode);
         }
 

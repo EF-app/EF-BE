@@ -3,8 +3,8 @@ package com.nokcha.efbe.domain.user.entity;
 public enum SignUpStep {
     TERMS_AGREED,
     PHONE_VERIFIED,
-    EMAIL_VERIFIED,
     CREDENTIALS_COMPLETED,
+    EMAIL_COMPLETED,
     NICKNAME_COMPLETED,
     AREA_COMPLETED,
     PURPOSE_SELECTED,

@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.admin.auth.entity;
+package com.nokcha.efbe.domain.admin.log.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 
-// 관리자 로그인 시도 기록 (DDL admin_login_log). 성공/실패 모두 남김.
 @Getter
 @Entity
 @Table(
@@ -35,11 +34,9 @@ public class AdminLoginLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 관리자 FK (존재하지 않는 login_id 시도 시 NULL)
     @Column(name = "admin_id")
     private Long adminId;
 
-    // 로그인 시도한 ID (실패 케이스 추적용)
     @Column(name = "login_id_attempt", nullable = false, length = 50)
     private String loginIdAttempt;
 
@@ -49,7 +46,7 @@ public class AdminLoginLog {
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
 
-    @Column(name = "user_agent", length = 255)
+    @Column(name = "user_agent")
     private String userAgent;
 
     @Column(name = "is_success", nullable = false)
@@ -59,18 +56,12 @@ public class AdminLoginLog {
     @Column(name = "failure_reason", length = 30)
     private AdminLoginFailureReason failureReason;
 
-    @Column(name = "failure_detail", length = 255)
-    private String failureDetail;
-
-    // TOTP 2FA 통과 여부. Phase 2
-    @Column(name = "totp_verified")
-    private Boolean totpVerified;
+    // TOTP 2FA 통과 여부
+//    @Column(name = "totp_verified")
+//    private Boolean totpVerified;
 
     @Builder
-    public AdminLoginLog(Long adminId, String loginIdAttempt, LocalDateTime loginAt,
-                         String ipAddress, String userAgent,
-                         boolean isSuccess, AdminLoginFailureReason failureReason,
-                         String failureDetail, Boolean totpVerified) {
+    public AdminLoginLog(Long adminId, String loginIdAttempt, LocalDateTime loginAt, String ipAddress, String userAgent, boolean isSuccess, AdminLoginFailureReason failureReason) {
         this.adminId = adminId;
         this.loginIdAttempt = loginIdAttempt;
         this.loginAt = loginAt;
@@ -78,7 +69,5 @@ public class AdminLoginLog {
         this.userAgent = userAgent;
         this.isSuccess = isSuccess;
         this.failureReason = failureReason;
-        this.failureDetail = failureDetail;
-        this.totpVerified = totpVerified;
     }
 }

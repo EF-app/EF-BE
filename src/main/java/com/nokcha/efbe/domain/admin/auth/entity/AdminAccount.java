@@ -3,8 +3,6 @@ package com.nokcha.efbe.domain.admin.auth.entity;
 import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,14 +16,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// 관리자 계정 (DDL admin_account). users 테이블과 완전 분리.
 @Getter
 @Entity
 @Table(
         name = "admin_account",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_admin_login_id", columnNames = "login_id"),
-                @UniqueConstraint(name = "uk_admin_uuid", columnNames = "uuid")
+                @UniqueConstraint(name = "uk_admin_login_id", columnNames = "login_id")
         },
         indexes = {
                 @Index(name = "idx_admin_role_active", columnList = "role, is_active")
@@ -38,13 +34,10 @@ public class AdminAccount extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 36)
-    private String uuid;
-
     @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, length = 50)
@@ -56,10 +49,6 @@ public class AdminAccount extends BaseEntity {
     @Column(length = 20)
     private String phone;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AdminRole role;
-
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
@@ -67,24 +56,13 @@ public class AdminAccount extends BaseEntity {
     private LocalDateTime lockedUntil;
 
     @Builder
-    public AdminAccount(String uuid, String loginId, String password, String name,
-                        String email, String phone, AdminRole role, boolean isActive) {
-        this.uuid = uuid;
+    public AdminAccount(String loginId, String password, String name, String email, String phone, boolean isActive) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
         this.phone = phone;
-        this.role = role;
         this.isActive = isActive;
-    }
-
-    public void deactivate() {
-        this.isActive = false;
-    }
-
-    public void changePassword(String encodedPassword) {
-        this.password = encodedPassword;
     }
 
     public boolean isLocked(LocalDateTime now) {
@@ -93,9 +71,5 @@ public class AdminAccount extends BaseEntity {
 
     public void lock(LocalDateTime until) {
         this.lockedUntil = until;
-    }
-
-    public void unlock() {
-        this.lockedUntil = null;
     }
 }

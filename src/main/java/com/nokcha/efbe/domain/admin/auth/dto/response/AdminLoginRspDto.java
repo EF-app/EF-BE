@@ -17,15 +17,9 @@ public class AdminLoginRspDto {
     @Schema(description = "리프레시 토큰", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String refreshToken;
 
-    @Schema(description = "토큰 타입", example = "Bearer")
-    private String tokenType;
-
     @Schema(description = "로그인 아이디", example = "admin01")
     private String loginId;
 
     @Schema(description = "관리자 이름", example = "홍길동")
     private String name;
-
-    @Schema(description = "관리자 권한", example = "ADMIN")
-    private String role;
 }
