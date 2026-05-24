@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -22,9 +21,6 @@ import java.time.LocalDateTime;
         name = "admin_account",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_admin_login_id", columnNames = "login_id")
-        },
-        indexes = {
-                @Index(name = "idx_admin_role_active", columnList = "role, is_active")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,9 +42,6 @@ public class AdminAccount extends BaseEntity {
     @Column(length = 100)
     private String email;
 
-    @Column(length = 20)
-    private String phone;
-
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
@@ -56,12 +49,11 @@ public class AdminAccount extends BaseEntity {
     private LocalDateTime lockedUntil;
 
     @Builder
-    public AdminAccount(String loginId, String password, String name, String email, String phone, boolean isActive) {
+    public AdminAccount(String loginId, String password, String name, String email, boolean isActive) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
-        this.phone = phone;
         this.isActive = isActive;
     }
 
@@ -71,5 +63,29 @@ public class AdminAccount extends BaseEntity {
 
     public void lock(LocalDateTime until) {
         this.lockedUntil = until;
+    }
+
+    // 잠금 해제 — 관리자 강제 해제용
+    public void unlock() {
+        this.lockedUntil = null;
+    }
+
+    // 관리자 계정 관리
+    public void updateBasicInfo(String email) {
+        if (email != null) this.email = email;
+    }
+
+    // 활성/비활성 토글
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
+
+    // 비밀번호 변경
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 }
