@@ -6,6 +6,7 @@ import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
+import com.nokcha.efbe.domain.block.repository.BlockRepository;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
 import com.nokcha.efbe.domain.payment.repository.CodeItemRepository;
 import com.nokcha.efbe.domain.payment.service.DailyUsageService;
@@ -46,6 +47,7 @@ public class PostItService {
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final AreaRepository areaRepository;
+    private final BlockRepository blockRepository;
     private final DailyUsageService dailyUsageService;
     private final CodeItemRepository itemCatalogRepository;
     private final CursorCodec cursorCodec;
@@ -98,7 +100,12 @@ public class PostItService {
         PostItCursor decoded = cursorCodec.decode(cursor, PostItCursor.class);
         LocalDateTime now = LocalDateTime.now();
 
-        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1, viewerId);
+        // 로그인 유저면 차단한 작성자 글을 피드에서 제외
+        List<Long> blockedUserIds = viewerId == null
+                ? List.of()
+                : blockRepository.findBlockedUserIds(viewerId);
+
+        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1, viewerId, blockedUserIds);
         boolean hasMore = rows.size() > pageSize;
         List<PostItRow> page = hasMore ? rows.subList(0, pageSize) : rows;
 
