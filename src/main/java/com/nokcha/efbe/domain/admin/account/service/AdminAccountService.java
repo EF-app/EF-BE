@@ -6,8 +6,8 @@ import com.nokcha.efbe.domain.admin.account.dto.request.AdminAccountCreateReqDto
 import com.nokcha.efbe.domain.admin.account.dto.request.AdminAccountUpdateReqDto;
 import com.nokcha.efbe.domain.admin.account.dto.request.AdminPasswordResetReqDto;
 import com.nokcha.efbe.domain.admin.account.dto.response.AdminAccountRspDto;
-import com.nokcha.efbe.domain.admin.account.repository.AdminAccountManagementRepository;
 import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
+import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
 import com.nokcha.efbe.domain.admin.log.entity.AdminLoginFailureReason;
 import com.nokcha.efbe.domain.admin.log.entity.AdminLoginLog;
 import com.nokcha.efbe.domain.admin.log.repository.AdminLoginLogRepository;
@@ -30,7 +30,7 @@ public class AdminAccountService {
     // 두 곳이 정책 상수를 공유하지 않아 향후 변경 시 함께 갱신 필요.
     private static final Duration LOCKOUT_WINDOW = Duration.ofHours(1);
 
-    private final AdminAccountManagementRepository adminAccountManagementRepository;
+    private final AdminAccountRepository adminAccountRepository;
     private final AdminLoginLogRepository adminLoginLogRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -38,14 +38,14 @@ public class AdminAccountService {
     @Transactional(readOnly = true)
     public Page<AdminAccountRspDto> getAdmins(String keyword, Boolean isActive, Pageable pageable) {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        return adminAccountManagementRepository.search(kw, isActive, pageable)
+        return adminAccountRepository.search(kw, isActive, pageable)
                 .map(this::toRspDto);
     }
 
     // 단건 상세 — 마지막 로그인 정보(admin_login_log) 포함
     @Transactional(readOnly = true)
     public AdminAccountRspDto getAdmin(Long id) {
-        AdminAccount admin = adminAccountManagementRepository.findById(id)
+        AdminAccount admin = adminAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
         return toRspDto(admin);
     }
@@ -53,7 +53,7 @@ public class AdminAccountService {
     // 생성
     @Transactional
     public AdminAccountRspDto createAdmin(AdminAccountCreateReqDto req) {
-        if (adminAccountManagementRepository.existsByLoginId(req.getLoginId())) {
+        if (adminAccountRepository.existsByLoginId(req.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
 
@@ -65,14 +65,14 @@ public class AdminAccountService {
                 .isActive(true)
                 .build();
 
-        AdminAccount saved = adminAccountManagementRepository.save(admin);
+        AdminAccount saved = adminAccountRepository.save(admin);
         return toRspDto(saved);
     }
 
     // 수정 — email
     @Transactional
     public AdminAccountRspDto updateAdmin(Long id, AdminAccountUpdateReqDto req) {
-        AdminAccount admin = adminAccountManagementRepository.findById(id)
+        AdminAccount admin = adminAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateBasicInfo(req.getEmail());
@@ -87,7 +87,7 @@ public class AdminAccountService {
     // 비밀번호 강제 변경 — 현재 비밀번호 확인 없이 즉시 교체 (관리자가 다른 관리자 비번 리셋 가능)
     @Transactional
     public void forceChangePassword(Long id, AdminPasswordResetReqDto req) {
-        AdminAccount admin = adminAccountManagementRepository.findById(id)
+        AdminAccount admin = adminAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
 
         if (passwordEncoder.matches(req.getNewPassword(), admin.getPassword())) {
@@ -99,7 +99,7 @@ public class AdminAccountService {
     // 잠금 해제 — 비밀번호 실패 누적으로 lockedUntil 이 설정된 계정을 관리자가 즉시 해제.
     @Transactional
     public AdminAccountRspDto unlock(Long id) {
-        AdminAccount admin = adminAccountManagementRepository.findById(id)
+        AdminAccount admin = adminAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
         admin.unlock();
         return toRspDto(admin);
