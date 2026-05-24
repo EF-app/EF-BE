@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.user.dto.response;
 
+import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
 import com.nokcha.efbe.domain.user.entity.BanStatus;
 import com.nokcha.efbe.domain.user.entity.User;
 import lombok.Builder;
@@ -19,11 +20,12 @@ public class AdminUserSummaryRspDto {
     private Integer age;
     private String area;            // "서울특별시 강남구" 조합 문자열 (미입력 시 null)
     private String status;          // FE UserStatus — ACTIVE / TEMP_SUSPENDED / PERMANENTLY_SUSPENDED
+    private String profileStatus;
     private boolean withdraw;
     private LocalDateTime lastLoginTime;
     private LocalDateTime createTime;
 
-    public static AdminUserSummaryRspDto from(User u, String area) {
+    public static AdminUserSummaryRspDto from(User u, String area, ProfileStatus profileStatus) {
         return AdminUserSummaryRspDto.builder()
                 .id(u.getId())
                 .uuid(u.getUuid())
@@ -32,6 +34,7 @@ public class AdminUserSummaryRspDto {
                 .age(u.getAge())
                 .area(area)
                 .status(toUserStatus(u.getBanStatus()))
+                .profileStatus(profileStatus == null ? null : profileStatus.name())
                 .withdraw(u.isWithdraw())
                 .lastLoginTime(u.getLastLoginTime())
                 .createTime(u.getCreateTime())

@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.admin.user.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -48,4 +49,10 @@ public class AdminUserProfileRspDto {
     private String idealBody;
     private String idealHeight;
     private String idealVibe;
+
+    // 프로필 심사 상태 (관리자용)
+    private String profileStatus;
+    private String profileRejectedReason;
+    private LocalDateTime profileReviewedAt;
+    private Long profileReviewedBy;
 }

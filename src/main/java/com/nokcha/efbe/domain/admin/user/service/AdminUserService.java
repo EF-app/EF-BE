@@ -17,6 +17,7 @@ import com.nokcha.efbe.domain.payment.repository.UserSubscriptionRepository;
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
 import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.profile.entity.UserCustomKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserKeyword;
@@ -99,7 +100,16 @@ public class AdminUserService {
                 .distinct()
                 .toList());
 
-        return page.map(u -> AdminUserSummaryRspDto.from(u, composeArea(u.getAreaId(), areaMap)));
+        // 프로필 상태 배치 조회
+        List<Long> userIds = page.getContent().stream().map(User::getId).toList();
+        Map<Long, ProfileStatus> profileStatusMap = profileRepository.findByUserIdIn(userIds).stream()
+                .collect(Collectors.toMap(UserProfile::getUserId, UserProfile::getProfileStatus));
+
+        return page.map(u -> AdminUserSummaryRspDto.from(
+                u,
+                composeArea(u.getAreaId(), areaMap),
+                profileStatusMap.get(u.getId())
+        ));
     }
 
     // 단건 상세 — 기본정보 + 지역 + 프로필(키워드/성향 포함) + 결제 집계 + 접속 이력.
@@ -194,7 +204,31 @@ public class AdminUserService {
                 .idealBody(first(ideal.get("체형")))
                 .idealHeight(first(ideal.get("키")))
                 .idealVibe(first(ideal.get("성향")))
+                .profileStatus(profile.getProfileStatus() == null
+                        ? null : profile.getProfileStatus().name())
+                .profileRejectedReason(profile.getProfileRejectedReason())
+                .profileReviewedAt(profile.getProfileReviewedAt())
+                .profileReviewedBy(profile.getProfileReviewedBy())
                 .build();
+    }
+
+    // ===== 프로필 심사 (관리자) =====
+    // 프로필 승인
+    @Transactional
+    public AdminUserDetailRspDto approveProfile(Long userId, Long reviewerAdminId) {
+        UserProfile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROFILE));
+        profile.approve(reviewerAdminId);
+        return getUser(userId);
+    }
+
+    // 프로필 반려 — 사유는 유저에게 노출됨
+    @Transactional
+    public AdminUserDetailRspDto rejectProfile(Long userId, String reason, Long reviewerAdminId) {
+        UserProfile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_PROFILE));
+        profile.reject(reason, reviewerAdminId);
+        return getUser(userId);
     }
 
     // user_personal 을 type 별로 big_category → small_category 목록으로 그룹핑.
