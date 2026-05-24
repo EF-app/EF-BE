@@ -6,35 +6,79 @@ import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 import com.nokcha.efbe.domain.postIt.repository.projection.AdminPostItRow;
 import com.nokcha.efbe.domain.user.entity.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 포스트잇 응답 DTO.
-//   - 익명 마스킹 없음 (어드민용, FE 가 "작성자 보기" 토글로 처리)
+// 어드민 포스트잇 응답 DTO — 목록/상세 공용. 익명 마스킹 없음 (FE 가 "작성자 보기" 토글로 처리).
 @Getter
 @Builder
+@Schema(description = "어드민 포스트잇 응답 (목록/상세 공용)")
 public class AdminPostItRspDto {
 
+    @Schema(description = "포스트잇 PK", example = "42")
     private Long id;
+
+    @Schema(description = "작성자 유저 PK", example = "2")
     private Long userId;
+
+    @Schema(description = "작성자 UUID", example = "7f5a8b2c-4e91-4c33-9a55-9f3b1e0d1234")
     private String userUuid;
+
+    @Schema(description = "작성자 닉네임 (익명 글이어도 노출 — 어드민용)", example = "밤하늘공")
     private String userNickname;
+
+    @Schema(description = "작성자 나이", example = "27")
     private Integer userAge;
+
+    @Schema(description = "작성자 지역 (country + city, 없으면 null)",
+            example = "대한민국 서울특별시",
+            nullable = true)
     private String userArea;
+
+    @Schema(description = "카테고리 코드", example = "DAILY")
     private PostCategory categoryCode;
+
+    @Schema(description = "본문 (원본, 어드민용이라 마스킹 없음)", example = "오늘은 너무 좋은 날이었어!")
     private String content;
+
+    @Schema(description = "포스트잇 색상", example = "YELLOW")
     private PostItColor color;
+
+    @Schema(description = "익명 게시 여부", example = "false")
     private boolean anonymous;
+
+    @Schema(description = "자동 만료 시각 (null = 만료 없음)",
+            example = "2026-06-23T00:00:00",
+            nullable = true)
     private LocalDateTime expiresAt;
+
+    @Schema(description = "상단 고정 종료 시각 (null = 미고정)",
+            example = "2026-05-25T12:00:00",
+            nullable = true)
     private LocalDateTime pinnedUntil;
+
+    @Schema(description = "누적 신고 수 (숨김 해제 시 0 으로 리셋됨)", example = "3")
     private Integer reportCount;
+
+    @Schema(description = "답글 수", example = "12")
     private Integer replyCount;
+
+    @Schema(description = "좋아요 수", example = "47")
     private long likeCount;
+
+    @Schema(description = "관리자에 의해 숨김 처리된 글 여부", example = "false")
     private boolean hidden;
+
+    @Schema(description = "작성자 또는 시스템에 의해 삭제된 글 여부 (soft delete)", example = "false")
     private boolean deleted;
+
+    @Schema(description = "작성 시각", example = "2026-05-20T14:30:00")
     private LocalDateTime createTime;
+
+    @Schema(description = "최종 수정 시각", example = "2026-05-24T09:15:00")
     private LocalDateTime updateTime;
 
     // Querydsl projection 기반 — 목록 표준.
