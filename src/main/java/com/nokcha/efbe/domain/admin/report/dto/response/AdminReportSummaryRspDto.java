@@ -1,6 +1,5 @@
 package com.nokcha.efbe.domain.admin.report.dto.response;
 
-import com.nokcha.efbe.domain.report.entity.Report;
 import com.nokcha.efbe.domain.report.entity.ReportStatus;
 import com.nokcha.efbe.domain.report.entity.ReportTargetType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,12 +8,10 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// admin 측 신고 목록 항목. 리스트 화면용.
-// enrich 필드(reporterNickname / targetUserId / targetUserNickname / balGameId / targetPreview) 는
-// 그룹화 응답(getReportsGrouped) 에서만 채워지고, 플랫 응답(from(Report)) 에선 null.
+// admin 측 신고 목록 항목 — 그룹화 응답(getReportsGrouped) 의 대표 신고로 사용.
 @Getter
 @Builder
-@Schema(description = "어드민 신고 목록 항목 — enrich 필드는 그룹화 응답에서만 채워지고 플랫 응답에선 null")
+@Schema(description = "어드민 신고 목록 항목 — 그룹화 응답의 대표 신고")
 public class AdminReportSummaryRspDto {
 
     @Schema(description = "신고 PK", example = "1024")
@@ -37,7 +34,7 @@ public class AdminReportSummaryRspDto {
 
     // ===== enrich 필드 (그룹화 응답 전용) =====
 
-    @Schema(description = "신고자 닉네임 (enrich — 그룹화 응답에서만)",
+    @Schema(description = "신고자 닉네임 (enrich)",
             example = "익명펭귄", nullable = true)
     private String reporterNickname;
 
@@ -56,16 +53,4 @@ public class AdminReportSummaryRspDto {
             example = "오늘 너무 짜증나는 일이...",
             nullable = true)
     private String targetPreview;
-
-    // 단순 매핑 — enrich 없음 (플랫 응답용).
-    public static AdminReportSummaryRspDto from(Report report) {
-        return AdminReportSummaryRspDto.builder()
-                .id(report.getId())
-                .targetType(report.getTargetType())
-                .targetId(report.getTargetId())
-                .status(report.getStatus())
-                .reporterId(report.getReporter() == null ? null : report.getReporter().getId())
-                .createTime(report.getCreateTime())
-                .build();
-    }
 }

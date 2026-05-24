@@ -58,14 +58,6 @@ public class AdminReportService {
     private final BalGameCommentRepository balGameCommentRepository;
     private final SecurityUtil securityUtil;
 
-    @Transactional(readOnly = true)
-    public Page<AdminReportSummaryRspDto> getReports(ReportStatus statusFilter, Pageable pageable) {
-        Page<Report> page = (statusFilter == null)
-                ? reportRepository.findAll(pageable)
-                : reportRepository.findAllByStatus(statusFilter, pageable);
-        return page.map(AdminReportSummaryRspDto::from);
-    }
-
     // 그룹화 목록 — (target_type, target_id) 단위. 첫 신고 오래된 순 정렬 + enrich.
     @Transactional(readOnly = true)
     public Page<AdminReportGroupRspDto> getReportsGrouped(ReportStatus statusFilter, Pageable pageable) {

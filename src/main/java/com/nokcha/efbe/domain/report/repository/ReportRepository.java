@@ -18,9 +18,6 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
                                                          Long targetId,
                                                          Long reporterId);
 
-    // admin 측 — status 필터 플랫 목록.
-    Page<Report> findAllByStatus(ReportStatus status, Pageable pageable);
-
     // 같은 target 의 동일 상태 신고를 시간순으로 — 자동 대표 식별 + cascade 일괄 처리용.
     // 첫 번째 항목 = 첫 신고 = 자동 대표.
     List<Report> findAllByTargetTypeAndTargetIdAndStatusOrderByCreateTimeAsc(
