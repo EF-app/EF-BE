@@ -16,8 +16,8 @@ import java.util.List;
 // 포스트잇 Querydsl 인터페이스 (커서 페이지네이션 + 카테고리 동적 조건 + 사용자 활동)
 public interface PostItQueryRepository {
 
-    // 활성 피드 — isHidden=false, isDeleted=false, expiresAt>now, 카테고리 코드(선택)
-    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId);
+    // 활성 피드 — isHidden=false, isDeleted=false, expiresAt>now, 카테고리 코드(선택), 차단한 작성자 제외
+    List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId, List<Long> blockedUserIds);
 
     // "내가 붙인" — userId 본인 작성 글 + likeCount + chatCount(post_chat_room 전체)
     List<UserActivityPostItRow> findMyPostsWithCounts(Long userId, PostItCursor cursor, int size);
