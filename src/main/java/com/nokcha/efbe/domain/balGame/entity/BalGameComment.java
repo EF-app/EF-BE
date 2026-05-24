@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "bal_comment",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_bgc_uuid", columnNames = "uuid")},
         indexes = {
                 @Index(name = "idx_bc_game_create_time", columnList = "game_id, create_time"),
                 @Index(name = "idx_bc_game_parent", columnList = "game_id, parent_id"),
@@ -29,10 +28,6 @@ public class BalGameComment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    // 외부 API path 용 UUID (신고/삭제)
-    @Column(name = "uuid", nullable = false, length = 36)
-    private String uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_id", nullable = false, foreignKey = @ForeignKey(name = "fk_comment_game"))
@@ -68,9 +63,8 @@ public class BalGameComment extends BaseEntity {
     private Integer likesCount = 0;
 
     @Builder
-    private BalGameComment(String uuid, BalGame game, User user, BalGameComment parent,
+    private BalGameComment(BalGame game, User user, BalGameComment parent,
                            String nickname, String content) {
-        this.uuid = uuid;
         this.game = game;
         this.user = user;
         this.parent = parent;

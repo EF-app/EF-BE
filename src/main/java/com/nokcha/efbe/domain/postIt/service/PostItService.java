@@ -6,6 +6,7 @@ import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
+import com.nokcha.efbe.domain.block.repository.BlockRepository;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
 import com.nokcha.efbe.domain.payment.repository.CodeItemRepository;
 import com.nokcha.efbe.domain.payment.service.DailyUsageService;
@@ -46,6 +47,7 @@ public class PostItService {
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final AreaRepository areaRepository;
+    private final BlockRepository blockRepository;
     private final DailyUsageService dailyUsageService;
     private final CodeItemRepository itemCatalogRepository;
     private final CursorCodec cursorCodec;
@@ -74,7 +76,6 @@ public class PostItService {
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(hours);
 
         PostIt post = PostIt.builder()
-                .uuid(java.util.UUID.randomUUID().toString())
                 .user(user)
                 .categoryCode(categoryCode)
                 .content(req.getContent())
@@ -98,7 +99,12 @@ public class PostItService {
         PostItCursor decoded = cursorCodec.decode(cursor, PostItCursor.class);
         LocalDateTime now = LocalDateTime.now();
 
-        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1, viewerId);
+        // 로그인 유저면 차단한 작성자 글을 피드에서 제외
+        List<Long> blockedUserIds = viewerId == null
+                ? List.of()
+                : blockRepository.findBlockedUserIds(viewerId);
+
+        List<PostItRow> rows = postItRepository.findActiveFeed(categoryCode, now, decoded, pageSize + 1, viewerId, blockedUserIds);
         boolean hasMore = rows.size() > pageSize;
         List<PostItRow> page = hasMore ? rows.subList(0, pageSize) : rows;
 
@@ -116,14 +122,14 @@ public class PostItService {
         return size;
     }
 
-    // 단건 상세 조회 — 본인이어도 익명 글은 userId/nickname/age/location 마스킹 (피드 정책과 일관)
+    // 단건 상세 조회 — id 기반. 본인이어도 익명 글은 userId/nickname/age/location 마스킹
     // viewerId == null 이면 likedByMe=false.
     @Transactional(readOnly = true)
     public PostItRspDto getOnePostIt(Long postId, Long viewerId) {
         PostIt post = postItRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POST));
-        long likeCount = postLikeRepository.countByPostId(postId);
-        boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(postId, viewerId);
+        long likeCount = postLikeRepository.countByPostId(post.getId());
+        boolean likedByMe = viewerId != null && postLikeRepository.existsByPostIdAndUserId(post.getId(), viewerId);
         // anonymous 면 area lookup 생략 — DTO 가 어차피 null 처리.
         boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
         AreaPair area = anonymous || post.getUser() == null
@@ -152,14 +158,13 @@ public class PostItService {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
         }
         // TODO(v1.2 별 차감): SUPER_LIKE / PRE_MESSAGE / PROFILE_BOOST / UNDO 등을 user_star_balance 에서 직접 차감하는 로직 추가 예정
-        // (이전 InventoryService.consumeItemByCode(POST_PIN) 호출 자리 — 상단 고정 활성화 로직은 그대로 유지)
         int minutes = itemCatalogRepository.findByItemCode(CodeItem.CODE_POST_PIN)
                 .map(item -> item.getEffectDurationMin() == null ? 0 : item.getEffectDurationMin())
                 .orElse(0);
         post.activatePin(LocalDateTime.now().plusMinutes(minutes));
         // owner 액션 응답 — userId/nickname 노출. 좋아요/area lookup.
-        long likeCount = postLikeRepository.countByPostId(postId);
-        boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+        long likeCount = postLikeRepository.countByPostId(post.getId());
+        boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(post.getId(), userId);
         boolean anonymous = Boolean.TRUE.equals(post.getIsAnonymous());
         AreaPair area = anonymous ? AreaPair.EMPTY : resolveArea(post.getUser().getAreaId());
         return PostItRspDto.fromOwnerView(post, likeCount, likedByMe, area.country, area.city);

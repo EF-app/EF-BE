@@ -21,6 +21,9 @@ public class BalApplyRspDto {
     @Schema(description = "신청한 유저 ID", example = "10")
     private Long userId;
 
+    @Schema(description = "신청한 유저 닉네임 (탈퇴 시 null)", example = "용감한 다람쥐")
+    private String userNickname;
+
     @Schema(description = "옵션 A 텍스트", example = "교통카드")
     private String optionA;
 
@@ -52,6 +55,7 @@ public class BalApplyRspDto {
         return BalApplyRspDto.builder()
                 .id(a.getId())
                 .userId(a.getUser() == null ? null : a.getUser().getId())
+                .userNickname(a.getUser() == null ? null : a.getUser().getNickname())
                 .optionA(a.getOptionA())
                 .optionB(a.getOptionB())
                 .optionAEmoji(a.getOptionAEmoji())

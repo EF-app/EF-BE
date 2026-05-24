@@ -25,6 +25,12 @@ public class BalGameSummaryRspDto {
     @Schema(description = "옵션 B 텍스트", example = "이어폰")
     private String optionB;
 
+    @Schema(description = "옵션 A 부가 설명 (어드민 편집·카드 표시용)")
+    private String optionADesc;
+
+    @Schema(description = "옵션 B 부가 설명 (어드민 편집·카드 표시용)")
+    private String optionBDesc;
+
     @Schema(description = "옵션 A 표시용 이모지", example = "💳")
     private String optionAEmoji;
 
@@ -63,6 +69,8 @@ public class BalGameSummaryRspDto {
                 .id(g.getId())
                 .optionA(g.getOptionA())
                 .optionB(g.getOptionB())
+                .optionADesc(g.getOptionADesc())
+                .optionBDesc(g.getOptionBDesc())
                 .optionAEmoji(g.getOptionAEmoji())
                 .optionBEmoji(g.getOptionBEmoji())
                 .categoryCode(g.getCategoryCode())

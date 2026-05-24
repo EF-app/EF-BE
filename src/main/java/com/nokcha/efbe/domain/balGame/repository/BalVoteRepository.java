@@ -19,4 +19,7 @@ public interface BalVoteRepository extends JpaRepository<BalVote, Long>, BalVote
 
     // 홈 배치용 — 여러 게임에 대한 특정 유저의 투표를 한 번에.
     List<BalVote> findByGameIdInAndUserId(List<Long> gameIds, Long userId);
+
+    // 어드민 댓글 enrich — 한 게임의 댓글 작성자들이 이 게임에 한 투표를 한 번에 batch.
+    List<BalVote> findByGameIdAndUserIdIn(Long gameId, java.util.Collection<Long> userIds);
 }

@@ -23,7 +23,7 @@ public class BalVoteController {
     private final BalVoteService balVoteService;
     private final SecurityUtil securityUtil;
 
-    // 신규 투표
+    // 신규 투표 — id 기반
     @Operation(summary = "신규 투표")
     @PostMapping
     public ResponseEntity<RspTemplate<BalVoteRspDto>> createVote(@PathVariable Long gameId,

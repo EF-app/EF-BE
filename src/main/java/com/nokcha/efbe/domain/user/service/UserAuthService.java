@@ -163,9 +163,9 @@ public class UserAuthService {
                 .build();
     }
 
-    // 이메일 인증
+    // 이메일 입력
     @Transactional
-    public SignUpProgressRspDto verifyEmail(EmailVerificationReqDto reqDto) {
+    public SignUpProgressRspDto createEmail(EmailVerificationReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
         if (!signUpSession.hasRequiredTermsAgreed()) {
@@ -176,7 +176,13 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
         }
 
-        signUpSession.verifyEmail(reqDto.getEmail(), LocalDateTime.now());
+        if (signUpSession.getSignUpStep() != SignUpStep.CREDENTIALS_COMPLETED
+                && signUpSession.getSignUpStep() != SignUpStep.EMAIL_COMPLETED) {
+            throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
+        }
+
+        validateEmailRequest(reqDto);
+        signUpSession.updateEmail(reqDto.getEmail(), LocalDateTime.now());
 
         return SignUpProgressRspDto.builder()
                 .registrationToken(reqDto.getRegistrationToken())
@@ -219,8 +225,9 @@ public class UserAuthService {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
         if (signUpSession.getSignUpStep() != SignUpStep.CREDENTIALS_COMPLETED
+                && signUpSession.getSignUpStep() != SignUpStep.EMAIL_COMPLETED
                 && signUpSession.getSignUpStep() != SignUpStep.NICKNAME_COMPLETED) {
-            throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
 
         String nickname = reqDto.getNickname().trim();
@@ -486,6 +493,12 @@ public class UserAuthService {
     private void validateCredentialsRequest(SignUpCredentialsReqDto reqDto) {
         if (!reqDto.getPassword().equals(reqDto.getPasswordConfirm())) {
             throw new BusinessException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+    }
+
+    private void validateEmailRequest(EmailVerificationReqDto reqDto) {
+        if (!reqDto.getEmail().equals(reqDto.getEmailConfirm())) {
+            throw new BusinessException(ErrorCode.EMAIL_CONFIRM_MISMATCH);
         }
     }
 

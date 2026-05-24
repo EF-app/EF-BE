@@ -27,7 +27,7 @@ public class BalCommentController {
     private final BalCommentLikeService balCommentLikeService;
     private final SecurityUtil securityUtil;
 
-    // 댓글/대댓글 작성 (parentId 가 있으면 대댓글)
+    // 댓글/대댓글 작성 — id 기반 (parentId 가 있으면 대댓글)
     @Operation(summary = "댓글/대댓글 작성", description = "parentId 가 있으면 대댓글로 등록됨")
     @PostMapping
     public ResponseEntity<RspTemplate<CommentRspDto>> createComment(
@@ -39,7 +39,7 @@ public class BalCommentController {
                 .body(new RspTemplate<>(HttpStatus.CREATED, "댓글 작성 성공", data));
     }
 
-    // 댓글 트리 조회 (오래된 순 - 맨 아래가 최신)
+    // 댓글 트리 조회 (맨 아래가 최신)
     @Operation(summary = "댓글 트리 조회", description = "오래된 순으로 정렬 — 맨 아래가 최신")
     @GetMapping
     public ResponseEntity<RspTemplate<List<CommentRspDto>>> getComments(@PathVariable Long gameId) {
@@ -60,7 +60,7 @@ public class BalCommentController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "최신 댓글 조회 성공", data));
     }
 
-    // 본인 댓글 삭제
+    // 본인 댓글 삭제 — id 기반
     @Operation(summary = "본인 댓글 삭제")
     @DeleteMapping("/{commentId}")
     public ResponseEntity<RspTemplate<Void>> deleteComment(@PathVariable Long gameId,
