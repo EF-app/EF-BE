@@ -28,13 +28,14 @@ public enum ErrorCode {
     // 회원가입
     TERMS_AGREEMENT_REQUIRED(400, "필수 약관 동의가 필요합니다."),
     PASSWORD_CONFIRM_MISMATCH(400, "비밀번호 확인이 일치하지 않습니다."),
+    EMAIL_CONFIRM_MISMATCH(400, "이메일 확인이 일치하지 않습니다."),
     PHONE_VERIFICATION_REQUIRED(400, "휴대폰 인증이 필요합니다."),
     FEMALE_VERIFICATION_REQUIRED(400, "여성 인증이 필요합니다."),
     ADULT_VERIFICATION_REQUIRED(400, "성인 인증이 필요합니다."),
     CREDENTIALS_REQUIRED(400, "아이디와 비밀번호 입력이 필요합니다."),
     PURPOSE_REQUIRED(400, "가입 목적 선택이 필요합니다."),
     PROFILE_REQUIRED(400, "프로필 정보 입력이 필요합니다."),
-    PROFILE_IMAGE_COUNT_EXCEEDED(400, "프로필 이미지는 최대 3장까지 등록할 수 있습니다."),
+    PROFILE_IMAGE_COUNT_EXCEEDED(400, "프로필 이미지는 최대 5장까지 등록할 수 있습니다."),
     INVALID_PROFILE_IMAGE(400, "유효하지 않은 프로필 이미지입니다."),
     INVALID_FEEDBACK_IMAGE(400, "유효하지 않은 피드백 이미지입니다."),
     PERSONAL_REQUIRED(400, "성향 정보는 1개 이상 선택해야 합니다."),
@@ -146,7 +147,8 @@ public enum ErrorCode {
     INVALID_AMEND_NOTICE_UPDATE(400, "정정 공지는 수정으로 전환할 수 없습니다."),
 
     // 피드백 (버그신고/기능요청)
-    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다.");
+    INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다."),
+    NOT_FOUND_FEEDBACK(404, "존재하지 않는 피드백입니다.");
 
     private final int code;
     private final String message;

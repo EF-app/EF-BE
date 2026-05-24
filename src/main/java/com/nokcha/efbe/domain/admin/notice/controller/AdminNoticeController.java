@@ -4,17 +4,20 @@ import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.domain.admin.notice.dto.request.NoticeReqDto;
 import com.nokcha.efbe.domain.admin.notice.service.AdminNoticeService;
 import com.nokcha.efbe.domain.notice.dto.response.NoticeDetailRspDto;
+import com.nokcha.efbe.domain.notice.dto.response.NoticePageRspDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Admin Notice", description = "관리자 공지사항 관리 API")
@@ -38,7 +41,7 @@ public class AdminNoticeController {
     @Operation(summary = "공지사항 수정", description = "관리자만 공지사항을 수정할 수 있습니다.")
     @PatchMapping("/{noticeId}")
     public RspTemplate<NoticeDetailRspDto> updateNotice(@PathVariable Long noticeId,
-                                                       @Valid @RequestBody NoticeReqDto reqDto) {
+                                                        @Valid @RequestBody NoticeReqDto reqDto) {
         return new RspTemplate<>(
                 HttpStatus.OK,
                 "공지사항 수정이 완료되었습니다.",
@@ -51,5 +54,25 @@ public class AdminNoticeController {
     public RspTemplate<Void> deleteNotice(@PathVariable Long noticeId) {
         adminNoticeService.deleteNotice(noticeId);
         return new RspTemplate<>(HttpStatus.OK, "공지사항 삭제가 완료되었습니다.");
+    }
+
+    @Operation(summary = "관리자 공지사항 목록 조회", description = "관리자는 상태와 무관하게 전체 공지사항 목록을 조회할 수 있습니다.")
+    @GetMapping
+    public RspTemplate<NoticePageRspDto> getNotices(@RequestParam(defaultValue = "0") int page) {
+        return new RspTemplate<>(
+                HttpStatus.OK,
+                "공지사항 목록 조회가 완료되었습니다.",
+                adminNoticeService.getNotices(page)
+        );
+    }
+
+    @Operation(summary = "관리자 공지사항 상세 조회", description = "관리자는 상태와 무관하게 공지사항 상세를 조회할 수 있습니다.")
+    @GetMapping("/{noticeId}")
+    public RspTemplate<NoticeDetailRspDto> getOneNotice(@PathVariable Long noticeId) {
+        return new RspTemplate<>(
+                HttpStatus.OK,
+                "공지사항 상세 조회가 완료되었습니다.",
+                adminNoticeService.getOneNotice(noticeId)
+        );
     }
 }
