@@ -24,7 +24,7 @@ public class PostLikeController {
     private final PostLikeService postLikeService;
     private final SecurityUtil securityUtil;
 
-    @Operation(summary = "포스트잇 좋아요", description = "특정 포스트잇에 좋아요를 누릅니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
+    @Operation(summary = "포스트잇 좋아요", description = "id 로 좋아요. 갱신된 likeCount/likedByMe 반환.")
     @PostMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> createLike(@PathVariable Long postId) {
         Long userId = securityUtil.getCurrentUserId();
@@ -33,7 +33,7 @@ public class PostLikeController {
                 .body(new RspTemplate<>(HttpStatus.CREATED, "좋아요 성공", data));
     }
 
-    @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소합니다. 갱신된 likeCount/likedByMe 를 반환합니다.")
+    @Operation(summary = "포스트잇 좋아요 취소", description = "본인이 누른 좋아요를 취소. 갱신된 likeCount/likedByMe 반환.")
     @DeleteMapping
     public ResponseEntity<RspTemplate<PostLikeRspDto>> deleteLike(@PathVariable Long postId) {
         Long userId = securityUtil.getCurrentUserId();

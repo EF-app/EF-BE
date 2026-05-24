@@ -116,7 +116,7 @@ public class BalGameService {
         return size;
     }
 
-    // 단건 상세 조회 (홈 진입 - 최신 댓글 3개 + 내 투표 정보 포함)
+    // 단건 상세 조회 — id 기반 (홈 진입 - 최신 댓글 3개 + 내 투표 정보 포함)
     @Transactional(readOnly = true)
     public BalGameDetailRspDto getOneBalanceGame(Long gameId, Long viewerId) {
         BalGame game = balGameRepository.findById(gameId)

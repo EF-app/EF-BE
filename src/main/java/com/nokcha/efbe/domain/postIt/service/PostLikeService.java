@@ -24,7 +24,7 @@ public class PostLikeService {
     private final PostItRepository postItRepository;
     private final UserRepository userRepository;
 
-    // 좋아요 추가 (중복 시 예외)
+    // 좋아요 추가 (중복 시 예외) — id 기반
     @Transactional
     public PostLikeRspDto createLike(Long postId, Long userId) {
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
@@ -46,7 +46,7 @@ public class PostLikeService {
                 .build();
     }
 
-    // 좋아요 취소
+    // 좋아요 취소 — id 기반
     @Transactional
     public PostLikeRspDto deleteLike(Long postId, Long userId) {
         PostLike like = postLikeRepository.findByPostIdAndUserId(postId, userId)

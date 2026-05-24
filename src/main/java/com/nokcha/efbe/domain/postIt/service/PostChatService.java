@@ -60,7 +60,7 @@ public class PostChatService {
 
         // 첫 답장 시 결정한 익명 정책은 그 방에서 영원히 유지 (이후 토글 불가)
         boolean partnerAnonymous = Boolean.TRUE.equals(req.getIsAnonymous());
-        PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(postId, partnerId)
+        PostChatRoom room = postChatRoomRepository.findByPostIdAndPartnerId(post.getId(), partnerId)
                 .orElseGet(() -> {
                     // 새 방 생성 = 새 답장 → 한도 차감. 기존 방에 추가 메시지 보내는 건 미차감.
                     dailyUsageService.consume(partnerId, ACTION_POST_REPLY, FREE_POST_REPLY_LIMIT);

@@ -52,7 +52,7 @@ public class BalGameController {
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "홈 밸런스 게임 조회 성공", data));
     }
 
-    // 단건 상세 조회
+    // 단건 상세 조회 — id 기반
     @Operation(summary = "밸런스 게임 단건 상세")
     @GetMapping("/{gameId}")
     public ResponseEntity<RspTemplate<BalGameDetailRspDto>> getOneBalanceGame(@PathVariable Long gameId) {

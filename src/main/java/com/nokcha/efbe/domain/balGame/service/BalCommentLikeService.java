@@ -22,7 +22,7 @@ public class BalCommentLikeService {
     private final BalGameCommentRepository balGameCommentRepository;
     private final UserRepository userRepository;
 
-    // 좋아요 추가 - 카운트 1 증가, 중복 시 예외
+    // 좋아요 추가 - id 기반, 카운트 1 증가, 중복 시 예외
     @Transactional
     public void createLike(Long commentId, Long userId) {
         if (balCommentLikeRepository.existsByCommentIdAndUserId(commentId, userId)) {
@@ -40,14 +40,14 @@ public class BalCommentLikeService {
         comment.increaseLikes();
     }
 
-    // 좋아요 취소 - 카운트 1 감소
+    // 좋아요 취소 - id 기반, 카운트 1 감소
     @Transactional
     public void deleteLike(Long commentId, Long userId) {
+        BalGameComment comment = balGameCommentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
         BalCommentLike like = balCommentLikeRepository.findByCommentIdAndUserId(commentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_LIKE));
         balCommentLikeRepository.delete(like);
-        BalGameComment comment = balGameCommentRepository.findById(commentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
         comment.decreaseLikes();
     }
 }

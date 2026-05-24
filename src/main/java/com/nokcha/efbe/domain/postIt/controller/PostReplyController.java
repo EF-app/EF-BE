@@ -28,7 +28,7 @@ public class PostReplyController {
     private final PostChatService postChatService;
     private final SecurityUtil securityUtil;
 
-    @Operation(summary = "포스트잇 답장", description = "특정 포스트잇에 답장합니다. 첫 답장이면 채팅방이 lazy 생성되며, 이때 isAnonymous=true 면 그 방은 영원히 익명으로 유지됩니다.")
+    @Operation(summary = "포스트잇 답장", description = "id 포스트잇에 답장. 첫 답장이면 채팅방 lazy 생성, isAnonymous=true 면 영원히 익명 유지.")
     @PostMapping("/{postId}/replies")
     public ResponseEntity<RspTemplate<PostChatMessageRspDto>> replyToPost(
             @PathVariable Long postId,

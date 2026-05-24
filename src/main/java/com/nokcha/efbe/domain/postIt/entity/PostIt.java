@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "post_it",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_post_uuid", columnNames = "uuid")},
         indexes = {
                 @Index(name = "idx_post_active_feed", columnList = "is_hidden, is_deleted, create_time DESC"),
                 @Index(name = "idx_post_pinned", columnList = "is_hidden, is_deleted, pinned_until DESC"),
@@ -39,10 +38,6 @@ public class PostIt extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    // [v1.6] 외부 API path 용 UUID
-    @Column(name = "uuid", nullable = false, length = 36)
-    private String uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_post_user"))
@@ -82,9 +77,8 @@ public class PostIt extends BaseEntity {
     private Boolean isDeleted = Boolean.FALSE;
 
     @Builder
-    private PostIt(String uuid, User user, PostCategory categoryCode, String content,
+    private PostIt(User user, PostCategory categoryCode, String content,
                    PostItColor color, Boolean isAnonymous, LocalDateTime expiresAt) {
-        this.uuid = uuid;
         this.user = user;
         this.categoryCode = categoryCode;
         this.content = content;
@@ -131,6 +125,17 @@ public class PostIt extends BaseEntity {
     // 작성자 Soft delete
     public void softDelete() {
         this.isDeleted = Boolean.TRUE;
+    }
+
+    // 어드민 강제 숨김 — increaseReportAndHideIfThreshold 와 달리 신고 카운트 변경 없음
+    public void hideByAdmin() {
+        this.isHidden = Boolean.TRUE;
+    }
+
+    // 어드민 숨김 해제 — 신고 누적 카운트도 0 리셋 (FE 모달 명시: "해제 시 report_count 0")
+    public void restoreByAdmin() {
+        this.isHidden = Boolean.FALSE;
+        this.reportCount = 0;
     }
 
     // 본문 표시 정책 적용 (삭제/숨김 우선 치환)

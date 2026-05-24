@@ -25,7 +25,7 @@ public class BalVoteService {
     private final BalVoteRepository balVoteRepository;
     private final UserRepository userRepository;
 
-    // 신규 투표 처리 - 게임 행 락 후 카운트 + 투표 row 동시 처리
+    // 신규 투표 처리 - id 로 게임 행 락 후 카운트 + 투표 row 동시 처리
     @Transactional
     public BalVoteRspDto createVote(Long gameId, Long userId, BalVoteChoice choice) {
         BalGame game = balGameRepository.findByIdForUpdate(gameId)

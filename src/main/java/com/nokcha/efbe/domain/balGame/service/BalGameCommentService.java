@@ -40,7 +40,7 @@ public class BalGameCommentService {
     private final UserRepository userRepository;
     private final NicknameService nicknameService;
 
-    // 댓글/대댓글 작성 (투표 완료자만 가능, 익명 닉네임 자동 부여)
+    // 댓글/대댓글 작성 — id 기반. 투표 완료자만 가능, 익명 닉네임 자동 부여.
     @Transactional
     public CommentRspDto createComment(Long gameId, Long userId, CommentCreateReqDto req) {
         BalGame game = balGameRepository.findById(gameId)
@@ -65,23 +65,21 @@ public class BalGameCommentService {
 
         String nickname = nicknameService.resolveOrCreate(game, user);
         BalGameComment comment = BalGameComment.builder()
-                .uuid(java.util.UUID.randomUUID().toString())
                 .game(game).user(user).parent(parent)
                 .nickname(nickname).content(req.getContent())
                 .build();
         BalGameComment saved = balGameCommentRepository.save(comment);
-        // 댓글 카운트는 JPQL bulk UPDATE 로 갱신 — entity setter 경로를 피해 update_time 비갱신 정책 유지
         balGameRepository.updateCommentCount(gameId, 1);
 
         return CommentRspDto.from(saved, userId, false);
     }
 
-    // 본인 댓글 삭제 (소프트 삭제 - 본문은 표시 정책으로 치환)
+    // 본인 댓글 삭제 — id 기반. 소프트 삭제, 본문은 표시 정책으로 치환.
     @Transactional
     public void deleteComment(Long gameId, Long commentId, Long userId) {
         BalGameComment comment = balGameCommentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_COMMENT));
-        if (!comment.getGame().getId().equals(gameId)) {
+        if (comment.getGame() == null || !comment.getGame().getId().equals(gameId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND_COMMENT);
         }
         if (comment.getUser() == null || !comment.getUser().getId().equals(userId)) {
@@ -90,15 +88,13 @@ public class BalGameCommentService {
         if (Boolean.TRUE.equals(comment.getIsDeleted())) return;
         comment.softDelete();
 
-        // 댓글 카운트는 JPQL bulk UPDATE 로 갱신 (update_time 비갱신 정책 유지).
-        // comment.getGame() 은 LAZY 프록시이며 .getId() 는 추가 SELECT 없이 식별자만 꺼냄.
         Long commentGameId = comment.getGame() != null ? comment.getGame().getId() : null;
         if (commentGameId != null) {
             balGameRepository.updateCommentCount(commentGameId, -1);
         }
     }
 
-    // 게임 댓글 트리 조회 (오래된 순 - 맨 아래가 최신, 신고/숨김 필터 적용)
+    // 게임 댓글 트리 조회 — id 기반 (오래된 순, 신고/숨김 필터 적용)
     @Transactional(readOnly = true)
     public List<CommentRspDto> getComments(Long gameId, Long viewerId) {
         if (!balGameRepository.existsById(gameId)) {
@@ -136,8 +132,8 @@ public class BalGameCommentService {
         return roots;
     }
 
-    // 메인홈용 — 특정 게임의 최신 top-level 댓글 N개 (기본 3, 최대 10).
-    // 투표 여부와 무관하게 메인홈 카드에서 미리보기로 노출되므로 ensureVoter 호출하지 않음.
+    // 메인홈용 — id 기반 최신 top-level 댓글 N개 (기본 3, 최대 10).
+    // 투표 여부와 무관하게 메인홈 카드에서 미리보기로 노출
     @Transactional(readOnly = true)
     public List<CommentRspDto> getRecentComments(Long gameId, Long viewerId, Integer size) {
         if (!balGameRepository.existsById(gameId)) {
