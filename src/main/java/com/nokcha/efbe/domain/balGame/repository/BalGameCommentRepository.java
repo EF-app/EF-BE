@@ -48,4 +48,8 @@ public interface BalGameCommentRepository extends JpaRepository<BalGameComment, 
     // 어드민 댓글 페이지 — 숨김/삭제 모두 노출 (어드민이 직접 판단).
     org.springframework.data.domain.Page<BalGameComment> findByGameId(
             Long gameId, org.springframework.data.domain.Pageable pageable);
+
+    // 어드민 — 유저 상세 "작성한 댓글" 숨김/삭제 포함.
+    org.springframework.data.domain.Page<BalGameComment> findByUser_IdOrderByCreateTimeDesc(
+            Long userId, org.springframework.data.domain.Pageable pageable);
 }
