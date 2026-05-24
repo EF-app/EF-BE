@@ -6,8 +6,7 @@ import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalCommentRspDto;
 import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalGameDetailRspDto;
 import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalGameSummaryRspDto;
 import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalVoteStatsRspDto;
-import com.nokcha.efbe.domain.admin.balGame.dto.request.AdminBalGameCreateReqDto;
-import com.nokcha.efbe.domain.admin.balGame.dto.request.AdminBalGameUpdateReqDto;
+import com.nokcha.efbe.domain.admin.balGame.dto.request.AdminBalGameReqDto;
 import com.nokcha.efbe.domain.balGame.entity.BalApply;
 import com.nokcha.efbe.domain.balGame.entity.BalApplyStatus;
 import com.nokcha.efbe.domain.balGame.repository.BalApplyRepository;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,12 +36,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// User 측 BalGameService 와 차이:
-//   - status 차단 없음 (DRAFT/SCHEDULED/HIDDEN/ARCHIVED 모두 노출)
-//   - Spring Page<> 페이지네이션 (CursorPage 아님)
 @Service
 @RequiredArgsConstructor
 public class AdminBalGameService {
+
+    private static final LocalDateTime DEFAULT_SCHEDULED_END_AT = LocalDateTime.of(9999, 12, 31, 0, 0);
 
     private final BalGameRepository balGameRepository;
     private final BalGameCommentRepository balGameCommentRepository;
@@ -52,13 +49,14 @@ public class AdminBalGameService {
     private final BalApplyRepository balApplyRepository;
     private final AdminBalVoteService adminBalVoteService;
 
+    // 밸런스 게임 전체 조회
     @Transactional(readOnly = true)
     public Page<AdminBalGameSummaryRspDto> getGames(BalGameStatus status, BalCategoryCode categoryCode, Pageable pageable) {
         return balGameRepository.findAdminGames(status, categoryCode, pageable)
                 .map(AdminBalGameSummaryRspDto::from);
     }
 
-    // 단건 상세 — id 기반. status 차단 없이 모든 상태 노출. voteStats(비율 + 연령대/지역 분포)
+    // 밸런스 게임 상세 조회
     @Transactional(readOnly = true)
     public AdminBalGameDetailRspDto getGame(Long gameId) {
         BalGame game = balGameRepository.findById(gameId)
@@ -67,26 +65,28 @@ public class AdminBalGameService {
         return AdminBalGameDetailRspDto.from(game, stats);
     }
 
+    // 밸런스 게임 등록
     @Transactional
-    public AdminBalGameDetailRspDto createGame(AdminBalGameCreateReqDto req) {
+    public AdminBalGameDetailRspDto createGame(AdminBalGameReqDto req) {
         BalGameStatus status = req.getStatus() == null ? BalGameStatus.DRAFT : req.getStatus();
+        LocalDateTime scheduledEndAt = req.getScheduledEndAt() == null
+                ? DEFAULT_SCHEDULED_END_AT
+                : req.getScheduledEndAt();
 
-        // 1) 신규 등록에 ARCHIVED 금지
+        // 신규 등록에 ARCHIVED 금지
         if (status == BalGameStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.BAL_GAME_INVALID_TRANSITION);
         }
 
-        // 2) SCHEDULED 검증 — scheduledAt 필수, 미래, 10분 단위
+        // SCHEDULED 검증 — scheduledAt 필수, 미래, 10분 단위
         if (status == BalGameStatus.SCHEDULED) {
             validateScheduledAtForCreate(req.getScheduledAt());
         }
 
-        // 3) scheduledEndAt 검증 (있을 때만)
-        if (req.getScheduledEndAt() != null) {
-            validateScheduledEndAtForCreate(req.getScheduledEndAt(), req.getScheduledAt());
-        }
+        // scheduledEndAt이 존재할 때만 검증
+        validateScheduledEndAtForCreate(scheduledEndAt, req.getScheduledAt());
 
-        // 4) BAL-APPLY 기반 등록 — applyId 있으면 PENDING → APPROVED 처리 + 신청자 도출
+        // applyId 있는 경우 PENDING → APPROVED 처리 + 신청자 도출
         User applicant = null;
         if (req.getApplyId() != null) {
             BalApply apply = balApplyRepository.findById(req.getApplyId())
@@ -109,7 +109,7 @@ public class AdminBalGameService {
                 .categoryCode(req.getCategoryCode())
                 .status(status)
                 .scheduledAt(req.getScheduledAt())
-                .scheduledEndAt(req.getScheduledEndAt())
+                .scheduledEndAt(scheduledEndAt)
                 .applicant(applicant)
                 .build());
 
@@ -139,46 +139,36 @@ public class AdminBalGameService {
     }
 
     @Transactional
-    public AdminBalGameDetailRspDto updateGame(Long gameId, AdminBalGameUpdateReqDto req) {
+    public AdminBalGameDetailRspDto updateGame(Long gameId, AdminBalGameReqDto req) {
         BalGame game = balGameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_GAME));
+        LocalDateTime resolvedScheduledEndAt = resolveScheduledEndAtForUpdate(game, req);
 
-        // 1) PUBLISHED / ARCHIVED 수정 거부 (status/일정만 허용)
+        // PUBLISHED / ARCHIVED 수정 거부
         BalGameStatus current = game.getStatus();
-        if ((current == BalGameStatus.PUBLISHED || current == BalGameStatus.ARCHIVED)
-                && req.hasContentField()) {
+        if ((current == BalGameStatus.PUBLISHED || current == BalGameStatus.ARCHIVED && req.hasContentField())) {
             throw new BusinessException(ErrorCode.BAL_GAME_CONTENT_LOCKED);
         }
 
-        // 2) clear flag 와 value 동시 사용 모순 거부
-        if (Boolean.TRUE.equals(req.getClearScheduledAt()) && req.getScheduledAt() != null) {
-            throw new BusinessException(ErrorCode.BAL_GAME_INVALID_SCHEDULE);
-        }
-        if (Boolean.TRUE.equals(req.getClearScheduledEndAt()) && req.getScheduledEndAt() != null) {
-            throw new BusinessException(ErrorCode.BAL_GAME_INVALID_SCHEDULE);
-        }
-
-        // 3) 상태 전환 검증 + 적용
+        // 상태 전환 검증 + 적용
         if (req.getStatus() != null && req.getStatus() != game.getStatus()) {
             validateTransition(game.getStatus(), req.getStatus(), req);
             game.changeStatus(req.getStatus());
         }
 
-        // 4) 일정 — clear flag 우선, 그 다음 value
-        if (Boolean.TRUE.equals(req.getClearScheduledAt())) {
-            game.changeScheduledAt(null);
-        } else if (req.getScheduledAt() != null) {
+        // 일정 — null 이 아니면 변경
+        if (req.getScheduledAt() != null) {
             validateScheduledAt(req.getScheduledAt(), game.getStatus());
             game.changeScheduledAt(req.getScheduledAt());
         }
-        if (Boolean.TRUE.equals(req.getClearScheduledEndAt())) {
-            game.changeScheduledEndAt(null);
-        } else if (req.getScheduledEndAt() != null) {
-            validateScheduledEndAt(req.getScheduledEndAt(), game.getScheduledAt());
-            game.changeScheduledEndAt(req.getScheduledEndAt());
+
+        if (resolvedScheduledEndAt != null
+                && (!resolvedScheduledEndAt.equals(game.getScheduledEndAt()) || game.getScheduledEndAt() == null)) {
+            validateScheduledEndAt(resolvedScheduledEndAt, game.getScheduledAt());
+            game.changeScheduledEndAt(resolvedScheduledEndAt);
         }
 
-        // 5) 내용 (PUBLISHED 는 1번에서 수정 차단됨)
+        // 4) 내용 (PUBLISHED 는 1번에서 수정 차단됨)
         if (req.hasContentField()) {
             game.editFields(
                     req.getOptionA(), req.getOptionB(),
@@ -192,7 +182,7 @@ public class AdminBalGameService {
     }
 
     // 상태 전환 매트릭스 검증.
-    private void validateTransition(BalGameStatus from, BalGameStatus to, AdminBalGameUpdateReqDto req) {
+    private void validateTransition(BalGameStatus from, BalGameStatus to, AdminBalGameReqDto req) {
         switch (from) {
             case DRAFT -> {
                 if (to == BalGameStatus.HIDDEN) {
@@ -235,11 +225,19 @@ public class AdminBalGameService {
         }
     }
 
-    // 전환 후 scheduledAt 값 — 요청에 명시되면 그 값, 아니면 (clear 가 아니면) 검증 통과 위해 null 반환.
-    // 검증 호출자에서 null 이면 INVALID_SCHEDULE 던짐.
-    private LocalDateTime resolveScheduledAtAfter(AdminBalGameUpdateReqDto req) {
-        if (Boolean.TRUE.equals(req.getClearScheduledAt())) return null;
+    // 전환 후 scheduledAt 값 — 요청에 명시된 값만 사용한다.
+    private LocalDateTime resolveScheduledAtAfter(AdminBalGameReqDto req) {
         return req.getScheduledAt();
+    }
+
+    private LocalDateTime resolveScheduledEndAtForUpdate(BalGame game, AdminBalGameReqDto req) {
+        if (req.getScheduledEndAt() != null) {
+            return req.getScheduledEndAt();
+        }
+        if (game.getScheduledEndAt() != null) {
+            return game.getScheduledEndAt();
+        }
+        return DEFAULT_SCHEDULED_END_AT;
     }
 
     // 단일 scheduledAt 변경 검증 — SCHEDULED 상태면 미래여야 함
