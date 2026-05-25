@@ -47,6 +47,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -295,7 +296,7 @@ public class UserAuthService {
     @Transactional
     public SignUpCompleteRspDto completeSignUp(String registrationToken) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(registrationToken);
-        int birth = 19900101;   // 임시 값 (핸드폰 인증 작성 시 수정 필요)
+        LocalDate birth = LocalDate.of(1990, 01, 01);   // 임시 값 (핸드폰 인증 작성 시 수정 필요)
 
         if (signUpSession.getSignUpStep() != SignUpStep.PROFILE_COMPLETED) {
             throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
@@ -582,8 +583,8 @@ public class UserAuthService {
     }
 
     // YYYYMMDD 형식 생년월일 기준 한국 나이 계산
-    private int calculateKoreanAge(int birth) {
-        int birthYear = birth / 10000;
+    private int calculateKoreanAge(LocalDate birth) {
+        int birthYear = birth.getYear();
         int currentYear = LocalDateTime.now().getYear();
         return currentYear - birthYear + 1;
     }
