@@ -134,7 +134,7 @@ public class UserSignUpProfileService {
 
     // 프로필 사진과 소개 저장
     @Transactional
-    public SignUpProfileRspDto createProfile(String registrationToken, String message, List<MultipartFile> images) {
+    public SignUpProfileRspDto createProfile(String registrationToken, String bioMessage, List<MultipartFile> images) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(registrationToken);
 
         if (!isProfileIntroEditableStep(signUpSession.getSignUpStep())) {
@@ -142,7 +142,7 @@ public class UserSignUpProfileService {
         }
 
         validateProfileImages(images);
-        saveDraftProfileMessage(signUpSession.getId(), message);
+        saveDraftProfileMessage(signUpSession.getId(), bioMessage);
         List<String> imageUrls = saveProfileImages(signUpSession.getId(), images);
         signUpSession.updateProfileIntroStep();
 
@@ -287,9 +287,9 @@ public class UserSignUpProfileService {
     }
 
     // 소개 문구 저장
-    private void saveDraftProfileMessage(Long signUpSessionId, String message) {
+    private void saveDraftProfileMessage(Long signUpSessionId, String bioMessage) {
         UserSignUpProfile profile = getOrCreateDraftProfile(signUpSessionId);
-        profile.updateMessage(message == null || message.isBlank() ? null : message.trim());
+        profile.updateMessage(bioMessage == null || bioMessage.isBlank() ? null : bioMessage.trim());
     }
 
     // 이상형 포인트 목록 정규화

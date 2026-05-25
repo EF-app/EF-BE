@@ -177,7 +177,7 @@ public class AdminUserService {
                 .matchPurpose(profile.getPurpose() == null ? null : profile.getPurpose().name())
                 .interestTarget(profile.getPurpose())
                 .job(profile.getJob() == null ? null : profile.getJob().name())
-                .bioMessage(profile.getMessage())
+                .bioMessage(profile.getBioMessage())
                 .idealPoints(profile.getIdealPointTypes() == null ? List.of()
                         : profile.getIdealPointTypes().stream().map(IdealPointType::name).toList())
                 .keywords(keywords)

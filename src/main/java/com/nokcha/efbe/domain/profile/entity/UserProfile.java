@@ -41,7 +41,7 @@ public class UserProfile {
     private List<IdealPointType> idealPointTypes;
 
     @Column(length = 300)
-    private String message;
+    private String bioMessage;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "profile_status", nullable = false, length = 20, columnDefinition = "VARCHAR(20) NOT NULL DEFAULT 'APPROVED'")
@@ -57,13 +57,13 @@ public class UserProfile {
     private Long profileReviewedBy;
 
     @Builder
-    public UserProfile(Long userId, Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String message) {
+    public UserProfile(Long userId, Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String bioMessage) {
         this.userId = userId;
         this.mbti = mbti;
         this.purpose = purpose;
         this.job = job;
         this.idealPointTypes = idealPointTypes;
-        this.message = message;
+        this.bioMessage = bioMessage;
         this.profileStatus = ProfileStatus.APPROVED;
     }
 
@@ -72,7 +72,7 @@ public class UserProfile {
         this.purpose = purpose;
         this.job = job;
         this.idealPointTypes = idealPointTypes;
-        this.message = message;
+        this.bioMessage = message;
     }
 
     // 관리자 승인

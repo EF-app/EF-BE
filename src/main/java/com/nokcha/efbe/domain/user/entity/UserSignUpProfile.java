@@ -38,15 +38,15 @@ public class UserSignUpProfile extends BaseEntity {
     private List<IdealPointType> idealPointTypes;
 
     @Column(length = 255)
-    private String message;
+    private String bioMessage;
 
     @Builder
-    public UserSignUpProfile(Long signUpSessionId, Mbti mbti, Job job, List<IdealPointType> idealPointTypes, String message) {
+    public UserSignUpProfile(Long signUpSessionId, Mbti mbti, Job job, List<IdealPointType> idealPointTypes, String bioMessage) {
         this.signUpSessionId = signUpSessionId;
         this.mbti = mbti;
         this.job = job;
         this.idealPointTypes = idealPointTypes;
-        this.message = message;
+        this.bioMessage = bioMessage;
     }
 
     public void updateAboutMe(Job job, Mbti mbti) {
@@ -59,6 +59,6 @@ public class UserSignUpProfile extends BaseEntity {
     }
 
     public void updateMessage(String message) {
-        this.message = message;
+        this.bioMessage = message;
     }
 }
