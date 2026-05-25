@@ -48,3 +48,6 @@ application*.yml
 
 ### sql 파일 ###
 *.sql
+
+### docs ###
+/docs
