@@ -137,6 +137,8 @@ public enum ErrorCode {
 
     // 신고·동의·사진
     DUPLICATE_REPORT(409, "이미 신고된 항목입니다."),
+    NOT_FOUND_REPORT(404, "신고를 찾을 수 없습니다."),
+    REPORT_ALREADY_PROCESSED(409, "이미 처리된 신고입니다."),
     NOT_FOUND_CONSENT(404, "동의 정보를 찾을 수 없습니다."),
     NOT_FOUND_PHOTO(404, "사진을 찾을 수 없습니다."),
 
