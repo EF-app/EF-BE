@@ -48,7 +48,7 @@ public class AdminBalVoteRspDto {
                 .userUuid(r.userUuid())
                 .userNickname(r.userNickname())
                 .userAge(r.userAge())
-                .userArea(composeLocation(r.areaCountry(), r.areaCity()))
+                .userArea(LocationUtil.composeLocation(r.areaCountry(), r.areaCity()))
                 .choice(r.choice())
                 .createTime(r.createTime())
                 .updateTime(r.updateTime())
