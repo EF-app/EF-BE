@@ -10,6 +10,9 @@ public interface ProfileImageRepository extends JpaRepository<UserProfileImage, 
     // 회원가입 세션 기준 프로필 이미지 조회
     List<UserProfileImage> findBySignUpSessionIdOrderBySortOrderAsc(Long signUpSessionId);
 
+    // 회원 기준 프로필 이미지 조회 (어드민 유저 상세)
+    List<UserProfileImage> findByUserIdOrderBySortOrderAsc(Long userId);
+
     // 회원가입 세션 기준 프로필 이미지 삭제
     void deleteBySignUpSessionId(Long signUpSessionId);
 }

@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -42,6 +43,21 @@ public class UserProfile {
     @Column(length = 300)
     private String message;
 
+    // ===== 프로필 심사 (관리자) =====
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile_status", nullable = false, length = 20,
+            columnDefinition = "VARCHAR(20) NOT NULL DEFAULT 'APPROVED'")
+    private ProfileStatus profileStatus;
+
+    @Column(name = "profile_rejected_reason", length = 255)
+    private String profileRejectedReason;
+
+    @Column(name = "profile_reviewed_at")
+    private LocalDateTime profileReviewedAt;
+
+    @Column(name = "profile_reviewed_by")
+    private Long profileReviewedBy;
+
     @Builder
     public UserProfile(Long userId, Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String message) {
         this.userId = userId;
@@ -50,6 +66,7 @@ public class UserProfile {
         this.job = job;
         this.idealPointTypes = idealPointTypes;
         this.message = message;
+        this.profileStatus = ProfileStatus.APPROVED;
     }
 
     public void update(Mbti mbti, Purpose purpose, Job job, List<IdealPointType> idealPointTypes, String message) {
@@ -58,5 +75,21 @@ public class UserProfile {
         this.job = job;
         this.idealPointTypes = idealPointTypes;
         this.message = message;
+    }
+
+    // 관리자 승인
+    public void approve(Long reviewerAdminId) {
+        this.profileStatus = ProfileStatus.APPROVED;
+        this.profileRejectedReason = null;
+        this.profileReviewedAt = LocalDateTime.now();
+        this.profileReviewedBy = reviewerAdminId;
+    }
+
+    // 관리자 반려
+    public void reject(String reason, Long reviewerAdminId) {
+        this.profileStatus = ProfileStatus.REJECTED;
+        this.profileRejectedReason = reason;
+        this.profileReviewedAt = LocalDateTime.now();
+        this.profileReviewedBy = reviewerAdminId;
     }
 }
