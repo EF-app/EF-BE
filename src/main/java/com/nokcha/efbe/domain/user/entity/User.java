@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -56,7 +57,7 @@ public class User extends BaseEntity {
     private String nickname;
 
     @Column
-    private Integer birth;
+    private LocalDate birth;
 
     @Column
     private Integer age;
@@ -78,7 +79,7 @@ public class User extends BaseEntity {
     private BanStatus banStatus;
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, Integer birth, Integer age, boolean isWithdraw, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, boolean isWithdraw, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;

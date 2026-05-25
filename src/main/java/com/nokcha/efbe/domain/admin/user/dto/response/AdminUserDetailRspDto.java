@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -38,8 +39,8 @@ public class AdminUserDetailRspDto {
     @Schema(description = "나이", example = "27", nullable = true)
     private Integer age;
 
-    @Schema(description = "생년 (YYYY)", example = "1998", nullable = true)
-    private Integer birth;
+    @Schema(description = "생년월일", example = "1998-01-01", nullable = true)
+    private LocalDate birth;
 
     @Schema(description = "지역 (\"국가 도시\" 조합)", example = "대한민국 서울특별시", nullable = true)
     private String area;
