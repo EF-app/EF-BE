@@ -596,14 +596,14 @@ public class UserAuthService {
 
         profileRepository.findByUserId(userId)
                 .ifPresentOrElse(
-                        userProfile -> userProfile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getMessage()),
+                        userProfile -> userProfile.update(signUpProfile.getMbti(), purpose, signUpProfile.getJob(), signUpProfile.getIdealPointTypes(), signUpProfile.getBioMessage()),
                         () -> profileRepository.save(UserProfile.builder()
                                 .userId(userId)
                                 .mbti(signUpProfile.getMbti())
                                 .purpose(purpose)
                                 .job(signUpProfile.getJob())
                                 .idealPointTypes(signUpProfile.getIdealPointTypes())
-                                .message(signUpProfile.getMessage())
+                                .bioMessage(signUpProfile.getBioMessage())
                                 .build())
                 );
     }

@@ -136,9 +136,9 @@ public class UserAuthController {
     @PostMapping(value = "/signup/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public RspTemplate<SignUpProfileRspDto> createProfileIntro(
             @RequestPart("registrationToken") String registrationToken,
-            @RequestPart(value = "message", required = false) String message,
+            @RequestPart(value = "bioMessage", required = false) String bioMessage,
             @RequestPart("images") List<MultipartFile> images) {
-        return new RspTemplate<>(HttpStatus.OK, "프로필 사진 및 소개 입력이 완료되었습니다.", userSignUpProfileService.createProfile(registrationToken, message, images));
+        return new RspTemplate<>(HttpStatus.OK, "프로필 사진 및 소개 입력이 완료되었습니다.", userSignUpProfileService.createProfile(registrationToken, bioMessage, images));
     }
 
     // 회원가입 완료
