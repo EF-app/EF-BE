@@ -9,9 +9,6 @@ build/
 .claude/
 CLAUDE.md
 
-### 로컬 전용 문서 — 개인 참고용, 깃에 올리지 않음 ###
-docs/
-
 ### JVM crash logs ###
 *.log
 
