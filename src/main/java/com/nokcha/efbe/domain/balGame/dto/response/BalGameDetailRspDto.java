@@ -11,7 +11,6 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 밸런스 게임 상세 응답 DTO (홈 진입용 - 최신 댓글 3개 포함)
 @Getter
 @Builder
 @Schema(description = "밸런스 게임 상세")

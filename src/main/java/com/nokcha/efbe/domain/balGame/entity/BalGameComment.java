@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 밸런스 게임 댓글 엔티티
 @Getter
 @Entity
 @Table(name = "bal_comment",
@@ -22,7 +21,6 @@ public class BalGameComment extends BaseEntity {
 
     public static final String DELETED_CONTENT_TEXT = "삭제된 댓글입니다";
     public static final String HIDDEN_CONTENT_TEXT = "숨김처리된 댓글입니다";
-    public static final int HIDE_THRESHOLD = 10;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -86,13 +84,6 @@ public class BalGameComment extends BaseEntity {
 
     public void decreaseLikes() {
         this.likesCount = Math.max(0, (this.likesCount == null ? 0 : this.likesCount) - 1);
-    }
-
-    public void increaseReportAndHideIfThreshold() {
-        this.reportCount = (this.reportCount == null ? 0 : this.reportCount) + 1;
-        if (this.reportCount >= HIDE_THRESHOLD) {
-            this.isHidden = Boolean.TRUE;
-        }
     }
 
     public String resolveDisplayContent() {

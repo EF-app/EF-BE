@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 포스트잇 답장 채팅 RESTful 컨트롤러
 @Tag(name = "PostIt Chat", description = "포스트잇 답장 채팅 API")
 @RestController
 @RequestMapping("/v1")

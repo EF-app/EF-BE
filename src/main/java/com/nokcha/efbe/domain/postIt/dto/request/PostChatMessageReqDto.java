@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 포스트잇 채팅 메시지 요청 DTO
 @Getter
 @NoArgsConstructor
 @Schema(description = "포스트잇 채팅 메시지 전송 요청")

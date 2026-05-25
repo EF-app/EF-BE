@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 어드민 — 특정 유저가 작성한 밸런스 게임 댓글 조회 (유저 상세 "작성한 글" 탭).
 @Service
 @RequiredArgsConstructor
 public class AdminUserBalCommentService {

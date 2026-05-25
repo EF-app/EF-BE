@@ -1,6 +1,5 @@
 package com.nokcha.efbe.domain.postIt.entity;
 
-// post_chat_message.message_type (v1.7)
 public enum PostMessageType {
     TEXT,        // 일반 메시지
     SYSTEM,      // 시스템 배지

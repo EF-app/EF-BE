@@ -1,55 +1,82 @@
 package com.nokcha.efbe.domain.postIt.dto.response;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 import com.nokcha.efbe.domain.postIt.repository.projection.PostItRow;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 포스트잇 응답 DTO (삭제/숨김 표시 정책 + 익명 처리 반영)
-// 익명 마스킹 정책:
-//   - 모든 viewing(피드/내가 쓴 글/단건 조회) 응답에서는 익명 글이면 userId=null, nickname="익명", age/location=null
-//   - 본인 시점도 동일 — "메인 피드에서 본인 글이라도 닉네임 노출 금지" 요구사항 충족
-//   - 단, 작성/owner 액션 응답(createPostIt, activatePin) 만 fromOwnerView 로 userId/nickname 노출 (본인 확인용)
-//     - age/location 은 anonymous=true 면 owner view 에서도 노출하지 않음 ("익명이니 안 나옴" 정책 일관 적용)
-//   - 신고 처리 등 admin 흐름은 별도 admin DTO 사용 (본 DTO 와 무관)
-// 좋아요 필드:
-//   - likeCount: 해당 포스트의 누적 좋아요 수
-//   - likedByMe: viewer(현재 로그인 유저)가 좋아요를 눌렀는지. 비로그인 시 false.
-// age 필드:
-//   - users.age 컬럼 값을 그대로 노출 (한국 나이). 휴대폰 인증 시 산출·저장, 빠른년생 수정 가능.
-//   - 미설정(null) 사용자는 age=null 그대로 전달.
 @Getter
 @Builder
+@Schema(description = "포스트잇 응답")
 public class PostItRspDto {
     public static final String ANONYMOUS_NICKNAME = "익명";
 
+    @Schema(description = "포스트잇 ID", example = "42")
     private Long id;
-    private Long userId;         // 익명이면 null (단 fromOwnerView 경로는 노출)
-    private String nickname;     // 익명이면 "익명", 일반 글은 작성자 nickname
-    private Integer age;         // 익명이면 null. 일반 글은 users.age (한국 나이).
-    private String location;     // 익명이면 null. 일반 글은 "country city" (예: "서울특별시 강남구")
+
+    @Schema(description = "작성자 userId. 익명 글이면 null이며, owner 전용 응답에서는 노출될 수 있음.", example = "15", nullable = true)
+    private Long userId;
+
+    @Schema(description = "표시용 닉네임. 익명 글이면 '익명'.", example = "밤하늘공")
+    private String nickname;
+
+    @Schema(description = "작성자 나이(한국 나이). 익명 글이면 null.", example = "27", nullable = true)
+    private Integer age;
+
+    @Schema(description = "작성자 지역. 익명 글이면 null.", example = "서울특별시 강남구", nullable = true)
+    private String location;
+
+    @Schema(description = "포스트잇 카테고리", example = "DAILY")
     private PostCategory categoryCode;
+
+    @Schema(description = "표시용 본문. 숨김/삭제 상태면 치환 문구가 내려갈 수 있음.", example = "오늘 하루가 너무 길었다.")
     private String content;
+
+    @Schema(description = "포스트잇 색상", example = "YELLOW")
     private PostItColor color;
+
+    @Schema(description = "익명 글 여부", example = "false")
     private boolean anonymous;
+
+    @Schema(description = "번개 카테고리 여부", example = "false")
     private boolean lightning;
+
+    @Schema(description = "만료 시각", example = "2026-05-25T23:59:59", nullable = true)
     private LocalDateTime expiresAt;
+
+    @Schema(description = "상단 고정 만료 시각", example = "2026-05-25T18:00:00", nullable = true)
     private LocalDateTime pinnedUntil;
+
+    @Schema(description = "현재 상단 고정 활성 여부", example = "true")
     private boolean pinned;
+
+    @Schema(description = "답글 수", example = "3")
     private Integer replyCount;
+
+    @Schema(description = "좋아요 수", example = "12")
     private long likeCount;
+
+    @Schema(description = "현재 로그인 유저가 좋아요를 눌렀는지 여부", example = "true")
     private boolean likedByMe;
+
+    @Schema(description = "관리자에 의해 숨김 처리된 글 여부", example = "false")
     private boolean hidden;
+
+    @Schema(description = "삭제 처리된 글 여부", example = "false")
     private boolean deleted;
-    private boolean mine; // viewer 가 작성자 본인인지 (익명 글이어도 본인이면 true → FE 삭제버튼 노출용)
+
+    @Schema(description = "현재 조회 유저가 작성자 본인인지 여부. 익명 글이어도 본인이면 true.", example = "false")
+    private boolean mine;
+
+    @Schema(description = "작성 시각", example = "2026-05-25T14:30:00")
     private LocalDateTime createTime;
 
-    // viewing 기본값 — 익명이면 userId/nickname/age/location 마스킹.
-    // viewerId 가 작성자와 같으면 mine=true (익명이어도 본인 식별용 — FE 삭제 버튼 등에 사용)
     public static PostItRspDto from(PostIt p, long likeCount, boolean likedByMe, String areaCountry, String areaCity, Long viewerId) {
         boolean anonymous = Boolean.TRUE.equals(p.getIsAnonymous());
         Long authorId = p.getUser() == null ? null : p.getUser().getId();
@@ -61,7 +88,7 @@ public class PostItRspDto {
                 .userId(anonymous ? null : authorId)
                 .nickname(resolveNickname(anonymous, authorNickname))
                 .age(anonymous ? null : authorAge)
-                .location(anonymous ? null : composeLocation(areaCountry, areaCity))
+                .location(anonymous ? null : LocationUtil.composeLocation(areaCountry, areaCity))
                 .categoryCode(p.getCategoryCode())
                 .content(p.resolveDisplayContent())
                 .color(p.getColor())
@@ -81,15 +108,11 @@ public class PostItRspDto {
     }
 
     // Querydsl projection 기반 — 신규 피드 표준
-    // 표시 정책 (삭제/숨김 치환) 을 row 단계에서 적용. 익명이면 userId/nickname/age/location 마스킹.
-    // viewerId 가 작성자와 같으면 mine=true.
     public static PostItRspDto from(PostItRow r, Long viewerId) {
         boolean anonymous = Boolean.TRUE.equals(r.isAnonymous());
         boolean hidden = Boolean.TRUE.equals(r.isHidden());
         boolean deleted = Boolean.TRUE.equals(r.isDeleted());
-        String content = hidden ? PostIt.HIDDEN_POST_TEXT
-                : deleted ? PostIt.DELETED_POST_TEXT
-                : r.content();
+        String content = hidden ? PostIt.HIDDEN_POST_TEXT : deleted ? PostIt.DELETED_POST_TEXT : r.content();
         boolean pinned = r.pinnedUntil() != null && r.pinnedUntil().isAfter(LocalDateTime.now());
         boolean owner = viewerId != null && r.userId() != null && viewerId.equals(r.userId());
         return PostItRspDto.builder()
@@ -97,7 +120,7 @@ public class PostItRspDto {
                 .userId(anonymous ? null : r.userId())
                 .nickname(resolveNickname(anonymous, r.nickname()))
                 .age(anonymous ? null : r.age())
-                .location(anonymous ? null : composeLocation(r.areaCountry(), r.areaCity()))
+                .location(anonymous ? null : LocationUtil.composeLocation(r.areaCountry(), r.areaCity()))
                 .categoryCode(r.categoryCode())
                 .content(content)
                 .color(r.color())
@@ -117,8 +140,6 @@ public class PostItRspDto {
     }
 
     // 작성/owner 액션 응답 — userId/nickname 은 익명이어도 노출 (본인 확인용),
-    // 단 age/location 은 anonymous=true 면 노출하지 않음 (익명 정책 일관).
-    // 작성자 본인 액션이라 mine=true 항상.
     public static PostItRspDto fromOwnerView(PostIt p, long likeCount, boolean likedByMe, String areaCountry, String areaCity) {
         boolean anonymous = Boolean.TRUE.equals(p.getIsAnonymous());
         Long authorId = p.getUser() == null ? null : p.getUser().getId();
@@ -129,7 +150,7 @@ public class PostItRspDto {
                 .userId(authorId)
                 .nickname(authorNickname == null ? ANONYMOUS_NICKNAME : authorNickname)
                 .age(anonymous ? null : authorAge)
-                .location(anonymous ? null : composeLocation(areaCountry, areaCity))
+                .location(anonymous ? null : LocationUtil.composeLocation(areaCountry, areaCity))
                 .categoryCode(p.getCategoryCode())
                 .content(p.resolveDisplayContent())
                 .color(p.getColor())
@@ -151,14 +172,5 @@ public class PostItRspDto {
     private static String resolveNickname(boolean anonymous, String rawNickname) {
         if (anonymous) return ANONYMOUS_NICKNAME;
         return rawNickname == null ? ANONYMOUS_NICKNAME : rawNickname;
-    }
-
-    // country+city → "country city". 둘 다 null 이면 null, 한쪽만 있으면 그 값만.
-    private static String composeLocation(String country, String city) {
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
     }
 }

@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// 밸런스 게임 본문 RESTful 컨트롤러 (사용자 측 — 목록·상세 조회)
 @Tag(name = "BalGame", description = "밸런스 게임 본문 (사용자 측 — 목록·상세 조회)")
 @RestController
 @RequestMapping("/v1/bal-game")
@@ -44,20 +43,19 @@ public class BalGameController {
             description = "PUBLISHED 게임을 update_time DESC 로 size 개 묶어서 반환. " +
                     "각 카드는 BalGameDetailRspDto 와 동일 모양 (이모지·내 투표·최신 댓글 3개 포함). 비로그인 시 myChoice=null.")
     @GetMapping("/home")
-    public ResponseEntity<RspTemplate<List<BalGameDetailRspDto>>> getHomeFeed(
+    public RspTemplate<List<BalGameDetailRspDto>> getHomeFeed(
             @Parameter(description = "한 번에 가져올 카드 수 (기본 5, 최대 20)")
             @RequestParam(required = false) Integer size) {
         Long viewerId = securityUtil.getCurrentUserIdOrSystem();
-        List<BalGameDetailRspDto> data = balGameService.getHomeFeed(size, viewerId);
-        return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "홈 밸런스 게임 조회 성공", data));
+        return new RspTemplate<>(HttpStatus.OK, "홈 밸런스 게임 조회 성공", balGameService.getHomeFeed(size, viewerId));
     }
 
     // 단건 상세 조회 — id 기반
     @Operation(summary = "밸런스 게임 단건 상세")
     @GetMapping("/{gameId}")
-    public ResponseEntity<RspTemplate<BalGameDetailRspDto>> getOneBalanceGame(@PathVariable Long gameId) {
+    public RspTemplate<BalGameDetailRspDto> getOneBalanceGame(@PathVariable Long gameId) {
         Long viewerId = securityUtil.getCurrentUserIdOrSystem();
         BalGameDetailRspDto data = balGameService.getOneBalanceGame(gameId, viewerId);
-        return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "밸런스 게임 상세 조회 성공", data));
+        return new RspTemplate<>(HttpStatus.OK, "밸런스 게임 상세 조회 성공", data);
     }
 }

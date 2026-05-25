@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 댓글/대댓글 생성 요청 DTO
 @Getter
 @NoArgsConstructor
 @Schema(description = "댓글/대댓글 생성 요청")

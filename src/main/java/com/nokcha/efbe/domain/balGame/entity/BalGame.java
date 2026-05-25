@@ -104,44 +104,8 @@ public class BalGame extends BaseEntity {
         this.commentCount = 0;
     }
 
-    // 본문/카테고리/예약 일시/상태/이모지 수정
-    public void updateContents(String optionA, String optionB, String optionADesc, String optionBDesc,
-                               String optionAEmoji, String optionBEmoji,
-                               String description, BalCategoryCode categoryCode, BalGameStatus status,
-                               LocalDateTime scheduledAt, LocalDateTime scheduledEndAt) {
-        if (optionA != null) this.optionA = optionA;
-        if (optionB != null) this.optionB = optionB;
-        if (optionADesc != null) this.optionADesc = optionADesc;
-        if (optionBDesc != null) this.optionBDesc = optionBDesc;
-        if (optionAEmoji != null) this.optionAEmoji = optionAEmoji;
-        if (optionBEmoji != null) this.optionBEmoji = optionBEmoji;
-        if (description != null) this.description = description;
-        if (categoryCode != null) this.categoryCode = categoryCode;
-        if (status != null) this.status = status;
-        this.scheduledAt = scheduledAt;
-        this.scheduledEndAt = scheduledEndAt;
-    }
-
     public void changeStatus(BalGameStatus status) {
         this.status = status;
-    }
-
-    public void markPublished() {
-        this.status = BalGameStatus.PUBLISHED;
-    }
-
-    public void markArchived() {
-        this.status = BalGameStatus.ARCHIVED;
-    }
-
-    public void markHidden() {
-        this.status = BalGameStatus.HIDDEN;
-    }
-
-    // 예약 취소 (SCHEDULED → DRAFT)
-    public void cancelSchedule() {
-        this.status = BalGameStatus.DRAFT;
-        this.scheduledAt = null;
     }
 
     // 어드민 부분 업데이트 — 일정 변경/클리어.

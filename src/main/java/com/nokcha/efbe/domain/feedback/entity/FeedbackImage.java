@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 피드백 첨부 이미지 — feedback_image 테이블
 @Getter
 @Entity
 @Table(
@@ -24,7 +23,6 @@ public class FeedbackImage extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    // 피드백 — feedback(id)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "feedback_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_feedback_image_feedback"))

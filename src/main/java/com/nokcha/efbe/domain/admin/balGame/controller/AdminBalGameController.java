@@ -34,7 +34,7 @@ public class AdminBalGameController {
 
     private final AdminBalGameService adminBalGameService;
 
-    @Operation(summary = "밸런스 게임 목록 조회", description = "status / categoryCode 옵션. 생략 시 전체 상태/카테고리 노출")
+    @Operation(summary = "밸런스 게임 목록 조회", description = "status / categoryCode 옵션 생략 시 전체 상태/카테고리 노출")
     @GetMapping
     public RspTemplate<Page<AdminBalGameSummaryRspDto>> getGames(
             @RequestParam(required = false) BalGameStatus status,

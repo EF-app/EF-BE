@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.postIt.dto.response;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
@@ -12,7 +13,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 포스트잇 응답 DTO — 목록/상세 공용. 익명 마스킹 없음 (FE 가 "작성자 보기" 토글로 처리).
 @Getter
 @Builder
 @Schema(description = "어드민 포스트잇 응답 (목록/상세 공용)")
@@ -33,9 +33,7 @@ public class AdminPostItRspDto {
     @Schema(description = "작성자 나이", example = "27")
     private Integer userAge;
 
-    @Schema(description = "작성자 지역 (country + city, 없으면 null)",
-            example = "대한민국 서울특별시",
-            nullable = true)
+    @Schema(description = "작성자 지역 (country + city, 없으면 null)", example = "대한민국 서울특별시")
     private String userArea;
 
     @Schema(description = "카테고리 코드", example = "DAILY")
@@ -50,14 +48,10 @@ public class AdminPostItRspDto {
     @Schema(description = "익명 게시 여부", example = "false")
     private boolean anonymous;
 
-    @Schema(description = "자동 만료 시각 (null = 만료 없음)",
-            example = "2026-06-23T00:00:00",
-            nullable = true)
+    @Schema(description = "자동 만료 시각 (null = 만료 없음)", example = "2026-06-23T00:00:00")
     private LocalDateTime expiresAt;
 
-    @Schema(description = "상단 고정 종료 시각 (null = 미고정)",
-            example = "2026-05-25T12:00:00",
-            nullable = true)
+    @Schema(description = "상단 고정 종료 시각 (null = 미고정)", example = "2026-05-25T12:00:00")
     private LocalDateTime pinnedUntil;
 
     @Schema(description = "누적 신고 수 (숨김 해제 시 0 으로 리셋됨)", example = "3")
@@ -81,7 +75,7 @@ public class AdminPostItRspDto {
     @Schema(description = "최종 수정 시각", example = "2026-05-24T09:15:00")
     private LocalDateTime updateTime;
 
-    // Querydsl projection 기반 — 목록 표준.
+    // Querydsl projection 기반
     public static AdminPostItRspDto from(AdminPostItRow r) {
         return AdminPostItRspDto.builder()
                 .id(r.id())
@@ -89,7 +83,7 @@ public class AdminPostItRspDto {
                 .userUuid(r.userUuid())
                 .userNickname(r.userNickname())
                 .userAge(r.userAge())
-                .userArea(composeLocation(r.areaCountry(), r.areaCity()))
+                .userArea(LocationUtil.composeLocation(r.areaCountry(), r.areaCity()))
                 .categoryCode(r.categoryCode())
                 .content(r.content())
                 .color(r.color())
@@ -106,7 +100,6 @@ public class AdminPostItRspDto {
                 .build();
     }
 
-    // 단건 조회
     public static AdminPostItRspDto from(PostIt p, long likeCount, CodeArea area) {
         User user = p.getUser();
         return AdminPostItRspDto.builder()
@@ -115,7 +108,7 @@ public class AdminPostItRspDto {
                 .userUuid(user == null ? null : user.getUuid())
                 .userNickname(user == null ? null : user.getNickname())
                 .userAge(user == null ? null : user.getAge())
-                .userArea(area == null ? null : composeLocation(area.getCountry(), area.getCity()))
+                .userArea(LocationUtil.composeLocation(area == null ? null : area.getCountry(), area == null ? null : area.getCity()))
                 .categoryCode(p.getCategoryCode())
                 .content(p.getContent())
                 .color(p.getColor())
@@ -132,11 +125,4 @@ public class AdminPostItRspDto {
                 .build();
     }
 
-    private static String composeLocation(String country, String city) {
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
-    }
 }

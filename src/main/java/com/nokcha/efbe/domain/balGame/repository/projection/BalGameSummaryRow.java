@@ -5,7 +5,7 @@ import com.nokcha.efbe.domain.balGame.entity.BalGameStatus;
 
 import java.time.LocalDateTime;
 
-// 밸런스 게임 피드 카드 projection
+// 밸런스 게임 피드 요약 row
 public record BalGameSummaryRow(
         Long id,
         String optionA,

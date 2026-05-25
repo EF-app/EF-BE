@@ -2,27 +2,44 @@ package com.nokcha.efbe.domain.postIt.dto.response;
 
 import com.nokcha.efbe.domain.postIt.entity.PostChatMessage;
 import com.nokcha.efbe.domain.postIt.entity.PostChatRoom;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 포스트잇 채팅 메시지 응답 DTO (취소 시 본문 치환)
-// 익명 방의 partner 발신 메시지는 senderId 마스킹 + senderDisplayName="익명" 노출.
 @Getter
 @Builder
+@Schema(description = "포스트잇 채팅 메시지 응답")
 public class PostChatMessageRspDto {
 
     private static final String CANCELED_TEXT = "상대가 메시지를 취소했어요";
 
+    @Schema(description = "메시지 ID", example = "301")
     private Long id;
+
+    @Schema(description = "채팅방 ID", example = "21")
     private Long roomId;
+
+    @Schema(description = "발신자 userId. 익명 파트너 메시지면 null", example = "14", nullable = true)
     private Long senderId;
+
+    @Schema(description = "발신자 표시 이름", example = "익명의 대화상대")
     private String senderDisplayName;
+
+    @Schema(description = "발신자가 익명 파트너인지 여부", example = "true")
     private boolean senderAnonymous;
+
+    @Schema(description = "메시지 내용. 취소된 메시지는 치환 문구가 내려감.", example = "안녕하세요!")
     private String content;
+
+    @Schema(description = "메시지 취소 여부", example = "false")
     private boolean canceled;
+
+    @Schema(description = "읽음 시각. 아직 읽지 않았으면 null", example = "2026-05-25T16:10:00", nullable = true)
     private LocalDateTime readAt;
+
+    @Schema(description = "메시지 생성 시각", example = "2026-05-25T16:05:00")
     private LocalDateTime createTime;
 
     public static PostChatMessageRspDto from(PostChatMessage m) {

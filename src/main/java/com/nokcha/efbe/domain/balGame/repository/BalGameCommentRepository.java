@@ -1,6 +1,8 @@
 package com.nokcha.efbe.domain.balGame.repository;
 
 import com.nokcha.efbe.domain.balGame.entity.BalGameComment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,8 +18,7 @@ public interface BalGameCommentRepository extends JpaRepository<BalGameComment, 
             "and (c.isHidden = false or c.isHidden is null) " +
             "and (c.isDeleted = false or c.isDeleted is null) " +
             "order by c.createTime desc")
-    List<BalGameComment> findRecentTopComments(@Param("gameId") Long gameId,
-                                               org.springframework.data.domain.Pageable pageable);
+    List<BalGameComment> findRecentTopComments(@Param("gameId") Long gameId, Pageable pageable);
 
     // 홈 배치용 — 여러 게임의 top-level 댓글을 한 번에. 게임별 limit 은 호출자가 in-memory 적용.
     @Query("select c from BalGameComment c " +
@@ -39,17 +40,11 @@ public interface BalGameCommentRepository extends JpaRepository<BalGameComment, 
             // "  and r.reporter.id = :viewerId" +
             // ") " +
             "order by c.createTime asc")
-    List<BalGameComment> findVisibleCommentsAsc(@Param("gameId") Long gameId,
-                                                @Param("viewerId") Long viewerId);
-
-    // 특정 댓글의 자식 대댓글 존재 여부 (삭제 표시 정책 판단용)
-    boolean existsByParentId(Long parentId);
+    List<BalGameComment> findVisibleCommentsAsc(@Param("gameId") Long gameId, @Param("viewerId") Long viewerId);
 
     // 어드민 댓글 페이지 — 숨김/삭제 모두 노출 (어드민이 직접 판단).
-    org.springframework.data.domain.Page<BalGameComment> findByGameId(
-            Long gameId, org.springframework.data.domain.Pageable pageable);
+    Page<BalGameComment> findByGameId(Long gameId, Pageable pageable);
 
     // 어드민 — 유저 상세 "작성한 댓글" 숨김/삭제 포함.
-    org.springframework.data.domain.Page<BalGameComment> findByUser_IdOrderByCreateTimeDesc(
-            Long userId, org.springframework.data.domain.Pageable pageable);
+    Page<BalGameComment> findByUser_IdOrderByCreateTimeDesc(Long userId, Pageable pageable);
 }

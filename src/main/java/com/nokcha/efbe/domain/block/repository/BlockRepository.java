@@ -37,6 +37,5 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
                                Pageable pageable);
 
     // 어드민 차단 내역 — 한 페이지 유저들 사이의 모든 차단 쌍 (상호 차단 isMutual 판정용)
-    List<Block> findByBlocker_IdInAndBlocked_IdIn(Collection<Long> blockerIds,
-                                                  Collection<Long> blockedIds);
+    List<Block> findByBlocker_IdInAndBlocked_IdIn(Collection<Long> blockerIds, Collection<Long> blockedIds);
 }

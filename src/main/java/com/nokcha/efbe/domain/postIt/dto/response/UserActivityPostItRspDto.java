@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.postIt.dto.response;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.entity.PostItColor;
@@ -10,11 +11,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// "내가 붙인" 탭 응답 DTO — owner view 마스킹 정책 적용
-// - 본인 글이지만 익명 글이면 nickname="익명", age/location=null (메인 피드 정책과 일관)
-// - userId 는 본인이므로 노출 (FE 본인 식별용)
-// - likeCount + chatCount 동시 노출
-// - likedByMe — 본인이 자기 글에 좋아요를 눌렀는지 (FE 하트 아이콘 outline/filled 분기용)
 @Getter
 @Builder
 @Schema(description = "내 활동 — 내가 붙인 포스트잇 카드")
@@ -47,10 +43,10 @@ public class UserActivityPostItRspDto {
     private PostItColor color;
 
     @Schema(description = "익명 여부", example = "false")
-    private boolean anonymous;
+    private boolean isAnonymous;
 
     @Schema(description = "번개 카테고리 여부", example = "false")
-    private boolean lightning;
+    private boolean isLightning;
 
     @Schema(description = "만료 시각")
     private LocalDateTime expiresAt;
@@ -59,7 +55,7 @@ public class UserActivityPostItRspDto {
     private LocalDateTime pinnedUntil;
 
     @Schema(description = "현재 상단 고정 활성 여부", example = "false")
-    private boolean pinned;
+    private boolean isPinned;
 
     @Schema(description = "답장 수", example = "3")
     private Integer replyCount;
@@ -74,7 +70,7 @@ public class UserActivityPostItRspDto {
     private boolean likedByMe;
 
     @Schema(description = "숨김 여부", example = "false")
-    private boolean hidden;
+    private boolean isHidden;
 
     @Schema(description = "삭제 여부 (soft delete)", example = "false")
     private boolean deleted;
@@ -83,18 +79,11 @@ public class UserActivityPostItRspDto {
     private LocalDateTime createTime;
 
     // Querydsl projection + 본인 area 캐시 기반 매핑
-    // 익명 글: nickname="익명", age/location=null. 그렇지 않으면 ownerNickname/ownerAge/ownerArea 사용.
-    public static UserActivityPostItRspDto from(UserActivityPostItRow r,
-                                                String ownerNickname,
-                                                Integer ownerAge,
-                                                String ownerAreaCountry,
-                                                String ownerAreaCity) {
+    public static UserActivityPostItRspDto from(UserActivityPostItRow r, String ownerNickname, Integer ownerAge, String ownerAreaCountry, String ownerAreaCity) {
         boolean anonymous = Boolean.TRUE.equals(r.isAnonymous());
         boolean hidden = Boolean.TRUE.equals(r.isHidden());
         boolean deleted = Boolean.TRUE.equals(r.isDeleted());
-        String content = hidden ? PostIt.HIDDEN_POST_TEXT
-                : deleted ? PostIt.DELETED_POST_TEXT
-                : r.content();
+        String content = hidden ? PostIt.HIDDEN_POST_TEXT : deleted ? PostIt.DELETED_POST_TEXT : r.content();
         boolean pinned = r.pinnedUntil() != null && r.pinnedUntil().isAfter(LocalDateTime.now());
 
         return UserActivityPostItRspDto.builder()
@@ -102,31 +91,22 @@ public class UserActivityPostItRspDto {
                 .userId(r.userId())
                 .nickname(anonymous ? ANONYMOUS_NICKNAME : (ownerNickname == null ? ANONYMOUS_NICKNAME : ownerNickname))
                 .age(anonymous ? null : ownerAge)
-                .location(anonymous ? null : composeLocation(ownerAreaCountry, ownerAreaCity))
+                .location(anonymous ? null : LocationUtil.composeLocation(ownerAreaCountry, ownerAreaCity))
                 .categoryCode(r.categoryCode())
                 .content(content)
                 .color(r.color())
-                .anonymous(anonymous)
-                .lightning(r.categoryCode() == PostCategory.LIGHTN)
+                .isAnonymous(anonymous)
+                .isLightning(r.categoryCode() == PostCategory.LIGHTN)
                 .expiresAt(r.expiresAt())
                 .pinnedUntil(r.pinnedUntil())
-                .pinned(pinned)
+                .isPinned(pinned)
                 .replyCount(r.replyCount())
                 .likeCount(r.likeCount() == null ? 0L : r.likeCount())
                 .chatCount(r.chatCount() == null ? 0L : r.chatCount())
                 .likedByMe(Boolean.TRUE.equals(r.likedByMe()))
-                .hidden(hidden)
+                .isHidden(hidden)
                 .deleted(deleted)
                 .createTime(r.createTime())
                 .build();
-    }
-
-    // country+city → "country city". 둘 다 null 이면 null, 한쪽만 있으면 그 값만.
-    private static String composeLocation(String country, String city) {
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
     }
 }

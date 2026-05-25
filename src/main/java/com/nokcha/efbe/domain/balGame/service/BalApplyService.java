@@ -10,13 +10,9 @@ import com.nokcha.efbe.domain.balGame.repository.BalApplyRepository;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 밸런스 게임 신청 서비스 (유저).
 @Service
 @RequiredArgsConstructor
 public class BalApplyService {
@@ -41,14 +37,5 @@ public class BalApplyService {
                 .status(BalApplyStatus.PENDING)
                 .build();
         return BalApplyRspDto.from(balApplyRepository.save(apply));
-    }
-
-
-    // 유저: 내 신청 목록 (최신순)
-    @Transactional(readOnly = true)
-    public Page<BalApplyRspDto> getMyApplies(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return balApplyRepository.findByUserIdOrderByCreateTimeDesc(userId, pageable)
-                .map(BalApplyRspDto::from);
     }
 }

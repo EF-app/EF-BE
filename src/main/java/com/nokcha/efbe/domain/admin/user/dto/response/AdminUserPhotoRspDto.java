@@ -5,10 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-// 어드민 유저 상세
 @Getter
 @Builder
-@Schema(description = "어드민 유저 프로필 사진")
+@Schema(description = "관리자 전용 유저 프로필 사진")
 public class AdminUserPhotoRspDto {
 
     @Schema(description = "사진 PK", example = "501")

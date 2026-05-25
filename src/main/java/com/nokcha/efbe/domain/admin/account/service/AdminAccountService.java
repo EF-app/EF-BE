@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-// 관리자 계정 관리 — 목록 / 상세 / 생성 / 수정 / 활성토글 / 비밀번호 변경.
 @Service
 @RequiredArgsConstructor
 public class AdminAccountService {

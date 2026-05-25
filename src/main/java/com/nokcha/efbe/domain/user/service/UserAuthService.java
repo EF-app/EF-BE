@@ -9,6 +9,7 @@ import com.nokcha.efbe.domain.log.entity.LoginFailureReason;
 import com.nokcha.efbe.domain.log.service.UserLoginLogService;
 import com.nokcha.efbe.domain.payment.entity.UserInkFund;
 import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
+import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
@@ -78,13 +79,13 @@ public class UserAuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RevokedTokenRepository revokedTokenRepository;
 
-    // 로그인 아이디 사용 가능 여부 (실시간 중복 체크용 — 회원가입 전 단계 노출)
+    // 로그인 아이디 사용 가능 여부
     @Transactional(readOnly = true)
     public boolean isLoginIdAvailable(String loginId) {
         return !userRepository.existsByLoginId(loginId);
     }
 
-    // 닉네임 사용 가능 여부 (실시간 중복 체크용 — 회원가입 전 단계 노출)
+    // 닉네임 사용 가능 여부
     @Transactional(readOnly = true)
     public boolean isNicknameAvailable(String nickname) {
         return !userRepository.existsByNickname(nickname);
@@ -673,30 +674,30 @@ public class UserAuthService {
         List<UserPolicy> userTerms = new ArrayList<>();
         String consentIp = signUpSession.getLastConsentIp();
 
-        userTerms.add(buildUserTerms(userId, TermType.TERMS_AGREE, signUpSession.getServiceTermsVersion(), signUpSession.getServiceTermsAgreedAt(), true, consentIp));
-        userTerms.add(buildUserTerms(userId, TermType.PRIVACY_COLLECTION_AGREE, signUpSession.getPrivacyCollectionVersion(), signUpSession.getPrivacyCollectionAgreedAt(), true, consentIp));
-        userTerms.add(buildUserTerms(userId, TermType.SENSITIVE_AGREE, signUpSession.getSensitiveInfoVersion(), signUpSession.getSensitiveInfoAgreedAt(), true, consentIp));
-        userTerms.add(buildUserTerms(userId, TermType.NO_DISCLOSURE_AGREE, signUpSession.getNoDisclosureVersion(), signUpSession.getNoDisclosureAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, PolicyType.TERMS_AGREE, signUpSession.getServiceTermsVersion(), signUpSession.getServiceTermsAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, PolicyType.PRIVACY_COLLECTION_AGREE, signUpSession.getPrivacyCollectionVersion(), signUpSession.getPrivacyCollectionAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, PolicyType.SENSITIVE_AGREE, signUpSession.getSensitiveInfoVersion(), signUpSession.getSensitiveInfoAgreedAt(), true, consentIp));
+        userTerms.add(buildUserTerms(userId, PolicyType.NO_DISCLOSURE_AGREE, signUpSession.getNoDisclosureVersion(), signUpSession.getNoDisclosureAgreedAt(), true, consentIp));
 
         if (signUpSession.isMarketingAgreed()) {
-            userTerms.add(buildUserTerms(userId, TermType.MARKETING_AGREE, signUpSession.getMarketingVersion(), signUpSession.getMarketingAgreedAt(), false, consentIp));
+            userTerms.add(buildUserTerms(userId, PolicyType.MARKETING_AGREE, signUpSession.getMarketingVersion(), signUpSession.getMarketingAgreedAt(), false, consentIp));
         }
 
         if (signUpSession.isPushAgreed()) {
-            userTerms.add(buildUserTerms(userId, TermType.PUSH_AGREE, null, signUpSession.getPushAgreedAt(), false, consentIp));
+            userTerms.add(buildUserTerms(userId, PolicyType.PUSH_AGREE, null, signUpSession.getPushAgreedAt(), false, consentIp));
         }
 
         if (signUpSession.isLocationAgreed()) {
-            userTerms.add(buildUserTerms(userId, TermType.LOCATION_AGREE, signUpSession.getLocationVersion(), signUpSession.getLocationAgreedAt(), false, consentIp));
+            userTerms.add(buildUserTerms(userId, PolicyType.LOCATION_AGREE, signUpSession.getLocationVersion(), signUpSession.getLocationAgreedAt(), false, consentIp));
         }
 
         userTermsRepository.saveAll(userTerms);
     }
 
-    private UserPolicy buildUserTerms(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
+    private UserPolicy buildUserTerms(Long userId, PolicyType policyType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
         return UserPolicy.builder()
                 .userId(userId)
-                .termType(termType)
+                .policyType(policyType)
                 .termsVer(termsVer)
                 .agreedDate(agreedDate)
                 .isEssential(isEssential)

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// 어드민 밸런스 댓글 API — 유저 기준 조회 (유저 상세 "작성한 글" 탭)
 @Tag(name = "Admin BalComment", description = "관리자 밸런스 게임 댓글 (유저별 조회)")
 @RestController
 @RequiredArgsConstructor
@@ -25,14 +24,11 @@ public class AdminBalCommentController {
 
     private final AdminUserBalCommentService adminUserBalCommentService;
 
-    @Operation(summary = "유저가 작성한 밸런스 댓글 목록",
-            description = "userId 의 모든 밸런스 게임 댓글 (숨김/삭제 포함, 최신순)")
+    @Operation(summary = "유저가 작성한 밸런스 댓글 목록", description = "userId 의 모든 밸런스 게임 댓글 (숨김/삭제 포함, 최신순)")
     @GetMapping
     public RspTemplate<Page<AdminUserBalCommentRspDto>> getUserComments(
             @RequestParam Long userId,
-            @PageableDefault(size = 50, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return new RspTemplate<>(HttpStatus.OK, "유저의 밸런스 댓글을 조회했습니다.",
-                adminUserBalCommentService.getUserComments(userId, pageable));
+            @PageableDefault(size = 50, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        return new RspTemplate<>(HttpStatus.OK, "유저의 밸런스 댓글을 조회했습니다.", adminUserBalCommentService.getUserComments(userId, pageable));
     }
 }

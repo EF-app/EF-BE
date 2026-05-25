@@ -14,8 +14,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 포스트잇 좋아요 서비스 (토글)
-// 추가/취소 후 갱신된 카운트·viewer 상태를 반환해 FE 가 ±1 계산으로 NaN 나는 일을 막는다.
 @Service
 @RequiredArgsConstructor
 public class PostLikeService {
@@ -24,7 +22,7 @@ public class PostLikeService {
     private final PostItRepository postItRepository;
     private final UserRepository userRepository;
 
-    // 좋아요 추가 (중복 시 예외) — id 기반
+    // 포스트잇 좋아요
     @Transactional
     public PostLikeRspDto createLike(Long postId, Long userId) {
         if (postLikeRepository.existsByPostIdAndUserId(postId, userId)) {
@@ -46,7 +44,7 @@ public class PostLikeService {
                 .build();
     }
 
-    // 좋아요 취소 — id 기반
+    // 포스트잇 좋아요 취소
     @Transactional
     public PostLikeRspDto deleteLike(Long postId, Long userId) {
         PostLike like = postLikeRepository.findByPostIdAndUserId(postId, userId)

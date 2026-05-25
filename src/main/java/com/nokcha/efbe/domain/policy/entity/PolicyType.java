@@ -1,6 +1,6 @@
-package com.nokcha.efbe.domain.user.entity;
+package com.nokcha.efbe.domain.policy.entity;
 
-public enum TermType {
+public enum PolicyType {
     TERMS_AGREE,    // 이용약관
     PRIVACY_COLLECTION_AGREE,  // 개인정보 수집 및 이용
     SENSITIVE_AGREE,    // 민감정보

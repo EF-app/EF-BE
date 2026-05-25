@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.payment.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.payment.dto.request.StarChargeReqDto;
+import com.nokcha.efbe.domain.payment.dto.request.InkChargeReqDto;
 import com.nokcha.efbe.domain.payment.dto.request.SubscriptionOrderReqDto;
 import com.nokcha.efbe.domain.payment.dto.response.PaymentLogRspDto;
 import com.nokcha.efbe.domain.payment.entity.PaymentLog;
@@ -20,12 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
     private final PaymentLogRepository paymentLogRepository;
-    private final StarService starService;
+    private final InkService inkService;
     private final SubscriptionService subscriptionService;
 
     // 별 충전 결제 성공 처리 (PG 콜백 훅)
     @Transactional
-    public PaymentLogRspDto confirmStarCharge(Long userId, StarChargeReqDto req) {
+    public PaymentLogRspDto confirmInkCharge(Long userId, InkChargeReqDto req) {
         if (paymentLogRepository.findByOrderId(req.getOrderId()).isPresent()) {
             throw new BusinessException(ErrorCode.DUPLICATE_PAYMENT);
         }
@@ -34,7 +34,7 @@ public class PaymentService {
                 .starAmount(req.getStarAmount()).amount(req.getAmount()).pgProvider(req.getPgProvider())
                 .build());
         log.markSuccess();
-        starService.charge(userId, req.getStarAmount(), "PAYMENT", log.getId(), "star-charge:" + req.getOrderId());
+        inkService.charge(userId, req.getStarAmount(), "PAYMENT", log.getId(), "star-charge:" + req.getOrderId());
         return PaymentLogRspDto.from(log);
     }
 

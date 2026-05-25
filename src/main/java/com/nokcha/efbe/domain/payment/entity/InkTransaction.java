@@ -1,27 +1,23 @@
 package com.nokcha.efbe.domain.payment.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
-
-// 별 거래 내역 엔티티 (star_transaction, append-only)
 @Getter
 @Entity
-@Table(name = "star_transaction",
+@Table(name = "ink_transaction",
         indexes = {
                 @Index(name = "idx_star_tx_user_time", columnList = "user_id, create_time DESC"),
                 @Index(name = "idx_star_tx_ref", columnList = "ref_type, ref_id")
         })
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class StarTransaction {
+public class InkTransaction extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +29,7 @@ public class StarTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tx_type", nullable = false, length = 15)
-    private StarTxType txType;
+    private InkTxType txType;
 
     // + 적립 / - 차감 (부호 포함)
     @Column(name = "amount", nullable = false)
@@ -48,20 +44,12 @@ public class StarTransaction {
     @Column(name = "ref_id")
     private Long refId;
 
-    @Column(name = "memo", length = 255)
+    @Column(name = "memo")
     private String memo;
 
-    @CreatedDate
-    @Column(name = "create_time", updatable = false)
-    private LocalDateTime createTime;
-
-    @CreatedBy
-    @Column(name = "create_user", updatable = false)
-    private Long createUser;
-
     @Builder
-    private StarTransaction(Long userId, StarTxType txType, Integer amount, Integer balanceAfter,
-                            String refType, Long refId, String memo) {
+    private InkTransaction(Long userId, InkTxType txType, Integer amount, Integer balanceAfter,
+                           String refType, Long refId, String memo) {
         this.userId = userId;
         this.txType = txType;
         this.amount = amount;

@@ -9,15 +9,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 밸런스 게임 신청 RESTful 컨트롤러 (유저).
 @Tag(name = "BalGame Apply", description = "밸런스 게임 신청 (유저)")
 @RestController
-@RequestMapping("/v1/bal-apply")
+@RequestMapping("/v1/bal-applys")
 @RequiredArgsConstructor
 public class BalApplyController {
 
@@ -30,18 +28,6 @@ public class BalApplyController {
     public ResponseEntity<RspTemplate<BalApplyRspDto>> createApply(@Valid @RequestBody BalApplyCreateReqDto req) {
         Long userId = securityUtil.getCurrentUserId();
         BalApplyRspDto data = balApplyService.createApply(userId, req);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new RspTemplate<>(HttpStatus.CREATED, "신청 등록 성공", data));
-    }
-
-    // 유저: 내 신청 목록
-    @Operation(summary = "유저: 내 밸런스 게임 신청 목록 조회")
-    @GetMapping("/me")
-    public ResponseEntity<RspTemplate<Page<BalApplyRspDto>>> getMyApplies(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Long userId = securityUtil.getCurrentUserId();
-        Page<BalApplyRspDto> data = balApplyService.getMyApplies(userId, page, size);
-        return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "내 신청 목록 조회 성공", data));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new RspTemplate<>(HttpStatus.CREATED, "신청 등록 성공", data));
     }
 }

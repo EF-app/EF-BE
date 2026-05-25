@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 어드민이 BAL-APPLY 를 거절할 때 사유 메모.
 @Getter
 @NoArgsConstructor
 public class AdminBalApplyRejectReqDto {

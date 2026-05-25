@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-// 광고 보상 서비스 (ad_tx_id 기반 멱등 처리)
 @Service
 @RequiredArgsConstructor
 public class AdRewardService {
@@ -20,7 +19,7 @@ public class AdRewardService {
     private static final int DAILY_MAX_PER_TYPE = 5;
 
     private final AdRewardLogRepository adRewardLogRepository;
-    private final StarService starService;
+    private final InkService inkService;
 
     // 광고 보상 수령 (별 보상만 처리 - 티켓 등 타입은 확장 지점)
     @Transactional
@@ -44,7 +43,7 @@ public class AdRewardService {
 
         // 별 보상 타입은 별 적립
         if ("AD_STAR".equals(req.getRewardType())) {
-            starService.charge(userId, req.getRewardAmount(), "AD_REWARD", null,
+            inkService.charge(userId, req.getRewardAmount(), "AD_REWARD", null,
                     "ad-tx:" + req.getAdTxId());
         }
     }

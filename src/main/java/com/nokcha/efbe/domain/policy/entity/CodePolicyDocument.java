@@ -1,7 +1,6 @@
 package com.nokcha.efbe.domain.policy.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
-import com.nokcha.efbe.domain.user.entity.TermType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,7 +28,7 @@ public class CodePolicyDocument extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private TermType policyType;
+    private PolicyType policyType;
 
     @Column(nullable = false, length = 20)
     private String version;
@@ -59,7 +58,7 @@ public class CodePolicyDocument extends BaseEntity {
     private boolean requiresReagreement;
 
     @Builder
-    public CodePolicyDocument(TermType policyType, String version, String title, String content, String summary,
+    public CodePolicyDocument(PolicyType policyType, String version, String title, String content, String summary,
                               boolean isRequired, LocalDateTime effectiveDate, LocalDateTime expiresAt,
                               boolean isActive, boolean requiresReagreement) {
         this.policyType = policyType;

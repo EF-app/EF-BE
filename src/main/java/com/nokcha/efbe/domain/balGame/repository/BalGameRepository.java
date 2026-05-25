@@ -23,9 +23,6 @@ public interface BalGameRepository extends JpaRepository<BalGame, Long>, BalGame
     @Query("select g from BalGame g where g.id = :id")
     Optional<BalGame> findByIdForUpdate(@Param("id") Long id);
 
-    // 상태별 최신순 페이징
-    Page<BalGame> findByStatusOrderByCreateTimeDesc(BalGameStatus status, Pageable pageable);
-
     // 어드민 측 — status / categoryCode 동적 필터
     @Query(value = "SELECT g FROM BalGame g " +
             "LEFT JOIN FETCH g.applicant " +

@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 포스트잇 작성 요청 DTO
 @Getter
 @NoArgsConstructor
 @Schema(description = "포스트잇 작성 요청")

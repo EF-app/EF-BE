@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-// 투표 결과 응답 DTO (% 표시 포함)
 @Getter
 @Builder
 @Schema(description = "투표 결과 (% 표시 포함)")

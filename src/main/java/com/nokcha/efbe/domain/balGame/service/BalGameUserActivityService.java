@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// 밸런스 게임 — 내 활동(내가 투표한 게임 목록) 서비스
 @Service
 @RequiredArgsConstructor
 public class BalGameUserActivityService {

@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
-// 피드백 등록 서비스
 @Service
 @RequiredArgsConstructor
 public class FeedbackService {
@@ -31,7 +30,8 @@ public class FeedbackService {
 
     @Transactional
     public FeedbackRspDto createFeedback(Long reporterId, FeedbackCreateReqDto req, List<MultipartFile> images) {
-        // 카테고리-유형 조합 검증
+        req.validate();
+
         FeedbackType type = req.getFeedbackType();
         FeedbackCategoryCode category = req.getCategoryCode();
         if (!type.allows(category)) {
@@ -52,15 +52,22 @@ public class FeedbackService {
                 .networkType(req.getNetworkType())
                 .build());
 
-        List<FeedbackImage> savedImages = new ArrayList<>();
-        if (images != null && !images.isEmpty()) {
-            int order = 0;
-            for (MultipartFile img : images) {
-                if (img == null || img.isEmpty()) continue;
-                savedImages.add(r2ImageService.uploadFeedbackImage(img, "feedback", saved, order++));
-            }
-        }
+        List<FeedbackImage> savedImages = uploadImages(images, saved);
 
         return FeedbackRspDto.of(saved, savedImages);
+    }
+
+    private List<FeedbackImage> uploadImages(List<MultipartFile> images, Feedback saved) {
+        List<FeedbackImage> result = new ArrayList<>();
+
+        if (images == null || images.isEmpty()) return result;
+
+        int order = 0;
+        for (MultipartFile img : images) {
+            if (img == null || img.isEmpty()) continue;
+            result.add(r2ImageService.uploadFeedbackImage(img, "feedback", saved, order++));
+        }
+
+        return result;
     }
 }

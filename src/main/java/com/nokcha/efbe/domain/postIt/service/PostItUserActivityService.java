@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// 포스트잇 — 내 활동(내가 붙인 / 내가 반응한) 서비스
 @Service
 @RequiredArgsConstructor
 public class PostItUserActivityService {

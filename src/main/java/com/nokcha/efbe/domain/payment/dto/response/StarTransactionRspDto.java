@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.payment.dto.response;
 
-import com.nokcha.efbe.domain.payment.entity.StarTransaction;
-import com.nokcha.efbe.domain.payment.entity.StarTxType;
+import com.nokcha.efbe.domain.payment.entity.InkTransaction;
+import com.nokcha.efbe.domain.payment.entity.InkTxType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class StarTransactionRspDto {
     private Long id;
     private Long userId;
-    private StarTxType txType;
+    private InkTxType txType;
     private Integer amount;
     private Integer balanceAfter;
     private String refType;
@@ -21,7 +21,7 @@ public class StarTransactionRspDto {
     private String memo;
     private LocalDateTime createTime;
 
-    public static StarTransactionRspDto from(StarTransaction t) {
+    public static StarTransactionRspDto from(InkTransaction t) {
         return StarTransactionRspDto.builder()
                 .id(t.getId())
                 .userId(t.getUserId())

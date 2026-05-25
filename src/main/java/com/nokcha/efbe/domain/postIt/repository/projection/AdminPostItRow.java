@@ -1,12 +1,11 @@
-package com.nokcha.efbe.domain.postIt.repository.projection;
+package com.nokcha.efbe.domain.postIt.repository.projection;    // admin에서 쓸 거면 패키지 이동해야 함.
 
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostItColor;
 
 import java.time.LocalDateTime;
 
-// 어드민 포스트잇 목록/상세 projection.
-// 익명 마스킹 없음 — 어드민용이라 작성자 정보 원본 그대로 운반.
+// 관리자 전용 포스트잇 목록/상세 row
 public record AdminPostItRow(
         Long id,
         Long userId,

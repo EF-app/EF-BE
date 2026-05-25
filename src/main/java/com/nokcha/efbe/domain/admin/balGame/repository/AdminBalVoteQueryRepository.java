@@ -9,7 +9,6 @@ import com.nokcha.efbe.domain.user.entity.QUser;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-// 어드민 측 BalVote
 @Repository
 @RequiredArgsConstructor
 public class AdminBalVoteQueryRepository {
@@ -73,7 +71,7 @@ public class AdminBalVoteQueryRepository {
         return new PageImpl<>(content, pageable, total == null ? 0L : total);
     }
 
-    // 연령대 분포 — CASE WHEN 으로 라벨링 후 GROUP BY label, choice.
+    // 연령대 분포
     public List<AdminBalVoteBucketRow> aggregateVotesByAge(Long gameId) {
         QBalVote v = QBalVote.balVote;
         QUser u = QUser.user;
@@ -100,7 +98,7 @@ public class AdminBalVoteQueryRepository {
                 .fetch();
     }
 
-    // 지역 분포 (country 1단계) — GROUP BY country, choice. country null 은 "미설정".
+    // 지역 분포
     public List<AdminBalVoteBucketRow> aggregateVotesByArea(Long gameId) {
         QBalVote v = QBalVote.balVote;
         QUser u = QUser.user;

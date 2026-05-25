@@ -7,7 +7,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 유저 차단 응답 DTO
 @Getter
 @Builder
 @Schema(description = "유저 차단 응답")

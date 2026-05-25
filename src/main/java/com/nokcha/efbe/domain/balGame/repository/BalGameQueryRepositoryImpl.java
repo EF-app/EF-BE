@@ -13,9 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-// 밸런스 게임 피드 Querydsl 구현체
-// 정렬: createTime DESC, id DESC (안정 정렬)
-// 필터: status=PUBLISHED, 카테고리(선택)
 @Repository
 @RequiredArgsConstructor
 public class BalGameQueryRepositoryImpl implements BalGameQueryRepository {

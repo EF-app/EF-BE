@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.admin.user.dto.response;
 
+import com.nokcha.efbe.domain.admin.user.util.AdminUserStatusMapper;
 import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
-import com.nokcha.efbe.domain.user.entity.BanStatus;
 import com.nokcha.efbe.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -9,10 +9,9 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 유저 목록 행 DTO.
 @Getter
 @Builder
-@Schema(description = "어드민 유저 목록 행")
+@Schema(description = "관리자 전용 유저 목록 응답 DTO")
 public class AdminUserSummaryRspDto {
 
     @Schema(description = "유저 PK", example = "1042")
@@ -57,21 +56,11 @@ public class AdminUserSummaryRspDto {
                 .nickname(u.getNickname())
                 .age(u.getAge())
                 .area(area)
-                .status(toUserStatus(u.getBanStatus()))
+                .status(AdminUserStatusMapper.toUserStatus(u.getBanStatus()))
                 .profileStatus(profileStatus == null ? null : profileStatus.name())
                 .withdraw(u.isWithdraw())
                 .lastLoginTime(u.getLastLoginTime())
                 .createTime(u.getCreateTime())
                 .build();
-    }
-
-    // BE BanStatus → FE UserStatus 매핑. WARNING 은 BE 개념 없음.
-    public static String toUserStatus(BanStatus banStatus) {
-        if (banStatus == null) return "ACTIVE";
-        return switch (banStatus) {
-            case NONE -> "ACTIVE";
-            case SEVEN_DAYS, THIRTY_DAYS -> "TEMP_SUSPENDED";
-            case FOREVER -> "PERMANENTLY_SUSPENDED";
-        };
     }
 }

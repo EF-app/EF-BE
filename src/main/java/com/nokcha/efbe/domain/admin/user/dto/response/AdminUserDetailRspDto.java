@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.user.dto.response;
 
+import com.nokcha.efbe.domain.admin.user.util.AdminUserStatusMapper;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.entity.User;
@@ -11,10 +12,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 어드민 유저 단건 상세 DTO
 @Getter
 @Builder
-@Schema(description = "어드민 유저 단건 상세 — 기본정보 + 결제집계 + 프로필 패널 + 사진 + 접속이력")
+@Schema(description = "관리자 전용 유저 단건 상세 — 기본정보 + 결제집계 + 프로필 패널 + 사진 + 접속이력")
 public class AdminUserDetailRspDto {
 
     @Schema(description = "유저 PK", example = "1042")
@@ -106,7 +106,7 @@ public class AdminUserDetailRspDto {
                 .age(u.getAge())
                 .birth(u.getBirth())
                 .area(area)
-                .status(AdminUserSummaryRspDto.toUserStatus(u.getBanStatus()))
+                .status(AdminUserStatusMapper.toUserStatus(u.getBanStatus()))
                 .withdraw(u.isWithdraw())
                 .withdrawAt(withdrawAt)
                 .lastLoginTime(u.getLastLoginTime())

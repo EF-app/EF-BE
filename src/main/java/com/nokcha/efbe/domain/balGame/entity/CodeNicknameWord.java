@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 익명 닉네임 단어 사전 엔티티 (code_nickname_word 테이블, v2.0 사양)
 @Getter
 @Entity
 @Table(name = "code_nickname_word",
@@ -23,14 +22,13 @@ public class CodeNicknameWord extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
     @Column(name = "word", nullable = false, length = 30)
     private String word;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false,
-            columnDefinition = "ENUM('ADJ','ANIMAL','FOOD','NATURE') NOT NULL")
+    @Column(name = "type", nullable = false)
     private CodeNicknameWordType type;
 
     @Column(name = "is_active", nullable = false,
@@ -42,10 +40,5 @@ public class CodeNicknameWord extends BaseEntity {
         this.word = word;
         this.type = type;
         this.isActive = isActive == null ? Boolean.TRUE : isActive;
-    }
-
-    // 풀 제외 / 재포함 토글 (관리자용)
-    public void changeActive(boolean active) {
-        this.isActive = active;
     }
 }

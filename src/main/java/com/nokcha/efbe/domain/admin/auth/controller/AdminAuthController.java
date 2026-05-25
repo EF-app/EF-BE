@@ -40,7 +40,6 @@ public class AdminAuthController {
     @Operation(summary = "내 정보 조회", description = "현재 로그인한 관리자 정보를 조회합니다.")
     @GetMapping("/me")
     public RspTemplate<AdminInfoRspDto> getMe() {
-        return new RspTemplate<>(HttpStatus.OK, "관리자 정보를 조회했습니다.",
-                adminAuthService.getAdmin(securityUtil.getCurrentUserId()));
+        return new RspTemplate<>(HttpStatus.OK, "관리자 정보를 조회했습니다.", adminAuthService.getAdmin(securityUtil.getCurrentUserId()));
     }
 }

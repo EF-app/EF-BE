@@ -1,10 +1,9 @@
 package com.nokcha.efbe.domain.block.service;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
-import com.nokcha.efbe.domain.block.dto.request.BlockCreateReqDto;
 import com.nokcha.efbe.domain.block.dto.response.BlockRspDto;
 import com.nokcha.efbe.domain.block.dto.response.BlockedUserRspDto;
 import com.nokcha.efbe.domain.block.entity.Block;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// 유저 간 차단
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,9 +29,7 @@ public class BlockService {
 
     // 차단 생성. 자기 자신 차단 불가, 이미 차단한 유저면 중복 거부.
     @Transactional
-    public BlockRspDto createBlock(Long blockerId, BlockCreateReqDto req) {
-        Long blockedId = req.getBlockedUserId();
-
+    public BlockRspDto createBlock(Long blockerId, Long blockedId) {
         if (blockedId.equals(blockerId)) {
             throw new BusinessException(ErrorCode.SELF_ACTION_FORBIDDEN);
         }
@@ -76,21 +72,10 @@ public class BlockService {
                     User blocked = b.getBlocked();
                     String area = blocked.getAreaId() == null ? null
                             : areaRepository.findById(blocked.getAreaId())
-                            .map(BlockService::composeLocation)
+                            .map(LocationUtil::composeLocation)
                             .orElse(null);
                     return BlockedUserRspDto.of(b, area);
                 })
                 .toList();
-    }
-
-    // CodeArea(country, city)
-    private static String composeLocation(CodeArea area) {
-        String country = area.getCountry();
-        String city = area.getCity();
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
     }
 }

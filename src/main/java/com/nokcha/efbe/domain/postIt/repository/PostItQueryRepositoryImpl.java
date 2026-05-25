@@ -29,7 +29,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 포스트잇 피드 Querydsl 구현체
 @Repository
 @RequiredArgsConstructor
 public class PostItQueryRepositoryImpl implements PostItQueryRepository {

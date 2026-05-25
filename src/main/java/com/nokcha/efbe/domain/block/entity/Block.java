@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.block.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import com.nokcha.efbe.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,13 +19,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
-
-// 유저 간 차단 관계 엔티티 (block)
-// blocker(차단한 유저) 가 blocked(차단당한 유저) 를 차단. (blocker, blocked) 쌍은 유일.
 @Getter
 @Entity
 @Table(
@@ -39,7 +35,7 @@ import java.time.LocalDateTime;
 )
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Block {
+public class Block extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,10 +51,6 @@ public class Block {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "blocked_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ub_blocked"))
     private User blocked;
-
-    @CreatedDate
-    @Column(name = "create_time", updatable = false)
-    private LocalDateTime createTime;
 
     @Builder
     private Block(User blocker, User blocked) {

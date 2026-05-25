@@ -10,9 +10,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// "내 활동 — 밸런스게임" 카드 응답 DTO
-// - 게임 본문 + 내 투표 결과 + 양 옵션 투표수 + 댓글수
-// - totalCount 는 a_count + b_count 합산값 (BE 계산). 투표 비율(%) 계산은 FE 에서.
 @Getter
 @Builder
 @Schema(description = "내 활동 — 내가 투표한 밸런스게임 카드")

@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 밸런스 게임별 익명 닉네임 매핑 엔티티 (복합 PK + 게임 내 닉네임 UNIQUE)
 @Getter
 @Entity
 @Table(name = "bal_name_map",

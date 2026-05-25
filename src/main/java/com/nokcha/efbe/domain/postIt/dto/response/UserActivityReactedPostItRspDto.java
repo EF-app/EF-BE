@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.postIt.dto.response;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.entity.PostItColor;
@@ -10,10 +11,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// "내가 반응한" 탭 응답 DTO — viewing 마스킹 정책 적용 (상대 글)
-// - 익명 글이면 userId=null, nickname="익명", age/location=null
-// - likedByMe / chattedByMe boolean
-// - likeCount / chatCount — FE 가 likedByMe/chattedByMe 에 맞춰 표시 결정
 @Getter
 @Builder
 @Schema(description = "내 활동 — 내가 반응한 포스트잇 카드 (상대 글)")
@@ -88,9 +85,7 @@ public class UserActivityReactedPostItRspDto {
         boolean anonymous = Boolean.TRUE.equals(r.isAnonymous());
         boolean hidden = Boolean.TRUE.equals(r.isHidden());
         boolean deleted = Boolean.TRUE.equals(r.isDeleted());
-        String content = hidden ? PostIt.HIDDEN_POST_TEXT
-                : deleted ? PostIt.DELETED_POST_TEXT
-                : r.content();
+        String content = hidden ? PostIt.HIDDEN_POST_TEXT : deleted ? PostIt.DELETED_POST_TEXT : r.content();
         boolean pinned = r.pinnedUntil() != null && r.pinnedUntil().isAfter(LocalDateTime.now());
 
         return UserActivityReactedPostItRspDto.builder()
@@ -98,7 +93,7 @@ public class UserActivityReactedPostItRspDto {
                 .userId(anonymous ? null : r.userId())
                 .nickname(anonymous ? ANONYMOUS_NICKNAME : (r.nickname() == null ? ANONYMOUS_NICKNAME : r.nickname()))
                 .age(anonymous ? null : r.age())
-                .location(anonymous ? null : composeLocation(r.areaCountry(), r.areaCity()))
+                .location(anonymous ? null : LocationUtil.composeLocation(r.areaCountry(), r.areaCity()))
                 .categoryCode(r.categoryCode())
                 .content(content)
                 .color(r.color())
@@ -116,13 +111,5 @@ public class UserActivityReactedPostItRspDto {
                 .deleted(deleted)
                 .createTime(r.createTime())
                 .build();
-    }
-
-    private static String composeLocation(String country, String city) {
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
     }
 }

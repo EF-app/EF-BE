@@ -52,8 +52,8 @@ public class UserAuthController {
         return new RspTemplate<>(HttpStatus.OK, "휴대폰 인증이 완료되었습니다.", userAuthService.verifyPhone(reqDto));
     }
 
-    // 아이디 중복 체크 (입력 중 실시간 호출)
-    @Operation(summary = "아이디 사용 가능 여부 확인", description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. (실시간 호출용 — keyboard blur 등)")
+    // 아이디 중복 체크
+    @Operation(summary = "아이디 사용 가능 여부 확인", description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다.")
     @GetMapping("/signup/check-login-id")
     public RspTemplate<AvailabilityRspDto> checkLoginIdAvailability(@RequestParam String loginId) {
         return new RspTemplate<>(HttpStatus.OK, "아이디 사용 가능 여부 조회 성공",
@@ -74,8 +74,8 @@ public class UserAuthController {
         return new RspTemplate<>(HttpStatus.OK, "이메일 입력이 완료되었습니다.", userAuthService.createEmail(reqDto));
     }
 
-    // 닉네임 중복 체크 (입력 중 실시간 호출)
-    @Operation(summary = "닉네임 사용 가능 여부 확인", description = "입력한 닉네임이 이미 사용 중인지 확인합니다. (실시간 호출용 — keyboard blur 또는 디바운스 입력 멈춤)")
+    // 닉네임 중복 체크
+    @Operation(summary = "닉네임 사용 가능 여부 확인", description = "입력한 닉네임이 이미 사용 중인지 확인합니다.")
     @GetMapping("/signup/check-nickname")
     public RspTemplate<AvailabilityRspDto> checkNicknameAvailability(@RequestParam String nickname) {
         return new RspTemplate<>(HttpStatus.OK, "닉네임 사용 가능 여부 조회 성공",

@@ -16,23 +16,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// 어드민 차단 내역 API
 @Tag(name = "Admin Block", description = "관리자 차단 내역 조회")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/admin/block")
+@RequestMapping("/v1/admin/blocks")
 public class AdminBlockController {
 
     private final AdminBlockService adminBlockService;
 
-    @Operation(summary = "차단 내역 목록 조회",
-            description = "keyword(차단자/피차단자 닉네임·UUID LIKE) 동적 필터. 최신순.")
+    @Operation(summary = "차단 내역 목록 조회", description = "keyword(차단자/피차단자 닉네임·UUID LIKE) 동적 필터. 최신순.")
     @GetMapping
     public RspTemplate<Page<AdminBlockRspDto>> getBlocks(
             @RequestParam(required = false) String keyword,
-            @PageableDefault(size = 20, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return new RspTemplate<>(HttpStatus.OK, "차단 내역을 조회했습니다.",
-                adminBlockService.getBlocks(keyword, pageable));
+            @PageableDefault(size = 20, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        return new RspTemplate<>(HttpStatus.OK, "차단 내역을 조회했습니다.", adminBlockService.getBlocks(keyword, pageable));
     }
 }

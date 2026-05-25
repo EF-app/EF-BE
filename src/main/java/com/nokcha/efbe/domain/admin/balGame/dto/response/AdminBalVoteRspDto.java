@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.balGame.dto.response;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.admin.balGame.repository.projection.AdminBalVoteRow;
 import com.nokcha.efbe.domain.balGame.entity.BalVoteChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,8 +9,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 측 개별 투표자 응답.
-// userArea = "country city" 합성. createTime = 첫 투표 시각, updateTime = 재투표 시 갱신.
 @Getter
 @Builder
 @Schema(description = "어드민 밸런스 게임 개별 투표자")
@@ -54,13 +53,5 @@ public class AdminBalVoteRspDto {
                 .createTime(r.createTime())
                 .updateTime(r.updateTime())
                 .build();
-    }
-
-    private static String composeLocation(String country, String city) {
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
     }
 }

@@ -8,7 +8,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 차단 내역 한 줄 — 차단자/피차단자의 닉네임·UUID 를 조인해 보강(enrich).
 @Getter
 @Builder
 @Schema(description = "어드민 차단 내역 응답")

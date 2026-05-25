@@ -8,9 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 포스트잇 레포지토리
-// - 단순 CRUD/배치 단순 조회 Spring Data JPA
-// - 동적 검색·커서·조인 프로젝션은 PostItQueryRepository (Querydsl) 로 위임
 public interface PostItRepository extends JpaRepository<PostIt, Long>, PostItQueryRepository {
 
     // 만료 임박 배치 (만료 시각이 지난 활성 글)

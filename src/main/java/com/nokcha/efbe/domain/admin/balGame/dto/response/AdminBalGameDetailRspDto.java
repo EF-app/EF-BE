@@ -10,7 +10,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 측 밸런스 게임 상세 응답 DTO.
 @Getter
 @Builder
 @Schema(description = "어드민 밸런스 게임 상세")

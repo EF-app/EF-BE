@@ -13,7 +13,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 댓글 좋아요 서비스 (토글 - 추가/취소)
 @Service
 @RequiredArgsConstructor
 public class BalCommentLikeService {

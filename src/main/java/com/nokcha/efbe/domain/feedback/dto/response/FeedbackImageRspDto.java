@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-// 피드백 첨부 이미지 응답
 @Getter
 @Builder
 @Schema(description = "피드백 첨부 이미지")

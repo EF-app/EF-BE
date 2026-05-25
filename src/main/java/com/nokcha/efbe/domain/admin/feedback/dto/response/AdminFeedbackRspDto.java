@@ -14,7 +14,6 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 어드민 피드백 응답 — 목록/상세 공용
 @Getter
 @Builder
 @Schema(description = "어드민 피드백 응답 (목록/상세 공용)")

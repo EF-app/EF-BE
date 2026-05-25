@@ -1,7 +1,6 @@
 package com.nokcha.efbe.domain.payment.entity;
 
-// star_transaction.tx_type — 거래 종류
-public enum StarTxType {
+public enum InkTxType {
     CHARGE,        // 충전
     USE,           // 사용
     REFUND,        // 환불

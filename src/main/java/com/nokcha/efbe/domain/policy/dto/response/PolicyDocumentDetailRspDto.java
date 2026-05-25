@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.policy.dto.response;
 
 import com.nokcha.efbe.domain.policy.entity.CodePolicyDocument;
-import com.nokcha.efbe.domain.user.entity.TermType;
+import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class PolicyDocumentDetailRspDto {
 
     @Schema(description = "약관 타입", example = "TERMS_AGREE")
-    private TermType policyType;
+    private PolicyType policyType;
 
     @Schema(description = "버전", example = "v1.1")
     private String version;

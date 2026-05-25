@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.user.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
+import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -29,7 +30,7 @@ public class UserPolicy extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private TermType termType;
+    private PolicyType policyType;
 
     @Column(length = 20)
     private String termsVer;
@@ -44,9 +45,9 @@ public class UserPolicy extends BaseEntity {
     private String lastConsentIp;
 
     @Builder
-    public UserPolicy(Long userId, TermType termType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
+    public UserPolicy(Long userId, PolicyType policyType, String termsVer, LocalDateTime agreedDate, boolean isEssential, String lastConsentIp) {
         this.userId = userId;
-        this.termType = termType;
+        this.policyType = policyType;
         this.termsVer = termsVer;
         this.agreedDate = agreedDate;
         this.isEssential = isEssential;

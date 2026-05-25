@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-// 포스트잇 답장 채팅방 레포지토리
 public interface PostChatRoomRepository extends JpaRepository<PostChatRoom, Long> {
 
     Optional<PostChatRoom> findByUuid(String uuid);

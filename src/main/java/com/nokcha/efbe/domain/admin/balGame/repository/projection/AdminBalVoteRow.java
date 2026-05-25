@@ -4,7 +4,7 @@ import com.nokcha.efbe.domain.balGame.entity.BalVoteChoice;
 
 import java.time.LocalDateTime;
 
-// 어드민 측 BalVote 개별 투표자 projection.
+// 관리자 측 밸런스 게임 개별 투표자 row
 public record AdminBalVoteRow(
         Long id,
         Long userId,

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-// 피드백 등록 응답
 @Getter
 @Builder
 @Schema(description = "피드백 등록 응답")

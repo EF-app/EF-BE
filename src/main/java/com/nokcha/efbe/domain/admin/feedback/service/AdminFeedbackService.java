@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// 어드민 피드백 관리 — 목록 / 상세 / 처리.
 @Service
 @RequiredArgsConstructor
 public class AdminFeedbackService {
@@ -32,7 +31,7 @@ public class AdminFeedbackService {
     private final AdminAccountRepository adminAccountRepository;
     private final SecurityUtil securityUtil;
 
-    // 목록 — 동적 필터
+    // 목록
     @Transactional(readOnly = true)
     public Page<AdminFeedbackRspDto> getFeedbacks(FeedbackType feedbackType,
                                                   FeedbackStatus status,
@@ -44,7 +43,7 @@ public class AdminFeedbackService {
                 .map(f -> AdminFeedbackRspDto.of(f, List.of()));
     }
 
-    // 단건 상세 — 첨부 이미지 포함.
+    // 단건 상세
     @Transactional(readOnly = true)
     public AdminFeedbackRspDto getFeedback(Long id) {
         Feedback feedback = feedbackRepository.findById(id)

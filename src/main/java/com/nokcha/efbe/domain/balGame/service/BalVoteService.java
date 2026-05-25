@@ -16,7 +16,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 투표 서비스 (중복 방지 + 수정 시 카운트 원자적 갱신)
 @Service
 @RequiredArgsConstructor
 public class BalVoteService {

@@ -7,11 +7,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Check;
 
 import java.time.LocalDateTime;
 
-// 포스트잇 게시글 엔티티 (post_it)
 @Getter
 @Entity
 @Table(name = "post_it",
@@ -23,10 +21,6 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_post_user_cat_time", columnList = "user_id, category_code, create_time"),
                 @Index(name = "idx_post_expires", columnList = "expires_at")
         })
-@Check(name = "chk_lightn_not_anon", constraints = "NOT (category_code = 'LIGHTN' AND is_anonymous = TRUE)")
-@Check(name = "chk_post_report_nn", constraints = "report_count >= 0")
-@Check(name = "chk_post_reply_nn", constraints = "reply_count >= 0")
-@Check(name = "chk_post_color", constraints = "color IN ('P1','P2','P3','P4','P5')")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostIt extends BaseEntity {
 
@@ -50,7 +44,6 @@ public class PostIt extends BaseEntity {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 포스트잇 색상 슬롯 — 추상 코드(P1~P5), FE 가 hex 매핑
     @Enumerated(EnumType.STRING)
     @Column(name = "color", nullable = false, length = 16)
     private PostItColor color = PostItColor.P1;
@@ -92,6 +85,8 @@ public class PostIt extends BaseEntity {
         this.isDeleted = Boolean.FALSE;
     }
 
+    // 하단으로 안 쓰는 메소드 지우기
+
     // 만료 시각 연장 (프리미엄 전환 등)
     public void extendExpires(LocalDateTime expiresAt) {
         if (expiresAt != null) this.expiresAt = expiresAt;
@@ -111,11 +106,6 @@ public class PostIt extends BaseEntity {
     public void increaseReplyCount() {
         this.replyCount = (this.replyCount == null ? 0 : this.replyCount) + 1;
     }
-
-    public void decreaseReplyCount() {
-        this.replyCount = Math.max(0, (this.replyCount == null ? 0 : this.replyCount) - 1);
-    }
-
     // 신고 누적 + 임계치 도달 시 자동 숨김
     public void increaseReportAndHideIfThreshold() {
         this.reportCount = (this.reportCount == null ? 0 : this.reportCount) + 1;

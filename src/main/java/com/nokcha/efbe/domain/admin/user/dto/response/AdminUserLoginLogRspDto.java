@@ -7,10 +7,9 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 유저 상세 — 접속 이력 한 줄.
 @Getter
 @Builder
-@Schema(description = "어드민 유저 접속 이력 한 줄")
+@Schema(description = "관리자 전용 유저 접속 이력")
 public class AdminUserLoginLogRspDto {
 
     @Schema(description = "로그 PK", example = "9821")

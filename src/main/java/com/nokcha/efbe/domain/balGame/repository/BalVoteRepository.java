@@ -6,9 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-// 밸런스 게임 투표 기록 레포지토리
-// - 단순 CRUD/존재여부는 Spring Data JPA
-// - 사용자 활동(내가 투표한 게임 목록) 등 조인 프로젝션은 BalVoteQueryRepository (Querydsl) 로 위임
 public interface BalVoteRepository extends JpaRepository<BalVote, Long>, BalVoteQueryRepository {
 
     // 게임 + 유저 단건 조회 (중복 투표 검증)

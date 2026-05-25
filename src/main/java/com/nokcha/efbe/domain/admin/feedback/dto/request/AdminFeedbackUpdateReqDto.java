@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 어드민 피드백 처리 요청
 @Getter
 @NoArgsConstructor
 @Schema(description = "어드민 피드백 처리 요청")

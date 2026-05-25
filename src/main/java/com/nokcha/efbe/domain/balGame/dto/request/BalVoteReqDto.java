@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 투표/투표수정 요청 DTO
 @Getter
 @NoArgsConstructor
 @Schema(description = "투표/투표수정 요청")

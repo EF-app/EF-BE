@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// 어드민 차단 내역 조회 서비스.
 @Service
 @RequiredArgsConstructor
 public class AdminBlockService {

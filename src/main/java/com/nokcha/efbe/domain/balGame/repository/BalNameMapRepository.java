@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-// 게임별 익명 닉네임 매핑 레포지토리
 public interface BalNameMapRepository extends JpaRepository<BalNameMap, BalNameMapId> {
 
     // 게임 + 유저로 매핑 조회

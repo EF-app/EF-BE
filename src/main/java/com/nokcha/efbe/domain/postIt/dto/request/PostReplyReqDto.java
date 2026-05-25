@@ -6,8 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 포스트잇 답장 요청 DTO (첫 답장 시 채팅방 + 첫 메시지 생성)
-// isAnonymous=true 면 첫 답장 시 그 방은 영원히 익명 (이후 토글 불가). 같은 방의 모든 메시지에 일관 적용.
 @Getter
 @NoArgsConstructor
 @Schema(description = "포스트잇 답장 요청 — 첫 답장 시 채팅방이 lazy 생성되며, 그 시점의 isAnonymous 가 방의 익명 정책으로 영구 고정됨")

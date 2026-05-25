@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-// 포스트잇 답장 채팅 서비스 (첫 답장 시 방 생성, 메시지 송수신/취소)
 @Service
 @RequiredArgsConstructor
 public class PostChatService {

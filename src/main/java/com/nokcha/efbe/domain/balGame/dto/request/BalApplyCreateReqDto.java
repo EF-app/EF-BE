@@ -8,28 +8,27 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 밸런스 게임 신청 요청 DTO
 @Getter
 @NoArgsConstructor
 @Schema(description = "밸런스 게임 신청 요청")
 public class BalApplyCreateReqDto {
 
-    @Schema(description = "옵션 A 텍스트", example = "교통카드", maxLength = 255)
+    @Schema(description = "옵션 A 텍스트", example = "교통카드")
     @NotBlank
     @Size(max = 255)
     private String optionA;
 
-    @Schema(description = "옵션 B 텍스트", example = "이어폰", maxLength = 255)
+    @Schema(description = "옵션 B 텍스트", example = "이어폰")
     @NotBlank
     @Size(max = 255)
     private String optionB;
 
     // 옵션 A/B 표시용 이모지 (선택). VARCHAR(8) — 단일 이모지 + ZWJ 시퀀스까지 안전 커버.
-    @Schema(description = "옵션 A 표시용 이모지 (선택). 단일 이모지 + ZWJ 시퀀스까지 안전 커버", example = "💳", maxLength = 8)
+    @Schema(description = "옵션 A 표시용 이모지 (선택). 단일 이모지 + ZWJ 시퀀스까지 안전 커버", example = "💳")
     @Size(max = 8)
     private String optionAEmoji;
 
-    @Schema(description = "옵션 B 표시용 이모지 (선택)", example = "🎧", maxLength = 8)
+    @Schema(description = "옵션 B 표시용 이모지 (선택)", example = "🎧")
     @Size(max = 8)
     private String optionBEmoji;
 

@@ -4,7 +4,6 @@ import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
-import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.block.repository.BlockRepository;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 포스트잇 게시글 서비스 (CRUD + 상단 고정 + 신고 숨김)
 @Service
 @RequiredArgsConstructor
 public class PostItService {
@@ -123,7 +121,6 @@ public class PostItService {
     }
 
     // 단건 상세 조회 — id 기반. 본인이어도 익명 글은 userId/nickname/age/location 마스킹
-    // viewerId == null 이면 likedByMe=false.
     @Transactional(readOnly = true)
     public PostItRspDto getOnePostIt(Long postId, Long viewerId) {
         PostIt post = postItRepository.findById(postId)
@@ -138,7 +135,7 @@ public class PostItService {
         return PostItRspDto.from(post, likeCount, likedByMe, area.country, area.city, viewerId);
     }
 
-    // Soft delete - 연결된 채팅방은 그대로 활성 유지 (기존 메시지 송수신 계속 가능, FE 가 진입 시 "원문이 삭제된 포스트잇입니다" 안내)
+    // 포스트잇 삭제
     @Transactional
     public void deletePostIt(Long postId, Long userId) {
         PostIt post = postItRepository.findById(postId)

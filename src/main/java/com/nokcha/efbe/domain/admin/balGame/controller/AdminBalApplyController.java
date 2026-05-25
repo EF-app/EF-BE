@@ -30,26 +30,19 @@ public class AdminBalApplyController {
 
     private final AdminBalApplyService adminBalApplyService;
 
-    @Operation(summary = "신청 목록 조회",
-            description = "status 필터 (생략 시 전체). 기본 createTime DESC.")
+    @Operation(summary = "신청 목록 조회", description = "status 필터 (생략 시 전체). 기본 createTime DESC.")
     @GetMapping
     public RspTemplate<Page<BalApplyRspDto>> getApplies(
             @RequestParam(required = false) BalApplyStatus status,
-            @PageableDefault(size = 10, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return new RspTemplate<>(HttpStatus.OK, "신청 목록 조회 성공",
-                adminBalApplyService.getApplies(status, pageable));
+            @PageableDefault(size = 10, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        return new RspTemplate<>(HttpStatus.OK, "신청 목록 조회 성공", adminBalApplyService.getApplies(status, pageable));
     }
 
-    @Operation(summary = "신청 거절",
-            description = "PENDING 신청을 REJECTED 로 변경. adminMemo 에 거절 사유 기록. " +
-                    "이미 APPROVED/REJECTED 처리된 신청은 400.")
+    @Operation(summary = "신청 거절", description = "유저가 신청한 밸런스 게임을 거절합니다.")
     @PatchMapping("/{applyId}/reject")
     public RspTemplate<BalApplyRspDto> rejectApply(
             @PathVariable Long applyId,
-            @Valid @RequestBody AdminBalApplyRejectReqDto req
-    ) {
-        return new RspTemplate<>(HttpStatus.OK, "신청이 거절되었습니다.",
-                adminBalApplyService.rejectApply(applyId, req));
+            @Valid @RequestBody AdminBalApplyRejectReqDto req) {
+        return new RspTemplate<>(HttpStatus.OK, "신청이 거절되었습니다.", adminBalApplyService.rejectApply(applyId, req));
     }
 }

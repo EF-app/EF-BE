@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.user.service;
 
+import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserDetailRspDto;
@@ -9,16 +10,15 @@ import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
 import com.nokcha.efbe.domain.log.repository.UserLoginLogRepository;
-import com.nokcha.efbe.domain.payment.entity.UserStarBalance;
 import com.nokcha.efbe.domain.payment.entity.UserSubscription;
+import com.nokcha.efbe.domain.payment.entity.UserInkFund;
 import com.nokcha.efbe.domain.payment.repository.PaymentLogRepository;
-import com.nokcha.efbe.domain.payment.repository.UserStarBalanceRepository;
+import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
 import com.nokcha.efbe.domain.payment.repository.UserSubscriptionRepository;
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
-import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.profile.entity.UserCustomKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserPersonal;
@@ -54,7 +54,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// 어드민 유저 관리 — 목록 / 단건 상세.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -65,7 +64,7 @@ public class AdminUserService {
     private final ProfileImageRepository profileImageRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
-    private final UserStarBalanceRepository userStarBalanceRepository;
+    private final UserInkFundRepository userInkFundRepository;
     private final PaymentLogRepository paymentLogRepository;
     private final UserLoginLogRepository userLoginLogRepository;
     private final AreaRepository areaRepository;
@@ -75,7 +74,6 @@ public class AdminUserService {
     private final UserPersonalRepository userPersonalRepository;
     private final CodePersonalRepository codePersonalRepository;
 
-    // code_keyword.big_category → FE ProfileKeywordSet 그룹 키
     private static final Map<String, String> KEYWORD_GROUP = Map.of(
             "라이프스타일", "lifestyle",
             "취미", "hobby",
@@ -118,8 +116,7 @@ public class AdminUserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
-        String area = user.getAreaId() == null ? null
-                : composeLocation(areaRepository.findById(user.getAreaId()).orElse(null));
+        String area = user.getAreaId() == null ? null : LocationUtil.composeLocation(areaRepository.findById(user.getAreaId()).orElse(null));
 
         UserProfile profile = profileRepository.findByUserId(id).orElse(null);
         AdminUserProfileRspDto profileDto = buildProfile(id, profile);
@@ -136,8 +133,8 @@ public class AdminUserService {
         LocalDateTime premiumUntil = sub == null ? null : sub.getEndDate();
         boolean premium = premiumUntil != null && premiumUntil.isAfter(LocalDateTime.now());
 
-        Integer inkBalance = userStarBalanceRepository.findById(id)
-                .map(UserStarBalance::getBalance)
+        Integer inkBalance = userInkFundRepository.findByUserId(id)
+                .map(UserInkFund::getFund)
                 .orElse(0);
 
         return AdminUserDetailRspDto.of(user, area, profileDto, photos, loginLogs,
@@ -178,7 +175,7 @@ public class AdminUserService {
         return AdminUserProfileRspDto.builder()
                 .mbti(profile.getMbti() == null ? null : profile.getMbti().name())
                 .matchPurpose(profile.getPurpose() == null ? null : profile.getPurpose().name())
-                .interestTarget(toInterestTarget(profile.getPurpose()))
+                .interestTarget(profile.getPurpose())
                 .job(profile.getJob() == null ? null : profile.getJob().name())
                 .bioMessage(profile.getMessage())
                 .idealPoints(profile.getIdealPointTypes() == null ? List.of()
@@ -212,7 +209,6 @@ public class AdminUserService {
                 .build();
     }
 
-    // ===== 프로필 심사 (관리자) =====
     // 프로필 승인
     @Transactional
     public AdminUserDetailRspDto approveProfile(Long userId, Long reviewerAdminId) {
@@ -249,17 +245,6 @@ public class AdminUserService {
         return (list == null || list.isEmpty()) ? null : list.get(0);
     }
 
-    // BE Purpose → FE InterestTarget
-    private static String toInterestTarget(Purpose purpose) {
-        if (purpose == null) return null;
-        return switch (purpose) {
-            case LOVE -> "LOVER";
-            case FRIEND -> "ACQUAINTANCE";
-            case MIXED -> "ALL";
-        };
-    }
-
-    // FE UserStatus → BE BanStatus 목록. 필터 없으면 전체, WARNING 등 미지원 값은 빈 목록(빈 결과).
     private List<BanStatus> resolveStatuses(String status) {
         if (status == null || status.isBlank()) {
             return List.of(BanStatus.values());
@@ -280,18 +265,6 @@ public class AdminUserService {
 
     private String composeArea(Long areaId, Map<Long, CodeArea> areaMap) {
         if (areaId == null) return null;
-        return composeLocation(areaMap.get(areaId));
-    }
-
-    // CodeArea(country, city) → "서울특별시 강남구". 둘 중 하나만 있으면 그 값, 없으면 null.
-    private static String composeLocation(CodeArea area) {
-        if (area == null) return null;
-        String country = area.getCountry();
-        String city = area.getCity();
-        boolean hasCountry = country != null && !country.isBlank();
-        boolean hasCity = city != null && !city.isBlank();
-        if (!hasCountry && !hasCity) return null;
-        if (hasCountry && hasCity) return country + " " + city;
-        return hasCountry ? country : city;
+        return LocationUtil.composeLocation(areaMap.get(areaId));
     }
 }

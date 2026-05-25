@@ -43,13 +43,11 @@ public class UserProfile {
     @Column(length = 300)
     private String message;
 
-    // ===== 프로필 심사 (관리자) =====
     @Enumerated(EnumType.STRING)
-    @Column(name = "profile_status", nullable = false, length = 20,
-            columnDefinition = "VARCHAR(20) NOT NULL DEFAULT 'APPROVED'")
+    @Column(name = "profile_status", nullable = false, length = 20, columnDefinition = "VARCHAR(20) NOT NULL DEFAULT 'APPROVED'")
     private ProfileStatus profileStatus;
 
-    @Column(name = "profile_rejected_reason", length = 255)
+    @Column(name = "profile_rejected_reason")
     private String profileRejectedReason;
 
     @Column(name = "profile_reviewed_at")

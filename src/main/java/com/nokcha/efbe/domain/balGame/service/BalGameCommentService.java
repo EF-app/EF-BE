@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// 밸런스 게임 댓글 서비스 (계층 구조 + 삭제/숨김 표시 정책)
 @Service
 @RequiredArgsConstructor
 public class BalGameCommentService {

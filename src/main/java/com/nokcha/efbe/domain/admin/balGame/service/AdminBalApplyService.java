@@ -13,14 +13,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 어드민 측 BAL-APPLY 신청
 @Service
 @RequiredArgsConstructor
 public class AdminBalApplyService {
 
     private final BalApplyRepository balApplyRepository;
 
-    // BAL-APPLY 목록 — status 필터 , 페이지네이션.
+    // 밸런스 게임 신청 목록
     @Transactional(readOnly = true)
     public Page<BalApplyRspDto> getApplies(BalApplyStatus statusFilter, Pageable pageable) {
         Page<BalApply> page = (statusFilter == null)
@@ -29,7 +28,7 @@ public class AdminBalApplyService {
         return page.map(BalApplyRspDto::from);
     }
 
-    // BAL-APPLY 거절 — PENDING 만 거절 가능. adminMemo 에 사유 기록.
+    // 밸런스 게임 신청 거절
     @Transactional
     public BalApplyRspDto rejectApply(Long applyId, AdminBalApplyRejectReqDto req) {
         BalApply apply = balApplyRepository.findById(applyId)

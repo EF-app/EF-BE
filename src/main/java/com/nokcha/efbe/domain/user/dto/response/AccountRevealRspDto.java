@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.user.account.dto.response;
+package com.nokcha.efbe.domain.user.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

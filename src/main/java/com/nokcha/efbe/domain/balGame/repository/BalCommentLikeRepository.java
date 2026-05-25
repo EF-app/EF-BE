@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
-// 댓글 좋아요 레포지토리
 public interface BalCommentLikeRepository extends JpaRepository<BalCommentLike, Long> {
 
     // 댓글 + 유저 단건 조회 (중복/취소 판정)

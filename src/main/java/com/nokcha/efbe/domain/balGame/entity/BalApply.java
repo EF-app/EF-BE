@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 밸런스 게임 신청 엔티티
 @Getter
 @Entity
 @Table(name = "bal_apply",
@@ -57,7 +56,7 @@ public class BalApply extends BaseEntity {
     private BalApplyStatus status = BalApplyStatus.PENDING;
 
     // 관리자 메모 (반려 사유 등)
-    @Column(name = "admin_memo", length = 255)
+    @Column(name = "admin_memo")
     private String adminMemo;
 
     @Builder
@@ -80,10 +79,5 @@ public class BalApply extends BaseEntity {
     public void decide(BalApplyStatus status, String adminMemo) {
         this.status = status;
         if (adminMemo != null) this.adminMemo = adminMemo;
-    }
-
-    // 단순 상태 변경 (메모 미변경)
-    public void changeStatus(BalApplyStatus status) {
-        this.status = status;
     }
 }

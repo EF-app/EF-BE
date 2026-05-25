@@ -1,18 +1,15 @@
 package com.nokcha.efbe.domain.payment.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-// 광고 보상 로그 엔티티 (ad_reward_log, 멱등성)
 @Getter
 @Entity
 @Table(name = "ad_reward_log",
@@ -20,7 +17,7 @@ import java.time.LocalDateTime;
         indexes = {@Index(name = "idx_ad_reward_user_date", columnList = "user_id, reward_date, reward_type")})
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AdRewardLog {
+public class AdRewardLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,14 +41,6 @@ public class AdRewardLog {
 
     @Column(name = "ad_tx_id", length = 100)
     private String adTxId;
-
-    @CreatedDate
-    @Column(name = "create_time", updatable = false)
-    private LocalDateTime createTime;
-
-    @CreatedBy
-    @Column(name = "create_user", updatable = false)
-    private Long createUser;
 
     @Builder
     private AdRewardLog(Long userId, String rewardType, Integer rewardAmount,

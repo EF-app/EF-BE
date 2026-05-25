@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 도움말/FAQ 마스터 — code_faq 테이블 (코드 마스터, 운영 SQL 로 데이터 주입)
 @Getter
 @Entity
 @Table(
@@ -25,8 +24,7 @@ public class CodeFaq extends BaseEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false,
-            columnDefinition = "ENUM('ACCOUNT','MATCHING','MESSAGE','PAYMENT','REPORT','ETC') NOT NULL")
+    @Column(name = "category", nullable = false)
     private FaqCategory category;
 
     @Column(name = "question", nullable = false, length = 500)
@@ -35,15 +33,12 @@ public class CodeFaq extends BaseEntity {
     @Column(name = "answer", nullable = false, columnDefinition = "TEXT NOT NULL")
     private String answer;
 
-    @Column(name = "display_order", nullable = false,
-            columnDefinition = "INT NOT NULL DEFAULT 0")
+    @Column(name = "display_order", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer displayOrder;
 
-    @Column(name = "is_popular", nullable = false,
-            columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
+    @Column(name = "is_popular", nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT FALSE")
     private Boolean isPopular;
 
-    @Column(name = "is_active", nullable = false,
-            columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
+    @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
     private Boolean isActive;
 }

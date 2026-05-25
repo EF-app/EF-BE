@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 밸런스 게임 투표 기록 엔티티
 @Getter
 @Entity
 @Table(name = "bal_vote",

@@ -8,10 +8,9 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-// 별 충전 결제 등록 요청 DTO (PG 성공 웹훅/클라이언트 콜백)
 @Getter
 @NoArgsConstructor
-public class StarChargeReqDto {
+public class InkChargeReqDto {
 
     @NotBlank
     private String orderId;

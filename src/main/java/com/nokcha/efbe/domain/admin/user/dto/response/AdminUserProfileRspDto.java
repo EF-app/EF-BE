@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.user.dto.response;
 
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,12 +9,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-// 어드민 유저 상세 — 프로필 패널 전체 데이터.
-// user_profile + user_keyword + user_custom_keyword + user_personal
-// 음주/흡연/타투/스타일/이상형 값은 code_personal 의 라벨 텍스트 그대로 노출.
 @Getter
 @Builder
-@Schema(description = "어드민 유저 프로필 패널 — 프로필/관심사/생활습관/스타일/이상형 + 심사 상태")
+@Schema(description = "관리자 전용 유저 프로필 정보 — 프로필/관심사/생활습관/스타일/이상형 + 심사 상태")
 public class AdminUserProfileRspDto {
 
     @Schema(description = "MBTI", example = "ENFP", nullable = true)
@@ -23,7 +21,7 @@ public class AdminUserProfileRspDto {
     private String matchPurpose;
 
     @Schema(description = "관심 대상", example = "ALL", nullable = true)
-    private String interestTarget;
+    private Purpose interestTarget;
 
     @Schema(description = "직업", example = "디자이너", nullable = true)
     private String job;

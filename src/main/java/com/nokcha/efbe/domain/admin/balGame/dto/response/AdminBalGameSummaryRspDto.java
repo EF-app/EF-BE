@@ -10,10 +10,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 어드민 밸런스 게임 목록 응답 DTO.
-// user 측 BalGameSummaryRspDto 와 달리:
-//   - optionADesc/optionBDesc 명시적으로 노출 (어드민 카드 표시·편집 진입용)
-//   - applicant 정보 노출 (어떤 유저 신청에서 출발한 게임인지)
 @Getter
 @Builder
 @Schema(description = "어드민 밸런스 게임 목록 요약")

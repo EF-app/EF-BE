@@ -8,14 +8,13 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 내가 차단한 유저 한 명 — 차단 목록 화면용.
 @Getter
 @Builder
 @Schema(description = "내가 차단한 유저 (차단 목록 항목)")
 public class BlockedUserRspDto {
 
     @Schema(description = "차단 레코드 PK", example = "1")
-    private Long id;                // block id
+    private Long id;
 
     @Schema(description = "차단당한 유저 PK", example = "102")
     private Long blockedUserId;

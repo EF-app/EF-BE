@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// 밸런스 게임 본문 서비스 (사용자 측 조회 전용)
 @Service
 @RequiredArgsConstructor
 public class BalGameService {
@@ -45,7 +44,7 @@ public class BalGameService {
     private final BalVoteRepository balVoteRepository;
     private final CursorCodec cursorCodec;
 
-    // 공개된 게임 목록 조회 (커서 기반, createTime DESC + id DESC)
+    // 공개된 게임 목록 조회
     @Transactional(readOnly = true)
     public CursorPageResponse<BalGameSummaryRspDto> getBalanceGames(BalCategoryCode categoryCode, String cursor, Integer size) {
         int pageSize = clampSize(size);

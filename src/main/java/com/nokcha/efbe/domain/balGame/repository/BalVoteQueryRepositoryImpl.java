@@ -14,9 +14,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 // 밸런스 게임 사용자 활동 Querydsl 구현체
-// 정렬: bal_vote.create_time DESC, bal_vote.id DESC (안정 정렬)
-// 필터: 본인 투표(user_id) + 게임 상태 IN (PUBLISHED, ARCHIVED)
-// 인덱스: idx_balvote_user (user_id, create_time DESC) 활용
 @Repository
 @RequiredArgsConstructor
 public class BalVoteQueryRepositoryImpl implements BalVoteQueryRepository {

@@ -9,7 +9,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// 밸런스 게임 신청 응답 DTO
 @Getter
 @Builder
 @Schema(description = "밸런스 게임 신청 응답")

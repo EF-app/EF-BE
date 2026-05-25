@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// 도움말/FAQ 조회 서비스 (사용자 측 — 활성 데이터만)
 @Service
 @RequiredArgsConstructor
 public class FaqService {
@@ -38,8 +37,12 @@ public class FaqService {
     }
 
     private List<CodeFaq> findByCategoryKey(String categoryKey) {
-        FaqCategory category = FaqCategory.fromApiKey(categoryKey);
+        FaqCategory category = resolveCategory(categoryKey);
         if (category == null) throw new BusinessException(ErrorCode.NOT_FOUND_CATEGORY);
         return codeFaqRepository.findAllByIsActiveTrueAndCategoryOrderByDisplayOrderAscIdAsc(category);
+    }
+
+    private FaqCategory resolveCategory(String categoryKey) {
+        return FaqCategory.valueOf(categoryKey);
     }
 }

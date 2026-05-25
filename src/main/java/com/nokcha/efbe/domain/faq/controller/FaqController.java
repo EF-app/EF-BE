@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// 고객지원 — 도움말/FAQ RESTful 컨트롤러 (사용자 측)
 @Tag(name = "FAQ", description = "고객지원 — 도움말/FAQ")
 @RestController
 @RequestMapping("/v1/faq")
@@ -28,10 +27,10 @@ public class FaqController {
     // 활성 FAQ 목록 — category 미지정/all 이면 전체, 아니면 해당 카테고리만 (display_order ASC)
     @Operation(summary = "FAQ 목록 조회",
             description = "활성 FAQ 를 display_order 오름차순으로 반환. category 파라미터로 필터링 가능 — " +
-                    "account/matching/message/payment/report/etc, 또는 미지정/all 시 전체.")
+                    "ACCOUNT/MATCHING/MESSAGE/PAYMENT/REPORT/ETC, 또는 미지정/all 시 전체.")
     @GetMapping
     public ResponseEntity<RspTemplate<List<FaqRspDto>>> getFaqs(
-            @Parameter(description = "카테고리 키 (소문자) — account/matching/message/payment/report/etc. 미지정 또는 'all' 이면 전체.")
+            @Parameter(description = "카테고리 키 — ACCOUNT/MATCHING/MESSAGE/PAYMENT/REPORT/ETC, 미지정 또는 'all' 이면 전체.")
             @RequestParam(required = false) String category) {
         List<FaqRspDto> data = faqService.getFaqs(category);
         return ResponseEntity.ok(new RspTemplate<>(HttpStatus.OK, "FAQ 목록 조회 성공", data));

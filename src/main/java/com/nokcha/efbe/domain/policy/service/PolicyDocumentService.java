@@ -5,8 +5,8 @@ import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentDetailRspDto;
 import com.nokcha.efbe.domain.policy.dto.response.PolicyDocumentSummaryRspDto;
 import com.nokcha.efbe.domain.policy.entity.CodePolicyDocument;
+import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import com.nokcha.efbe.domain.policy.repository.CodePolicyDocumentRepository;
-import com.nokcha.efbe.domain.user.entity.TermType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class PolicyDocumentService {
         List<CodePolicyDocument> all = codePolicyDocumentRepository
                 .findAllByIsActiveTrueOrderByPolicyTypeAscEffectiveDateDesc();
 
-        Set<TermType> seen = EnumSet.noneOf(TermType.class);
+        Set<PolicyType> seen = EnumSet.noneOf(PolicyType.class);
         List<PolicyDocumentSummaryRspDto> result = new ArrayList<>();
         for (CodePolicyDocument doc : all) {
             if (seen.add(doc.getPolicyType())) {
@@ -40,7 +40,7 @@ public class PolicyDocumentService {
 
     // 단건 상세 (특정 policy_type 의 최신 활성 버전 본문 포함)
     @Transactional(readOnly = true)
-    public PolicyDocumentDetailRspDto getPolicyDetail(TermType policyType) {
+    public PolicyDocumentDetailRspDto getPolicyDetail(PolicyType policyType) {
         CodePolicyDocument doc = codePolicyDocumentRepository
                 .findFirstByPolicyTypeAndIsActiveTrueOrderByEffectiveDateDesc(policyType)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_POLICY_DOCUMENT));

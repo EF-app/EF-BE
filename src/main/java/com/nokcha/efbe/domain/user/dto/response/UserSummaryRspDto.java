@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-// 내 정보 요약 — 글쓰기 화면 / My 탭 등 공용
 @Getter
 @Builder
 @Schema(description = "내 정보 요약 (닉네임 / 지역 / 나이)")

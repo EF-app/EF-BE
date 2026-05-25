@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// 댓글/대댓글 응답 DTO (계층 구조 포함)
 @Getter
 @Builder
 @Schema(description = "댓글/대댓글 (계층 구조 포함)")
@@ -45,11 +44,9 @@ public class CommentRspDto {
     @Schema(description = "작성 시각")
     private LocalDateTime createTime;
 
-    // 대댓글 목록 (없으면 빈 리스트)
     @Schema(description = "대댓글 목록 (없으면 빈 리스트)")
     private List<CommentRspDto> children;
 
-    // 표시 정책 적용된 단일 댓글 변환 (children 은 외부에서 채움)
     public static CommentRspDto from(BalGameComment c, Long viewerId, boolean likedByMe) {
         boolean owned = c.getUser() != null && viewerId != null && viewerId.equals(c.getUser().getId());
         return CommentRspDto.builder()

@@ -2,11 +2,10 @@ package com.nokcha.efbe.domain.admin.balGame.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalVoteBucketStat;
+import com.nokcha.efbe.domain.admin.balGame.repository.projection.AdminBalVoteBucketRow;
 import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalVoteRspDto;
 import com.nokcha.efbe.domain.admin.balGame.dto.response.AdminBalVoteStatsRspDto;
 import com.nokcha.efbe.domain.admin.balGame.repository.AdminBalVoteQueryRepository;
-import com.nokcha.efbe.domain.admin.balGame.repository.projection.AdminBalVoteBucketRow;
 import com.nokcha.efbe.domain.balGame.entity.BalGame;
 import com.nokcha.efbe.domain.balGame.entity.BalVoteChoice;
 import com.nokcha.efbe.domain.balGame.repository.BalGameRepository;
@@ -20,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// 어드민 측 밸런스 게임 투표 서비스 (목록 + 통계)
 @Service
 @RequiredArgsConstructor
 public class AdminBalVoteService {
@@ -28,7 +26,7 @@ public class AdminBalVoteService {
     private final AdminBalVoteQueryRepository adminBalVoteQueryRepository;
     private final BalGameRepository balGameRepository;
 
-    // 개별 투표자 목록 — id 기반
+    // 투표자 목록
     @Transactional(readOnly = true)
     public Page<AdminBalVoteRspDto> getVotes(Long gameId, BalVoteChoice choice, Pageable pageable) {
         if (!balGameRepository.existsById(gameId)) {
@@ -58,15 +56,15 @@ public class AdminBalVoteService {
                 .build();
     }
 
-    private Map<String, AdminBalVoteBucketStat> toBucketMap(List<AdminBalVoteBucketRow> rows) {
+    private Map<String, AdminBalVoteStatsRspDto.AdminBalVoteBucketStat> toBucketMap(List<AdminBalVoteBucketRow> rows) {
         Map<String, int[]> agg = new HashMap<>();
         for (AdminBalVoteBucketRow r : rows) {
             int[] ab = agg.computeIfAbsent(r.bucketLabel(), k -> new int[2]);
             if (r.choice() == BalVoteChoice.A) ab[0] += (int) r.count();
             else if (r.choice() == BalVoteChoice.B) ab[1] += (int) r.count();
         }
-        Map<String, AdminBalVoteBucketStat> result = new HashMap<>();
-        agg.forEach((label, ab) -> result.put(label, new AdminBalVoteBucketStat(ab[0], ab[1])));
+        Map<String, AdminBalVoteStatsRspDto.AdminBalVoteBucketStat> result = new HashMap<>();
+        agg.forEach((label, ab) -> result.put(label, new AdminBalVoteStatsRspDto.AdminBalVoteBucketStat(ab[0], ab[1])));
         return result;
     }
 }
