@@ -1,6 +1,7 @@
 package com.nokcha.efbe.common.config;
 
 import com.nokcha.efbe.common.auth.filter.JwtAuthenticationFilter;
+import com.nokcha.efbe.common.auth.filter.SuspensionGuardFilter;
 import com.nokcha.efbe.common.auth.handler.JwtAccessDeniedHandler;
 import com.nokcha.efbe.common.auth.handler.JwtAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +46,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtAccessDeniedHandler jwtAccessDeniedHandler) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                    JwtAuthenticationFilter jwtAuthenticationFilter,
+                                                    SuspensionGuardFilter suspensionGuardFilter,
+                                                    JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                                                    JwtAccessDeniedHandler jwtAccessDeniedHandler) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -73,6 +78,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
 //                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // JWT 인증 직후, 컨트롤러 진입 전 — 제재 유저 화이트리스트 외 API 차단
+                .addFilterAfter(suspensionGuardFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 }

@@ -1,6 +1,9 @@
 package com.nokcha.efbe.domain.user.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
+import com.nokcha.efbe.common.util.SecurityUtil;
+import com.nokcha.efbe.domain.suspension.dto.response.UserSuspensionRspDto;
+import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.user.dto.response.AccountMaskedRspDto;
 import com.nokcha.efbe.domain.user.dto.response.AccountRevealRspDto;
 import com.nokcha.efbe.domain.user.dto.request.*;
@@ -22,12 +25,27 @@ import org.springframework.web.bind.annotation.*;
 public class UserInfoController {
 
     private final UserInfoService userInfoService;
+    private final SuspensionService suspensionService;
+    private final SecurityUtil securityUtil;
 
     @Operation(summary = "내 정보 요약 조회", description = "로그인한 회원의 닉네임 / 지역 / 나이를 반환합니다. 포스트잇 글쓰기 화면 / My 탭 등 공용으로 사용.")
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/summary")
     public RspTemplate<UserSummaryRspDto> getMySummary() {
         return new RspTemplate<>(HttpStatus.OK, "내 정보 조회 성공", userInfoService.getMySummary());
+    }
+
+    @Operation(summary = "내 활성 제재 조회",
+            description = "차단 화면 진입 시 호출. 활성 제재 없으면 active=false, 있으면 type/reason/endsAt 반환. " +
+                    "로그인 응답(LoginRspDto.suspension) 으로도 inline 전달됨 — 신규 제재가 부과된 경우나 화면 재진입 시 재확인용.")
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/suspension")
+    public RspTemplate<UserSuspensionRspDto> getMySuspension() {
+        Long userId = securityUtil.getCurrentUserId();
+        UserSuspensionRspDto data = suspensionService.findActiveBlockingSuspension(userId)
+                .map(UserSuspensionRspDto::from)
+                .orElseGet(UserSuspensionRspDto::inactive);
+        return new RspTemplate<>(HttpStatus.OK, "활성 제재 조회 성공", data);
     }
 
     @Operation(summary = "보안코드 설정", description = "로그인한 회원의 보안코드를 설정합니다.")

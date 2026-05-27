@@ -11,6 +11,8 @@ import com.nokcha.efbe.domain.payment.entity.UserInkFund;
 import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
 import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import com.nokcha.efbe.domain.profile.entity.*;
+import com.nokcha.efbe.domain.suspension.dto.response.UserSuspensionRspDto;
+import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
@@ -79,6 +81,7 @@ public class UserAuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RevokedTokenRepository revokedTokenRepository;
+    private final SuspensionService suspensionService;
 
     // 로그인 아이디 사용 가능 여부
     @Transactional(readOnly = true)
@@ -327,9 +330,8 @@ public class UserAuthService {
                 .email(signUpSession.getEmail())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
-                .isWithdraw(false)
-                .lastNicknameChangeTime(LocalDateTime.now())
-                .banStatus(BanStatus.NONE)
+                .lastNicknameChangedAt(LocalDateTime.now())
+                .status(UserStatus.ACTIVE)
                 .build());
 
         saveFinalProfile(user.getId(), signUpSession.getId(), signUpSession.getPurpose());
@@ -373,26 +375,36 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
 
-        if (user.isWithdraw()) {
+        if (user.isWithdrawnOrWithdrawing()) {
             logFailure(user.getId(), reqDto, request, LoginFailureReason.WITHDRAWN);
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
-
-        validateBanStatus(user, reqDto, request);
 
         if (!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())) {
             logFailure(user.getId(), reqDto, request, LoginFailureReason.INVALID_PASSWORD);
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
 
-        user.updateLastLoginTime(LocalDateTime.now());
+        // 제재 상태(TEMPORARY/PERMANENT) 도 로그인 자체는 허용 — 마이/고객센터/탈퇴/로그아웃 화이트리스트 접근
+        suspensionService.evaluateAndUpdateStatus(user);
+
+        if (user.getStatus() == UserStatus.TEMPORARY || user.getStatus() == UserStatus.PERMANENT) {
+            logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
+        }
+
+        user.updateLastActiveAt(LocalDateTime.now());
         logSuccess(user.getId(), reqDto, request);
+
+        UserSuspensionRspDto suspension = suspensionService.findActiveBlockingSuspension(user.getId())
+                .map(UserSuspensionRspDto::from)
+                .orElseGet(UserSuspensionRspDto::inactive);
 
         return LoginRspDto.builder()
                 .userId(user.getId())
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .refreshToken(jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
+                .suspension(suspension)
                 .build();
     }
 
@@ -412,22 +424,11 @@ public class UserAuthService {
         User user = userRepository.findByLoginId(jwtTokenProvider.getLoginId(reqDto.getRefreshToken()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
-        if (user.isWithdraw()) {
+        if (user.isWithdrawnOrWithdrawing()) {
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
 
-        if (user.getBanStatus() == BanStatus.SEVEN_DAYS) {
-            throw new BusinessException(ErrorCode.BANNED_USER_SEVEN_DAYS);
-        }
-
-        if (user.getBanStatus() == BanStatus.THIRTY_DAYS) {
-            throw new BusinessException(ErrorCode.BANNED_USER_THIRTY_DAYS);
-        }
-
-        if (user.getBanStatus() == BanStatus.FOREVER) {
-            throw new BusinessException(ErrorCode.BANNED_USER_FOREVER);
-        }
-
+        // TEMPORARY/PERMANENT 도 토큰 갱신 허용 — 차단 분기는 SuspensionGuardFilter 가 API 호출 시점에 판정.
         return TokenRefreshRspDto.builder()
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
@@ -437,29 +438,6 @@ public class UserAuthService {
     // 목적 단계 수정 가능 여부 확인
     private boolean isPurposeEditableStep(SignUpStep signUpStep) {
         return signUpStep == SignUpStep.AREA_COMPLETED || signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
-    }
-
-    // 정지 상태 회원의 로그인 가능 여부 확인
-    private void validateBanStatus(User user, LoginReqDto reqDto, HttpServletRequest request) {
-        if (user.getBanStatus() == null || user.getBanStatus() == BanStatus.NONE) {
-            return;
-        }
-
-        switch (user.getBanStatus()) {
-            case SEVEN_DAYS -> {
-                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
-                throw new BusinessException(ErrorCode.BANNED_USER_SEVEN_DAYS);
-            }
-            case THIRTY_DAYS -> {
-                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
-                throw new BusinessException(ErrorCode.BANNED_USER_THIRTY_DAYS);
-            }
-            case FOREVER -> {
-                logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
-                throw new BusinessException(ErrorCode.BANNED_USER_FOREVER);
-            }
-            default -> throw new BusinessException(ErrorCode.INVALID_USER);
-        }
     }
 
     // 로그인 성공 이력 저장

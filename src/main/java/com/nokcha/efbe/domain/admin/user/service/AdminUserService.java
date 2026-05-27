@@ -3,9 +3,13 @@ package com.nokcha.efbe.domain.admin.user.service;
 import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.admin.suspension.dto.response.AdminSuspensionRspDto;
+import com.nokcha.efbe.domain.admin.suspension.repository.AdminSuspensionRepository;
+import com.nokcha.efbe.domain.admin.suspension.service.AdminSuspensionService;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserDetailRspDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserProfileRspDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserSummaryRspDto;
+import com.nokcha.efbe.domain.suspension.entity.UserSuspension;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
@@ -29,8 +33,8 @@ import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
-import com.nokcha.efbe.domain.user.entity.BanStatus;
 import com.nokcha.efbe.domain.user.entity.User;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
 import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
@@ -73,6 +77,9 @@ public class AdminUserService {
     private final CodeKeywordRepository codeKeywordRepository;
     private final UserPersonalRepository userPersonalRepository;
     private final CodePersonalRepository codePersonalRepository;
+    private final AdminSuspensionRepository adminSuspensionRepository;
+    private final AdminSuspensionService adminSuspensionService;
+    private final com.nokcha.efbe.domain.suspension.service.SuspensionService suspensionService;
 
     private static final Map<String, String> KEYWORD_GROUP = Map.of(
             "라이프스타일", "lifestyle",
@@ -85,11 +92,12 @@ public class AdminUserService {
             "게임", "game"
     );
 
-    // 목록 — keyword(닉네임/로그인ID/UUID LIKE) + status(FE UserStatus) 동적 필터.
+    // 목록 — keyword(닉네임/로그인ID/UUID LIKE) + status(UserStatus enum) 동적 필터.
     @Transactional(readOnly = true)
-    public Page<AdminUserSummaryRspDto> getUsers(String keyword, String status, Pageable pageable) {
+    public Page<AdminUserSummaryRspDto> getUsers(String keyword, UserStatus status, Pageable pageable) {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        Page<User> page = userRepository.searchForAdmin(kw, resolveStatuses(status), pageable);
+        List<UserStatus> statuses = (status == null) ? List.of(UserStatus.values()) : List.of(status);
+        Page<User> page = userRepository.searchForAdmin(kw, statuses, pageable);
 
         // 지역명 배치 조회 — areaId N개를 한 번에 (N+1 방지)
         Map<Long, CodeArea> areaMap = loadAreaMap(page.getContent().stream()
@@ -137,8 +145,37 @@ public class AdminUserService {
                 .map(UserInkFund::getFund)
                 .orElse(0);
 
+        // 제재 이력 — 전체 + 활성 차단 제재 1건
+        List<UserSuspension> suspensions = adminSuspensionRepository
+                .searchForAdmin(id, null, null, null, null, null,
+                        org.springframework.data.domain.PageRequest.of(0, 100,
+                                org.springframework.data.domain.Sort.by(
+                                        org.springframework.data.domain.Sort.Direction.DESC, "id")))
+                .getContent();
+        List<AdminSuspensionRspDto> suspensionDtos = adminSuspensionService.toDtoList(suspensions);
+        // activeSuspension 은 "차단" 의미 — TEMPORARY/PERMANENT 만 (도메인 SuspensionService 가 WARNING 제외).
+        AdminSuspensionRspDto activeSuspension = suspensionService
+                .findActiveBlockingSuspension(id)
+                .map(adminSuspensionService::toDto)
+                .orElse(null);
+
+        // 자동 에스컬레이션 예고용 메타: 30일 내 WARNING 카운트 + 직전 TEMPORARY 일수
+        long recentWarningCount = adminSuspensionRepository.countRecentWarnings(
+                id, LocalDateTime.now().minusDays(
+                        com.nokcha.efbe.domain.admin.suspension.service.AdminSuspensionService.WARNING_WINDOW_DAYS));
+        Long lastTemporaryDurationDays = adminSuspensionRepository
+                .findLatestTemporaryByUserId(id, org.springframework.data.domain.PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .map(s -> s.getEndsAt() == null
+                        ? null
+                        : java.time.temporal.ChronoUnit.DAYS.between(s.getStartsAt(), s.getEndsAt()))
+                .orElse(null);
+
         return AdminUserDetailRspDto.of(user, area, profileDto, photos, loginLogs,
-                withdrawAt, paymentTotal, premium, premiumUntil, inkBalance);
+                withdrawAt, paymentTotal, premium, premiumUntil, inkBalance,
+                activeSuspension, suspensionDtos,
+                recentWarningCount, lastTemporaryDurationDays);
     }
 
     // ── 프로필 조립 — user_profile + user_keyword + user_custom_keyword + user_personal ──
@@ -243,18 +280,6 @@ public class AdminUserService {
 
     private static String first(List<String> list) {
         return (list == null || list.isEmpty()) ? null : list.get(0);
-    }
-
-    private List<BanStatus> resolveStatuses(String status) {
-        if (status == null || status.isBlank()) {
-            return List.of(BanStatus.values());
-        }
-        return switch (status) {
-            case "ACTIVE" -> List.of(BanStatus.NONE);
-            case "TEMP_SUSPENDED" -> List.of(BanStatus.SEVEN_DAYS, BanStatus.THIRTY_DAYS);
-            case "PERMANENTLY_SUSPENDED" -> List.of(BanStatus.FOREVER);
-            default -> List.of();
-        };
     }
 
     private Map<Long, CodeArea> loadAreaMap(List<Long> areaIds) {
