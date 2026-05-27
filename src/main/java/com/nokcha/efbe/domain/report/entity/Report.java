@@ -65,7 +65,7 @@ public class Report extends BaseEntity {
     @Column(name = "admin_processed_at")
     private LocalDateTime adminProcessedAt;
 
-    // 대표 신고에만 연결되는 제재 suspension_log.id. cascade 신고는 NULL.
+    // 대표 신고에만 연결되는 제재 user_suspension.id. cascade 신고는 NULL.
     @Column(name = "suspension_id")
     private Long suspensionId;
 

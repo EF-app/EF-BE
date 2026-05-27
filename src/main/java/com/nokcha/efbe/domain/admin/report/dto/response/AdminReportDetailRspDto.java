@@ -51,11 +51,11 @@ public class AdminReportDetailRspDto {
     @Schema(description = "처리 시각", example = "2026-05-24T10:00:00", nullable = true)
     private LocalDateTime adminProcessedAt;
 
-    @Schema(description = "이 신고 자체가 연결된 suspension_log.id (자기 자신이 대표일 때만)",
+    @Schema(description = "이 신고 자체가 연결된 user_suspension.id (자기 자신이 대표일 때만)",
             example = "37", nullable = true)
     private Long suspensionId;
 
-    @Schema(description = "유효 suspension_log.id — cascade 신고도 parent.suspensionId 로 채워짐",
+    @Schema(description = "유효 user_suspension.id — cascade 신고도 parent.suspensionId 로 채워짐",
             example = "37", nullable = true)
     private Long effectiveSuspensionId;
 
