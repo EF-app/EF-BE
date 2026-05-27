@@ -25,7 +25,7 @@ public class FaqRspDto {
     private String answer;
 
     @Schema(description = "인기 질문 여부", example = "false")
-    private boolean isPopular;
+    private Boolean isPopular;
 
     @Schema(description = "카테고리 내부 노출 순서", example = "1")
     private Integer displayOrder;
