@@ -6,6 +6,7 @@ import com.nokcha.efbe.domain.admin.user.dto.request.AdminProfileRejectReqDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserDetailRspDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserSummaryRspDto;
 import com.nokcha.efbe.domain.admin.user.service.AdminUserService;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,11 +33,11 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
     private final SecurityUtil securityUtil;
 
-    @Operation(summary = "유저 목록 조회", description = "keyword(닉네임/로그인ID/UUID LIKE), status(ACTIVE/TEMP_SUSPENDED/PERMANENTLY_SUSPENDED) 동적 필터")
+    @Operation(summary = "유저 목록 조회", description = "keyword(닉네임/로그인ID/UUID LIKE), status(UserStatus enum: ACTIVE/TEMPORARY/PERMANENT/WITHDRAWING/WITHDRAWN) 동적 필터")
     @GetMapping
     public RspTemplate<Page<AdminUserSummaryRspDto>> getUsers(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) UserStatus status,
             @PageableDefault(size = 15, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable) {
         return new RspTemplate<>(HttpStatus.OK, "유저 목록을 조회했습니다.", adminUserService.getUsers(keyword, status, pageable));
     }

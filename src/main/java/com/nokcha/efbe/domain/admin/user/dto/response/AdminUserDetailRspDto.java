@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.admin.user.dto.response;
 
-import com.nokcha.efbe.domain.admin.user.util.AdminUserStatusMapper;
+import com.nokcha.efbe.domain.admin.suspension.dto.response.AdminSuspensionRspDto;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.entity.User;
@@ -45,8 +46,8 @@ public class AdminUserDetailRspDto {
     @Schema(description = "지역 (\"국가 도시\" 조합)", example = "대한민국 서울특별시", nullable = true)
     private String area;
 
-    @Schema(description = "유저 상태 — ACTIVE / TEMP_SUSPENDED / PERMANENTLY_SUSPENDED", example = "ACTIVE")
-    private String status;
+    @Schema(description = "유저 상태 — ACTIVE / TEMPORARY / PERMANENT / WITHDRAWING / WITHDRAWN", example = "ACTIVE")
+    private UserStatus status;
 
     @Schema(description = "탈퇴 여부", example = "false")
     private boolean withdraw;
@@ -54,11 +55,11 @@ public class AdminUserDetailRspDto {
     @Schema(description = "탈퇴 신청 시각 (탈퇴 진행 중인 경우)", example = "2026-05-20T10:00:00", nullable = true)
     private LocalDateTime withdrawAt;
 
-    @Schema(description = "마지막 로그인 시각", example = "2026-05-23T18:42:00", nullable = true)
-    private LocalDateTime lastLoginTime;
+    @Schema(description = "마지막 활동 시각", example = "2026-05-23T18:42:00", nullable = true)
+    private LocalDateTime lastActiveAt;
 
     @Schema(description = "마지막 닉네임 변경 시각", example = "2026-03-10T14:00:00", nullable = true)
-    private LocalDateTime lastNicknameChangeTime;
+    private LocalDateTime lastNicknameChangedAt;
 
     @Schema(description = "가입 시각", example = "2025-12-01T09:30:00")
     private LocalDateTime createTime;
@@ -87,6 +88,18 @@ public class AdminUserDetailRspDto {
     @Schema(description = "최근 접속 이력")
     private List<AdminUserLoginLogRspDto> recentLoginLogs;
 
+    @Schema(description = "현재 활성 제재 1건 (가장 강한 등급). 없으면 null", nullable = true)
+    private AdminSuspensionRspDto activeSuspension;
+
+    @Schema(description = "전체 제재 이력 (최신순). 없으면 빈 배열")
+    private List<AdminSuspensionRspDto> suspensions;
+
+    @Schema(description = "최근 30일 내 WARNING 부과 건수 — admin FE 가 WARNING 부과 시 자동 에스컬레이션 예고 모달 노출용", example = "3")
+    private long recentWarningCount;
+
+    @Schema(description = "직전 TEMPORARY 제재의 일수 (해제/만료 무관, 최신 1건). 없으면 null. WARNING 부과 후 자동 에스컬레이션 등급 결정용.", example = "7", nullable = true)
+    private Long lastTemporaryDurationDays;
+
     public static AdminUserDetailRspDto of(User u,
                                            String area,
                                            AdminUserProfileRspDto profile,
@@ -96,7 +109,11 @@ public class AdminUserDetailRspDto {
                                            BigDecimal paymentTotal,
                                            boolean premium,
                                            LocalDateTime premiumUntil,
-                                           Integer inkBalance) {
+                                           Integer inkBalance,
+                                           AdminSuspensionRspDto activeSuspension,
+                                           List<AdminSuspensionRspDto> suspensions,
+                                           long recentWarningCount,
+                                           Long lastTemporaryDurationDays) {
         return AdminUserDetailRspDto.builder()
                 .id(u.getId())
                 .uuid(u.getUuid())
@@ -107,11 +124,11 @@ public class AdminUserDetailRspDto {
                 .age(u.getAge())
                 .birth(u.getBirth())
                 .area(area)
-                .status(AdminUserStatusMapper.toUserStatus(u.getBanStatus()))
-                .withdraw(u.isWithdraw())
+                .status(u.getStatus())
+                .withdraw(u.isWithdrawnOrWithdrawing())
                 .withdrawAt(withdrawAt)
-                .lastLoginTime(u.getLastLoginTime())
-                .lastNicknameChangeTime(u.getLastNicknameChangeTime())
+                .lastActiveAt(u.getLastActiveAt())
+                .lastNicknameChangedAt(u.getLastNicknameChangedAt())
                 .createTime(u.getCreateTime())
                 .updateTime(u.getUpdateTime())
                 .paymentTotal(paymentTotal == null ? BigDecimal.ZERO : paymentTotal)
@@ -121,6 +138,10 @@ public class AdminUserDetailRspDto {
                 .profile(profile)
                 .photos(photos.stream().map(AdminUserPhotoRspDto::from).toList())
                 .recentLoginLogs(loginLogs.stream().map(AdminUserLoginLogRspDto::from).toList())
+                .activeSuspension(activeSuspension)
+                .suspensions(suspensions == null ? List.of() : suspensions)
+                .recentWarningCount(recentWarningCount)
+                .lastTemporaryDurationDays(lastTemporaryDurationDays)
                 .build();
     }
 }
