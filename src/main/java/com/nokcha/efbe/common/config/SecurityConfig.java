@@ -71,8 +71,6 @@ public class SecurityConfig {
                                 "/v1/admin/auth/token/refresh",
                                 "/v1/admin/auth/login"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/bal-game/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/post-it", "/v1/post-it/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/policies", "/v1/policies/*").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

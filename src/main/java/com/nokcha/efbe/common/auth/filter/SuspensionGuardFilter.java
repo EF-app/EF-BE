@@ -50,8 +50,6 @@ public class SuspensionGuardFilter extends OncePerRequestFilter {
     private static final List<String> WHITELIST = List.of(
             "/v1/users/me/**",          // 마이/계정/프로필수정/보안코드/탈퇴/제재조회
             "/v1/users/logout",         // 로그아웃
-            "/v1/blocks",               // 차단 목록
-            "/v1/blocks/**",            // 차단 추가/해제
             "/v1/faq",
             "/v1/faq/**",
             "/v1/policies",
