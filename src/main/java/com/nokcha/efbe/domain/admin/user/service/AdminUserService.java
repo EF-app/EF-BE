@@ -10,6 +10,7 @@ import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserDetailRspDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserProfileRspDto;
 import com.nokcha.efbe.domain.admin.user.dto.response.AdminUserSummaryRspDto;
 import com.nokcha.efbe.domain.suspension.entity.UserSuspension;
+import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
@@ -44,12 +45,15 @@ import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,7 +83,7 @@ public class AdminUserService {
     private final CodePersonalRepository codePersonalRepository;
     private final AdminSuspensionRepository adminSuspensionRepository;
     private final AdminSuspensionService adminSuspensionService;
-    private final com.nokcha.efbe.domain.suspension.service.SuspensionService suspensionService;
+    private final SuspensionService suspensionService;
 
     private static final Map<String, String> KEYWORD_GROUP = Map.of(
             "라이프스타일", "lifestyle",
@@ -148,9 +152,7 @@ public class AdminUserService {
         // 제재 이력 — 전체 + 활성 차단 제재 1건
         List<UserSuspension> suspensions = adminSuspensionRepository
                 .searchForAdmin(id, null, null, null, null, null,
-                        org.springframework.data.domain.PageRequest.of(0, 100,
-                                org.springframework.data.domain.Sort.by(
-                                        org.springframework.data.domain.Sort.Direction.DESC, "id")))
+                        PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "id")))
                 .getContent();
         List<AdminSuspensionRspDto> suspensionDtos = adminSuspensionService.toDtoList(suspensions);
         // activeSuspension 은 "차단" 의미 — TEMPORARY/PERMANENT 만 (도메인 SuspensionService 가 WARNING 제외).
@@ -161,15 +163,14 @@ public class AdminUserService {
 
         // 자동 에스컬레이션 예고용 메타: 30일 내 WARNING 카운트 + 직전 TEMPORARY 일수
         long recentWarningCount = adminSuspensionRepository.countRecentWarnings(
-                id, LocalDateTime.now().minusDays(
-                        com.nokcha.efbe.domain.admin.suspension.service.AdminSuspensionService.WARNING_WINDOW_DAYS));
+                id, LocalDateTime.now().minusDays(AdminSuspensionService.WARNING_WINDOW_DAYS));
         Long lastTemporaryDurationDays = adminSuspensionRepository
-                .findLatestTemporaryByUserId(id, org.springframework.data.domain.PageRequest.of(0, 1))
+                .findLatestTemporaryByUserId(id, PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
                 .map(s -> s.getEndsAt() == null
                         ? null
-                        : java.time.temporal.ChronoUnit.DAYS.between(s.getStartsAt(), s.getEndsAt()))
+                        : ChronoUnit.DAYS.between(s.getStartsAt(), s.getEndsAt()))
                 .orElse(null);
 
         return AdminUserDetailRspDto.of(user, area, profileDto, photos, loginLogs,
