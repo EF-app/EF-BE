@@ -39,7 +39,7 @@ public class UserInfoController {
             description = "차단 화면 진입 시 호출. 활성 제재 없으면 active=false, 있으면 type/reason/endsAt 반환. " +
                     "로그인 응답(LoginRspDto.suspension) 으로도 inline 전달됨 — 신규 제재가 부과된 경우나 화면 재진입 시 재확인용.")
     @PreAuthorize("hasRole('USER')")
-    @GetMapping("/suspension")
+    @GetMapping("/suspensions")
     public RspTemplate<UserSuspensionRspDto> getMySuspension() {
         Long userId = securityUtil.getCurrentUserId();
         UserSuspensionRspDto data = suspensionService.findActiveBlockingSuspension(userId)

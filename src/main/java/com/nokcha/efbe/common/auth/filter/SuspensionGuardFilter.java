@@ -113,7 +113,7 @@ public class SuspensionGuardFilter extends OncePerRequestFilter {
             return;
         }
 
-        // /v1/users/me/suspension 한 번 호출해 채움 (이 경로는 화이트리스트라 통과).
+        // /v1/users/me/suspensions 한 번 호출해 채움 (이 경로는 화이트리스트라 통과).
         writeSuspendedResponse(response);
     }
 
