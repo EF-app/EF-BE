@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 // 유저 본인의 활성 제재 정보 — "제재중" 화면 표시용.
 @Getter
 @Builder
-@Schema(description = "유저 본인의 활성 제재 정보 (없으면 active=false)")
+@Schema(description = "유저 본인의 활성 제재 정보 (없으면 isActive=false)")
 public class UserSuspensionRspDto {
 
     @Schema(description = "활성 제재 존재 여부", example = "true")
-    private boolean active;
+    private Boolean isActive;
 
     @Schema(description = "제재 유형", example = "TEMPORARY", nullable = true)
     private SuspensionType type;
@@ -30,12 +30,12 @@ public class UserSuspensionRspDto {
     private LocalDateTime endsAt;
 
     public static UserSuspensionRspDto inactive() {
-        return UserSuspensionRspDto.builder().active(false).build();
+        return UserSuspensionRspDto.builder().isActive(false).build();
     }
 
     public static UserSuspensionRspDto from(UserSuspension s) {
         return UserSuspensionRspDto.builder()
-                .active(true)
+                .isActive(true)
                 .type(s.getSuspensionType())
                 .reason(s.getReason())
                 .startsAt(s.getStartsAt())

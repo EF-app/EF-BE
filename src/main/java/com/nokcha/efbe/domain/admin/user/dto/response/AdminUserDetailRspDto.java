@@ -50,7 +50,7 @@ public class AdminUserDetailRspDto {
     private UserStatus status;
 
     @Schema(description = "탈퇴 여부", example = "false")
-    private boolean withdraw;
+    private Boolean isWithdraw;
 
     @Schema(description = "탈퇴 신청 시각 (탈퇴 진행 중인 경우)", example = "2026-05-20T10:00:00", nullable = true)
     private LocalDateTime withdrawAt;
@@ -125,7 +125,7 @@ public class AdminUserDetailRspDto {
                 .birth(u.getBirth())
                 .area(area)
                 .status(u.getStatus())
-                .withdraw(u.isWithdrawnOrWithdrawing())
+                .isWithdraw(u.isWithdrawnOrWithdrawing())
                 .withdrawAt(withdrawAt)
                 .lastActiveAt(u.getLastActiveAt())
                 .lastNicknameChangedAt(u.getLastNicknameChangedAt())

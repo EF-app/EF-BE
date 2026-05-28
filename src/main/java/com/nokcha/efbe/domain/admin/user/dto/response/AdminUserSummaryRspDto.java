@@ -40,7 +40,7 @@ public class AdminUserSummaryRspDto {
     private String profileStatus;
 
     @Schema(description = "탈퇴 여부 (WITHDRAWING 또는 WITHDRAWN)", example = "false")
-    private boolean withdraw;
+    private Boolean isWithdraw;
 
     @Schema(description = "마지막 활동 시각", example = "2026-05-23T18:42:00", nullable = true)
     private LocalDateTime lastActiveAt;
@@ -58,7 +58,7 @@ public class AdminUserSummaryRspDto {
                 .area(area)
                 .status(u.getStatus())
                 .profileStatus(profileStatus == null ? null : profileStatus.name())
-                .withdraw(u.isWithdrawnOrWithdrawing())
+                .isWithdraw(u.isWithdrawnOrWithdrawing())
                 .lastActiveAt(u.getLastActiveAt())
                 .createTime(u.getCreateTime())
                 .build();
