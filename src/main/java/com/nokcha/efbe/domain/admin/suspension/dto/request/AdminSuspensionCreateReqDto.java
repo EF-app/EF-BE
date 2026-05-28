@@ -29,12 +29,12 @@ public class AdminSuspensionCreateReqDto {
     private String reason;
 
     @Positive
-    @Schema(description = "TEMPORARY 일 때 필수 — 정지 일수 (예: 7, 30)", example = "7", nullable = true)
+    @Schema(description = "TEMPORARY 일 때 필수 — 정지 일수 (예: 7, 30)", example = "7")
     private Integer durationDays;
 
-    @Schema(description = "제재 근거 신고 대상 타입. 임의 제재 시 null", example = "POST_IT", nullable = true)
+    @Schema(description = "제재 근거 신고 대상 타입. 임의 제재 시 null", example = "POST_IT")
     private ReportTargetType sourceTargetType;
 
-    @Schema(description = "제재 근거 대상 PK. 임의 제재 시 null", example = "1234", nullable = true)
+    @Schema(description = "제재 근거 대상 PK. 임의 제재 시 null", example = "1234")
     private Long sourceTargetId;
 }

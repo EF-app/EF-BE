@@ -13,8 +13,6 @@ public class AdminReportProcessReqDto {
 
     @Positive
     @Schema(description = "연결할 user_suspension.id (제재 발동된 경우만, 미발동 시 null/생략 가능)",
-            example = "37",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-            nullable = true)
+            example = "37")
     private Long suspensionId;
 }
