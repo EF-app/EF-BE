@@ -23,7 +23,9 @@ import java.time.LocalDateTime;
         },
         indexes = {
                 @Index(name = "idx_report_target", columnList = "target_type, target_id"),
-                @Index(name = "idx_report_status_time", columnList = "status, create_time")
+                @Index(name = "idx_report_status_time", columnList = "status, create_time"),
+                // 그룹 처리 효율 — (target_type, target_id, status) 으로 같은 그룹의 PENDING 일괄 조회
+                @Index(name = "idx_report_group", columnList = "target_type, target_id, status")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -65,15 +67,9 @@ public class Report extends BaseEntity {
     @Column(name = "admin_processed_at")
     private LocalDateTime adminProcessedAt;
 
-    // 대표 신고에만 연결되는 제재 suspension_log.id. cascade 신고는 NULL.
+    // 이 신고로 이어진 제재 user_suspension.id. 같은 그룹의 모든 PROCESSED 신고에 동일 id 부여 (평탄화).
     @Column(name = "suspension_id")
     private Long suspensionId;
-
-    // 이 신고가 따라간 대표 신고. 대표 자신은 NULL.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_report_id",
-            foreignKey = @ForeignKey(name = "fk_report_parent"))
-    private Report parent;
 
     @Builder
     private Report(User reporter, ReportTargetType targetType, Long targetId,
@@ -86,7 +82,7 @@ public class Report extends BaseEntity {
         this.status = ReportStatus.PENDING;
     }
 
-    // 관리자 처리 — PROCESSED (실제 제재로 이어진 경우 suspensionId 연결).
+    // 관리자 처리 — PROCESSED. 같은 그룹의 모든 PENDING 에 동일 suspensionId 부여 (cascade 평탄화).
     public void process(AdminAccount admin, Long suspensionId) {
         if (this.status != ReportStatus.PENDING) {
             throw new BusinessException(ErrorCode.REPORT_ALREADY_PROCESSED);
@@ -97,18 +93,7 @@ public class Report extends BaseEntity {
         this.suspensionId = suspensionId;
     }
 
-    // cascade 신고 처리 — 같은 target 의 대표 신고를 따라 자동 닫힘. suspensionId 는 채우지 않음 (대표만 연결).
-    public void processAsCascade(AdminAccount admin, Report parent) {
-        if (this.status != ReportStatus.PENDING) {
-            throw new BusinessException(ErrorCode.REPORT_ALREADY_PROCESSED);
-        }
-        this.status = ReportStatus.PROCESSED;
-        this.adminProcessedBy = admin;
-        this.adminProcessedAt = LocalDateTime.now();
-        this.parent = parent;
-    }
-
-    // 관리자 처리 — DISMISSED (제재 사유 부족 등).
+    // 관리자 처리 — DISMISSED (제재 사유 부족 등). 단건만.
     public void dismiss(AdminAccount admin) {
         if (this.status != ReportStatus.PENDING) {
             throw new BusinessException(ErrorCode.REPORT_ALREADY_PROCESSED);

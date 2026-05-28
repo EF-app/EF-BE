@@ -9,11 +9,10 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// effectiveSuspensionId : 화면 표시용 합성값. cascade 신고에서도 parent.suspensionId 가 보임.
-// parentReportId        : 대표 신고의 id. cascade 신고에서만 채워짐, 대표 자기 자신은 null.
+// 평탄화 정책 — 같은 (target_type, target_id) 의 모든 PROCESSED 신고가 동일 suspension_id
 @Getter
 @Builder
-@Schema(description = "어드민 신고 단건 상세 — cascade 신고는 effectiveSuspensionId/parentReportId 로 대표 신고 정보 합성")
+@Schema(description = "어드민 신고 단건 상세")
 public class AdminReportDetailRspDto {
 
     @Schema(description = "신고 PK", example = "1024")
@@ -51,40 +50,40 @@ public class AdminReportDetailRspDto {
     @Schema(description = "처리 시각", example = "2026-05-24T10:00:00", nullable = true)
     private LocalDateTime adminProcessedAt;
 
-    @Schema(description = "이 신고 자체가 연결된 suspension_log.id (자기 자신이 대표일 때만)",
+    @Schema(description = "이 신고로 이어진 user_suspension.id. 같은 그룹의 모든 PROCESSED 신고에 동일 id",
             example = "37", nullable = true)
     private Long suspensionId;
-
-    @Schema(description = "유효 suspension_log.id — cascade 신고도 parent.suspensionId 로 채워짐",
-            example = "37", nullable = true)
-    private Long effectiveSuspensionId;
-
-    @Schema(description = "대표 신고의 PK — cascade 신고에서만 채워짐. 대표 자기 자신은 null",
-            example = "1020", nullable = true)
-    private Long parentReportId;
 
     @Schema(description = "신고 접수 시각", example = "2026-05-23T18:42:00")
     private LocalDateTime createTime;
 
-    // 단순 매핑 — 자기 자신이 대표인 경우 (또는 PENDING/DISMISSED).
+    /* ─── enrich 필드  — 신고 상세 화면 표시용 ─── */
+
+    @Schema(description = "신고자 닉네임. 탈퇴 등 미존재면 null", nullable = true)
+    private String reporterNickname;
+
+    @Schema(description = "신고 대상 유저 PK (POST_IT 작성자 / BAL_COMMENT 작성자 / PROFILE 본인)",
+            nullable = true)
+    private Long targetUserId;
+
+    @Schema(description = "신고 대상 유저 로그인 ID", example = "test01", nullable = true)
+    private String targetUserLoginId;
+
+    @Schema(description = "신고 대상 유저 닉네임", nullable = true)
+    private String targetUserNickname;
+
+    @Schema(description = "BAL_COMMENT 일 때 부모 게임 id (admin FE 라우팅용)", nullable = true)
+    private Long balGameId;
+
+    @Schema(description = "대상 콘텐츠 미리보기 (포스트잇/댓글 본문 일부)", nullable = true)
+    private String targetPreview;
+
+    // 단순 매핑
     public static AdminReportDetailRspDto from(Report report) {
-        return buildBase(report)
-                .effectiveSuspensionId(report.getSuspensionId())
-                .parentReportId(null)
-                .build();
+        return buildBase(report).build();
     }
 
-    // 합성 매핑 — cascade 신고용. Service 가 parent FK dereference 로 가져온 값을 전달.
-    public static AdminReportDetailRspDto from(Report report,
-                                                Long effectiveSuspensionId,
-                                                Long parentReportId) {
-        return buildBase(report)
-                .effectiveSuspensionId(effectiveSuspensionId)
-                .parentReportId(parentReportId)
-                .build();
-    }
-
-    private static AdminReportDetailRspDtoBuilder buildBase(Report report) {
+    public static AdminReportDetailRspDtoBuilder buildBase(Report report) {
         return AdminReportDetailRspDto.builder()
                 .id(report.getId())
                 .targetType(report.getTargetType())

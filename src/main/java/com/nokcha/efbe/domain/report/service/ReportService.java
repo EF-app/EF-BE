@@ -2,6 +2,10 @@ package com.nokcha.efbe.domain.report.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.balGame.entity.BalGameComment;
+import com.nokcha.efbe.domain.balGame.repository.BalGameCommentRepository;
+import com.nokcha.efbe.domain.postIt.entity.PostIt;
+import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
 import com.nokcha.efbe.domain.report.dto.request.ReportCreateReqDto;
 import com.nokcha.efbe.domain.report.dto.response.ReportRspDto;
 import com.nokcha.efbe.domain.report.entity.Report;
@@ -20,6 +24,8 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final PostItRepository postItRepository;
+    private final BalGameCommentRepository balGameCommentRepository;
 
     @Transactional
     public ReportRspDto createReport(Long reporterId, ReportCreateReqDto reqDto) {
@@ -55,6 +61,20 @@ public class ReportService {
                 .detail(reqDto.getDetail())
                 .build());
 
+        // 신고 누적 카운트  : 임계치(10) 도달 시 자동 hidden 마킹.
+        // PROFILE/CHAT/CHAT_IMAGE 는 카운트 컬럼 없음 (현 단계 미지원).
+        incrementTargetReportCount(reqDto.getTargetType(), reqDto.getTargetId());
+
         return ReportRspDto.from(saved);
+    }
+
+    private void incrementTargetReportCount(ReportTargetType type, Long targetId) {
+        switch (type) {
+            case POST_IT -> postItRepository.findById(targetId)
+                    .ifPresent(PostIt::increaseReportAndHideIfThreshold);
+            case BAL_COMMENT -> balGameCommentRepository.findById(targetId)
+                    .ifPresent(BalGameComment::incrementReport);
+            case PROFILE, CHAT, CHAT_IMAGE -> { /* 카운트 컬럼 없음 — 미적용 */ }
+        }
     }
 }

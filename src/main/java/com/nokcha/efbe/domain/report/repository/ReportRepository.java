@@ -23,9 +23,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findAllByTargetTypeAndTargetIdAndStatusOrderByCreateTimeAsc(
             ReportTargetType targetType, Long targetId, ReportStatus status);
 
-    // 그룹화 — (target_type, target_id) 단위 집계. JPQL projection 으로 메타만 가져옴.
-    // status 필터: null 이면 전체, 값 있으면 해당 상태 신고만 집계.
-    // 정렬: 첫 신고 오래된 순 (처리 우선순위).
+    // 그룹화 (오래된순) — 첫 신고 오래된 순 (처리 우선순위, 기본).
     @Query(value = """
             SELECT new com.nokcha.efbe.domain.admin.report.dto.response.AdminReportGroupKey(
                 r.targetType,
@@ -45,7 +43,29 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
             FROM Report r
             WHERE (:status IS NULL OR r.status = :status)
             """)
-    Page<AdminReportGroupKey> findGroupKeys(@Param("status") ReportStatus status, Pageable pageable);
+    Page<AdminReportGroupKey> findGroupKeysByOldest(@Param("status") ReportStatus status, Pageable pageable);
+
+    // 그룹화 (신고건수많은순, 같으면 오래된순) — 누적 많은 그룹 우선 노출용.
+    @Query(value = """
+            SELECT new com.nokcha.efbe.domain.admin.report.dto.response.AdminReportGroupKey(
+                r.targetType,
+                r.targetId,
+                COUNT(r),
+                SUM(CASE WHEN r.status = com.nokcha.efbe.domain.report.entity.ReportStatus.PENDING THEN 1L ELSE 0L END),
+                MIN(r.createTime),
+                MAX(r.createTime)
+            )
+            FROM Report r
+            WHERE (:status IS NULL OR r.status = :status)
+            GROUP BY r.targetType, r.targetId
+            ORDER BY COUNT(r) DESC, MIN(r.createTime) ASC
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT CONCAT(r.targetType, '-', r.targetId))
+            FROM Report r
+            WHERE (:status IS NULL OR r.status = :status)
+            """)
+    Page<AdminReportGroupKey> findGroupKeysByMostReported(@Param("status") ReportStatus status, Pageable pageable);
 
     // 한 그룹의 모든 신고 — 그룹화 응답에서 각 그룹의 신고 리스트 채우기용.
     List<Report> findAllByTargetTypeAndTargetIdOrderByCreateTimeAsc(

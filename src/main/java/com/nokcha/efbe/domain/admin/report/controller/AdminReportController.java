@@ -31,15 +31,17 @@ public class AdminReportController {
     private final AdminReportService adminReportService;
 
     @Operation(summary = "신고 목록 조회 (그룹화)",
-            description = "(target_type, target_id) 단위로 묶은 목록. 그룹 내 첫 신고 오래된 순. " +
-                    "처리 시 시스템이 자동으로 첫 신고를 대표로 선정합니다.")
+            description = "(target_type, target_id) 단위로 묶은 목록. 같은 그룹의 모든 PENDING 에 동일 suspension_id" +
+                    "파라미터 이름이 'sort' 가 아닌 'groupSort'")
     @GetMapping("/grouped")
     public RspTemplate<Page<AdminReportGroupRspDto>> getReportsGrouped(
             @RequestParam(required = false) ReportStatus status,
+            @RequestParam(name = "groupSort", required = false, defaultValue = "OLDEST")
+            com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort groupSort,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return new RspTemplate<>(HttpStatus.OK, "신고 그룹 목록을 조회했습니다.",
-                adminReportService.getReportsGrouped(status, pageable));
+                adminReportService.getReportsGrouped(status, groupSort, pageable));
     }
 
     @Operation(summary = "신고 단건 상세 조회")

@@ -32,6 +32,14 @@ public class AdminReportSummaryRspDto {
     @Schema(description = "신고 접수 시각", example = "2026-05-23T18:42:00")
     private LocalDateTime createTime;
 
+    @Schema(description = "다중 선택 사유 코드 (쉼표 구분, 예: HATE,SPAM)",
+            example = "HATE,SPAM", nullable = true)
+    private String reasonCodes;
+
+    @Schema(description = "신고자가 자유 입력한 상세 텍스트",
+            example = "욕설이 반복적으로 포함되어 있습니다.", nullable = true)
+    private String detail;
+
     // ===== enrich 필드 (그룹화 응답 전용) =====
 
     @Schema(description = "신고자 닉네임 (enrich)",
@@ -40,6 +48,10 @@ public class AdminReportSummaryRspDto {
 
     @Schema(description = "대상 콘텐츠 작성자 유저 PK (enrich)", example = "42", nullable = true)
     private Long targetUserId;
+
+    @Schema(description = "대상 콘텐츠 작성자 로그인 ID (enrich)",
+            example = "test01", nullable = true)
+    private String targetUserLoginId;
 
     @Schema(description = "대상 콘텐츠 작성자 닉네임 (enrich)",
             example = "밤하늘공", nullable = true)

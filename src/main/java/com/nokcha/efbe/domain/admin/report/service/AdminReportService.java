@@ -58,10 +58,15 @@ public class AdminReportService {
     private final BalGameCommentRepository balGameCommentRepository;
     private final SecurityUtil securityUtil;
 
-    // 그룹화 목록 — (target_type, target_id) 단위. 첫 신고 오래된 순 정렬 + enrich.
+    // 그룹화 목록 — (target_type, target_id) 단위. sort 옵션에 따라 정렬 + enrich.
     @Transactional(readOnly = true)
-    public Page<AdminReportGroupRspDto> getReportsGrouped(ReportStatus statusFilter, Pageable pageable) {
-        Page<AdminReportGroupKey> keyPage = reportRepository.findGroupKeys(statusFilter, pageable);
+    public Page<AdminReportGroupRspDto> getReportsGrouped(
+            ReportStatus statusFilter,
+            com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort sort,
+            Pageable pageable) {
+        Page<AdminReportGroupKey> keyPage = (sort == com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort.MOST_REPORTED)
+                ? reportRepository.findGroupKeysByMostReported(statusFilter, pageable)
+                : reportRepository.findGroupKeysByOldest(statusFilter, pageable);
 
         // 1) 페이지 내 모든 그룹의 신고 preload (페이지 size 만큼 쿼리).
         Map<String, List<Report>> reportsByGroup = new LinkedHashMap<>();
@@ -92,10 +97,25 @@ public class AdminReportService {
     public AdminReportDetailRspDto getReport(Long reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_REPORT));
-        return toDetailWithFallback(report);
+        // 단건 enrich — 대상 콘텐츠/유저/신고자 닉네임을 한 번에 채워 화면에 빈 필드 없게.
+        ReportEnrichContext ctx = buildEnrichContext(List.of(report));
+        return enrichDetail(report, ctx);
     }
 
-    // 처리 — 자동 첫 신고 대표 정책
+    /** detail DTO 에 enrich 필드 (대상 유저/닉네임/콘텐츠 미리보기 등) 채워 반환. */
+    private AdminReportDetailRspDto enrichDetail(Report report, ReportEnrichContext ctx) {
+        AdminReportSummaryRspDto enriched = enrichSummary(report, ctx);
+        return AdminReportDetailRspDto.buildBase(report)
+                .reporterNickname(enriched.getReporterNickname())
+                .targetUserId(enriched.getTargetUserId())
+                .targetUserLoginId(enriched.getTargetUserLoginId())
+                .targetUserNickname(enriched.getTargetUserNickname())
+                .balGameId(enriched.getBalGameId())
+                .targetPreview(enriched.getTargetPreview())
+                .build();
+    }
+
+    // 처리 — 같은 (target_type, target_id) 의 모든 PENDING 신고에 동일 suspensionId
     @Transactional
     public AdminReportDetailRspDto processReport(Long reportId, AdminReportProcessReqDto reqDto) {
         Report clicked = reportRepository.findById(reportId)
@@ -110,14 +130,11 @@ public class AdminReportService {
         List<Report> pendings = reportRepository.findAllByTargetTypeAndTargetIdAndStatusOrderByCreateTimeAsc(
                 clicked.getTargetType(), clicked.getTargetId(), ReportStatus.PENDING);
 
-        Report representative = pendings.get(0);
-        representative.process(admin, reqDto.getSuspensionId());
+        for (Report r : pendings) {
+            r.process(admin, reqDto.getSuspensionId());
+        }
 
-        pendings.stream()
-                .skip(1)
-                .forEach(r -> r.processAsCascade(admin, representative));
-
-        return AdminReportDetailRspDto.from(representative);
+        return AdminReportDetailRspDto.from(clicked);
     }
 
     @Transactional
@@ -137,18 +154,7 @@ public class AdminReportService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
     }
 
-    private AdminReportDetailRspDto toDetailWithFallback(Report report) {
-        Report parent = report.getParent();
-        if (parent == null) {
-            return AdminReportDetailRspDto.from(report);
-        }
-        return AdminReportDetailRspDto.from(report, parent.getSuspensionId(), parent.getId());
-    }
-
-    // ─────────────────────────── enrich ───────────────────────────
-
     // 그룹 내 신고들의 target_type 별 id 를 모아 batch fetch.
-    // CHAT / CHAT_IMAGE 는 현 단계 미지원 — enrich 시 빈 처리.
     private ReportEnrichContext buildEnrichContext(List<Report> reports) {
         if (reports.isEmpty()) return ReportEnrichContext.empty();
 
@@ -222,7 +228,9 @@ public class AdminReportService {
             }
         }
 
-        String targetUserNickname = lookupNickname(ctx, targetUserId);
+        User targetUser = targetUserId == null ? null : ctx.users().get(targetUserId);
+        String targetUserNickname = targetUser != null ? targetUser.getNickname() : null;
+        String targetUserLoginId = targetUser != null ? targetUser.getLoginId() : null;
 
         return AdminReportSummaryRspDto.builder()
                 .id(report.getId())
@@ -231,8 +239,11 @@ public class AdminReportService {
                 .status(report.getStatus())
                 .reporterId(reporterId)
                 .createTime(report.getCreateTime())
+                .reasonCodes(report.getReasonCodes())
+                .detail(report.getDetail())
                 .reporterNickname(reporterNickname)
                 .targetUserId(targetUserId)
+                .targetUserLoginId(targetUserLoginId)
                 .targetUserNickname(targetUserNickname)
                 .balGameId(balGameId)
                 .targetPreview(targetPreview)
