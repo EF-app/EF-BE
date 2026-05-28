@@ -29,6 +29,8 @@ import java.util.Optional;
  * 제재 상태(TEMPORARY/PERMANENT) 유저의 API 호출을 화이트리스트 외에는 모두 차단.
  *
  *  화이트리스트(차단 상태에서도 호출 허용):
+ *   - 재로그인 (/v1/users/login) — 잔존 토큰을 헤더에 붙인 채 재로그인하는 케이스 대응
+ *   - 토큰 리프레시 (/v1/users/token/refresh) — MY 작업 중 access 토큰 만료 시 필요
  *   - 마이페이지 전체 (/v1/users/me/*) — 프로필 수정, 계정관리, 보안코드, 탈퇴, 제재조회
  *   - 차단한 사용자 (/v1/blocks*)
  *   - 고객지원 FAQ (/v1/faq*)
@@ -48,6 +50,8 @@ public class SuspensionGuardFilter extends OncePerRequestFilter {
 
     /** 제재 상태에서도 허용되는 API 경로 prefix. AntPathMatcher 패턴. */
     private static final List<String> WHITELIST = List.of(
+            "/v1/users/login",          // 잔존 토큰을 붙인 채 재로그인하는 케이스 대응
+            "/v1/users/token/refresh",  // MY 작업 중 access 토큰 만료 시 갱신
             "/v1/users/me/**",          // 마이/계정/프로필수정/보안코드/탈퇴/제재조회
             "/v1/users/logout",         // 로그아웃
             "/v1/faq",
