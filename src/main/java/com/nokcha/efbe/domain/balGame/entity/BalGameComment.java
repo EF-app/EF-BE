@@ -82,6 +82,14 @@ public class BalGameComment extends BaseEntity {
         this.likesCount = (this.likesCount == null ? 0 : this.likesCount) + 1;
     }
 
+    public static final int HIDE_THRESHOLD = 10;
+
+    /** 신고 카운트 +1. 누적 임계치(10) 도달 시 자동 hidden 마킹. ReportService 가 신고 INSERT 후 호출. */
+    public void incrementReport() {
+        this.reportCount = (this.reportCount == null ? 0 : this.reportCount) + 1;
+        if (this.reportCount >= HIDE_THRESHOLD) this.isHidden = Boolean.TRUE;
+    }
+
     public void decreaseLikes() {
         this.likesCount = Math.max(0, (this.likesCount == null ? 0 : this.likesCount) - 1);
     }
