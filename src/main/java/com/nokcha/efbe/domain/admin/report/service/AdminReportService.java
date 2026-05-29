@@ -5,6 +5,7 @@ import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
 import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
+import com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort;
 import com.nokcha.efbe.domain.admin.report.dto.request.AdminReportProcessReqDto;
 import com.nokcha.efbe.domain.admin.report.dto.response.AdminReportDetailRspDto;
 import com.nokcha.efbe.domain.admin.report.dto.response.AdminReportGroupKey;
@@ -62,9 +63,9 @@ public class AdminReportService {
     @Transactional(readOnly = true)
     public Page<AdminReportGroupRspDto> getReportsGrouped(
             ReportStatus statusFilter,
-            com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort sort,
+            ReportGroupSort sort,
             Pageable pageable) {
-        Page<AdminReportGroupKey> keyPage = (sort == com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort.MOST_REPORTED)
+        Page<AdminReportGroupKey> keyPage = (sort == ReportGroupSort.MOST_REPORTED)
                 ? reportRepository.findGroupKeysByMostReported(statusFilter, pageable)
                 : reportRepository.findGroupKeysByOldest(statusFilter, pageable);
 
