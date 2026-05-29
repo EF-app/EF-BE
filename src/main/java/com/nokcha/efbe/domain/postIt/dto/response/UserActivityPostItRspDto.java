@@ -43,10 +43,10 @@ public class UserActivityPostItRspDto {
     private PostItColor color;
 
     @Schema(description = "익명 여부", example = "false")
-    private boolean isAnonymous;
+    private Boolean isAnonymous;
 
     @Schema(description = "번개 카테고리 여부", example = "false")
-    private boolean isLightning;
+    private Boolean isLightning;
 
     @Schema(description = "만료 시각")
     private LocalDateTime expiresAt;
@@ -55,7 +55,7 @@ public class UserActivityPostItRspDto {
     private LocalDateTime pinnedUntil;
 
     @Schema(description = "현재 상단 고정 활성 여부", example = "false")
-    private boolean isPinned;
+    private Boolean isPinned;
 
     @Schema(description = "답장 수", example = "3")
     private Integer replyCount;
@@ -70,7 +70,7 @@ public class UserActivityPostItRspDto {
     private boolean likedByMe;
 
     @Schema(description = "숨김 여부", example = "false")
-    private boolean isHidden;
+    private Boolean isHidden;
 
     @Schema(description = "삭제 여부 (soft delete)", example = "false")
     private boolean deleted;

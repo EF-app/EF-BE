@@ -25,7 +25,7 @@ public class AdminAccountRspDto {
     private String email;
 
     @Schema(description = "활성 여부 — false 면 로그인 차단", example = "true")
-    private boolean isActive;
+    private Boolean isActive;
 
     @Schema(description = "잠금 해제 예정 시각 (NULL = 잠금 아님). 비밀번호 실패 누적으로 임시 잠금된 상태.", example = "2026-05-23T15:30:00", nullable = true)
     private LocalDateTime lockedUntil;

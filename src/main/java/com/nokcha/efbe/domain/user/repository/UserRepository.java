@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.user.repository;
 
-import com.nokcha.efbe.domain.user.entity.BanStatus;
 import com.nokcha.efbe.domain.user.entity.User;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,14 +24,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 닉네임 존재 여부 조회
     boolean existsByNickname(String nickname);
 
-    // 어드민 유저 목록 — keyword(닉네임/로그인ID/UUID LIKE) + banStatus 다중 필터.
+    // 어드민 유저 목록 — keyword(닉네임/로그인ID/UUID LIKE) + status 다중 필터.
     @Query("select u from User u " +
             "where (:keyword is null " +
             "       or u.nickname like concat('%', :keyword, '%') " +
             "       or u.loginId like concat('%', :keyword, '%') " +
             "       or u.uuid like concat('%', :keyword, '%')) " +
-            "and u.banStatus in :statuses")
+            "and u.status in :statuses")
     Page<User> searchForAdmin(@Param("keyword") String keyword,
-                              @Param("statuses") List<BanStatus> statuses,
+                              @Param("statuses") List<UserStatus> statuses,
                               Pageable pageable);
+
+    // 특정 status 유저 전체 — 자동만료/무결성 배치용
+    List<User> findByStatus(UserStatus status);
+
+    // 무결성 검증 대상 — 탈퇴중 아닌 모든 유저
+    @Query("select u from User u where u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWING " +
+            "and u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWN")
+    List<User> findAllNonWithdrawn();
 }

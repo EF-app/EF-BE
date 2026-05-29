@@ -39,7 +39,7 @@ public class UserWithdrawalScheduler {
                 continue;
             }
 
-            user.withdraw();
+            user.completeWithdrawal();
             withdrawal.complete(null, null, now);
         }
     }

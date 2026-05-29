@@ -26,7 +26,7 @@ public class PolicyDocumentSummaryRspDto {
     private String summary;
 
     @Schema(description = "필수 동의 여부", example = "true")
-    private boolean isRequired;
+    private Boolean isRequired;
 
     @Schema(description = "시행일")
     private LocalDateTime effectiveDate;

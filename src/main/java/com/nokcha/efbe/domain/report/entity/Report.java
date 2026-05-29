@@ -67,7 +67,9 @@ public class Report extends BaseEntity {
     @Column(name = "admin_processed_at")
     private LocalDateTime adminProcessedAt;
 
+
     // 이 신고로 이어진 제재 user_suspension.id. 같은 그룹의 모든 PROCESSED 신고에 동일 id 부여 (평탄화).
+
     @Column(name = "suspension_id")
     private Long suspensionId;
 

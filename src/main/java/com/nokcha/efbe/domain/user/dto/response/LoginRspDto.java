@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.user.dto.response;
 
+import com.nokcha.efbe.domain.suspension.dto.response.UserSuspensionRspDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +23,7 @@ public class LoginRspDto {
 
     @Schema(description = "로그인 아이디", example = "test001")
     private String loginId;
+
+    @Schema(description = "활성 제재 정보. 없으면 active=false")
+    private UserSuspensionRspDto suspension;
 }
