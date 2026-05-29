@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "users",
         uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_uuid", columnNames = "uuid"),
                 @UniqueConstraint(name = "uk_users_login_id", columnNames = "login_id"),
                 @UniqueConstraint(name = "uk_users_phone", columnNames = "phone"),
                 @UniqueConstraint(name = "uk_users_nickname", columnNames = "nickname")
@@ -35,7 +36,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 36)
     private String uuid;
 
     @Column(nullable = false, length = 50, unique = true)
@@ -47,7 +48,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20, unique = true)
     private String phone;
 
-    @Column
+    @Column(length = 100)
     private String email;
 
     @Column(length = 100)
@@ -63,23 +64,33 @@ public class User extends BaseEntity {
     private Integer age;
 
     @Column(nullable = false)
-    private boolean isWithdraw;
-
-    @Column(nullable = false)
     private Long areaId;
 
     @Column
-    private LocalDateTime lastLoginTime;
+    private LocalDateTime lastActiveAt;
 
     @Column
-    private LocalDateTime lastNicknameChangeTime;
+    private LocalDateTime lastNicknameChangedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BanStatus banStatus;
+    private UserStatus status;
+
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, boolean isWithdraw, Long areaId, LocalDateTime lastLoginTime, LocalDateTime lastNicknameChangeTime, BanStatus banStatus) {
+    public User(String uuid,
+                String loginId,
+                String password,
+                String phone,
+                String email,
+                String scode,
+                String nickname,
+                LocalDate birth,
+                Integer age,
+                Long areaId,
+                LocalDateTime lastNicknameChangedAt,
+                UserStatus status,
+                LocalDateTime lastActiveAt) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -89,16 +100,15 @@ public class User extends BaseEntity {
         this.nickname = nickname;
         this.birth = birth;
         this.age = age;
-        this.isWithdraw = isWithdraw;
         this.areaId = areaId;
-        this.lastLoginTime = lastLoginTime;
-        this.lastNicknameChangeTime = lastNicknameChangeTime;
-        this.banStatus = banStatus;
+        this.lastNicknameChangedAt = lastNicknameChangedAt;
+        this.status = status == null ? UserStatus.ACTIVE : status;
+        this.lastActiveAt = lastActiveAt;
     }
 
-    // 마지막 로그인 시간 갱신
-    public void updateLastLoginTime(LocalDateTime lastLoginTime) {
-        this.lastLoginTime = lastLoginTime;
+    // 마지막 활동 시각 갱신 (주요 액션 시)
+    public void updateLastActiveAt(LocalDateTime lastActiveAt) {
+        this.lastActiveAt = lastActiveAt;
     }
 
     // 보안코드 설정/수정
@@ -111,8 +121,32 @@ public class User extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    // 탈퇴
-    public void withdraw() {
-        this.isWithdraw = true;
+    // 닉네임 변경 시각 갱신 (7일 쿨다운)
+    public void markNicknameChanged(LocalDateTime when) {
+        this.lastNicknameChangedAt = when;
+    }
+
+    // 상태 갱신 — SuspensionService.evaluateUserStatus() 가 호출
+    public void changeStatus(UserStatus next) {
+        this.status = next;
+    }
+
+    // 탈퇴 신청 (30일 유예)
+    public void requestWithdrawal() {
+        this.status = UserStatus.WITHDRAWING;
+    }
+
+    // 탈퇴 완료 (배치)
+    public void completeWithdrawal() {
+        this.status = UserStatus.WITHDRAWN;
+    }
+
+    // 편의 메서드 — UserAuthService 로그인 분기 등에서 사용
+    public boolean isWithdrawnOrWithdrawing() {
+        return this.status == UserStatus.WITHDRAWING || this.status == UserStatus.WITHDRAWN;
+    }
+
+    public boolean isSuspended() {
+        return this.status == UserStatus.TEMPORARY || this.status == UserStatus.PERMANENT;
     }
 }

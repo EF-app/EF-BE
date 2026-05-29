@@ -61,7 +61,13 @@ public enum ErrorCode {
     ALREADY_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_REQUIRED(400, "닉네임 입력이 필요합니다."),
     AREA_REQUIRED(400, "지역 선택이 필요합니다."),
-  
+
+    // 제재 (suspension)
+    NOT_FOUND_SUSPENSION(404, "제재 이력을 찾을 수 없습니다."),
+    ALREADY_LIFTED_SUSPENSION(409, "이미 해제된 제재입니다."),
+    INVALID_SUSPENSION_REQUEST(400, "유효하지 않은 제재 요청입니다."),
+    SUSPENDED_ACCESS_DENIED(403, "제재 상태에서는 이용할 수 없는 기능입니다."),
+
     // 회원관리
     BLOCKED_USER(403, "차단된 사용자입니다."),
     NOT_FOUND_USER(404, "존재하지 않는 사용자입니다."),

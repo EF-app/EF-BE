@@ -26,41 +26,39 @@ public class AdminReportDetailRspDto {
     @Schema(description = "신고 대상 PK (target_type 에 따라 의미 다름)", example = "42")
     private Long targetId;
 
-    @Schema(description = "신고자 유저 PK (탈퇴 시 null)", example = "17", nullable = true)
+    @Schema(description = "신고자 유저 PK (탈퇴 시 null)", example = "17")
     private Long reporterId;
 
     @Schema(description = "다중 선택 사유 코드",
-            example = "HATE,SPAM",
-            nullable = true)
+            example = "HATE,SPAM")
     private String reasonCodes;
 
     @Schema(description = "신고자가 자유 입력한 상세 텍스트",
-            example = "욕설이 반복적으로 포함되어 있습니다.",
-            nullable = true)
+            example = "욕설이 반복적으로 포함되어 있습니다.")
     private String detail;
 
     @Schema(description = "처리 상태 (PENDING / PROCESSED / DISMISSED)", example = "PROCESSED")
     private ReportStatus status;
 
-    @Schema(description = "처리한 관리자 PK", example = "1", nullable = true)
+    @Schema(description = "처리한 관리자 PK", example = "1")
     private Long adminProcessedById;
 
-    @Schema(description = "처리한 관리자 이름", example = "관리자", nullable = true)
+    @Schema(description = "처리한 관리자 이름", example = "관리자")
     private String adminProcessedByName;
 
-    @Schema(description = "처리 시각", example = "2026-05-24T10:00:00", nullable = true)
+    @Schema(description = "처리 시각", example = "2026-05-24T10:00:00")
     private LocalDateTime adminProcessedAt;
 
-    @Schema(description = "이 신고 자체가 연결된 suspension_log.id (자기 자신이 대표일 때만)",
-            example = "37", nullable = true)
+    @Schema(description = "이 신고 자체가 연결된 user_suspension.id (자기 자신이 대표일 때만)",
+            example = "37")
     private Long suspensionId;
 
-    @Schema(description = "유효 suspension_log.id — cascade 신고도 parent.suspensionId 로 채워짐",
-            example = "37", nullable = true)
+    @Schema(description = "유효 user_suspension.id — cascade 신고도 parent.suspensionId 로 채워짐",
+            example = "37")
     private Long effectiveSuspensionId;
 
     @Schema(description = "대표 신고의 PK — cascade 신고에서만 채워짐. 대표 자기 자신은 null",
-            example = "1020", nullable = true)
+            example = "1020")
     private Long parentReportId;
 
     @Schema(description = "신고 접수 시각", example = "2026-05-23T18:42:00")
