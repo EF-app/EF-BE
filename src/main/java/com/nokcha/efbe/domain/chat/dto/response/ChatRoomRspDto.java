@@ -1,6 +1,6 @@
-package com.nokcha.efbe.domain.postIt.dto.response;
+package com.nokcha.efbe.domain.chat.dto.response;
 
-import com.nokcha.efbe.domain.postIt.entity.PostChatRoom;
+import com.nokcha.efbe.domain.chat.entity.ChatRoom;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-@Schema(description = "포스트잇 채팅방 응답")
-public class PostChatRoomRspDto {
+@Schema(description = "채팅방 응답")
+public class ChatRoomRspDto {
 
     @Schema(description = "채팅방 ID", example = "21")
     private Long id;
@@ -34,20 +34,20 @@ public class PostChatRoomRspDto {
     private String partnerDisplayName;
 
     @Schema(description = "채팅 상대가 익명인지 여부", example = "true")
-    private boolean partnerAnonymous;
+    private Boolean isPartnerAnonymous;
 
     @Schema(description = "활성 채팅방 여부", example = "true")
-    private boolean active;
+    private Boolean isActive;
 
     @Schema(description = "종료된 채팅방 여부", example = "false")
-    private boolean closed;
+    private Boolean isClosed;
 
     @Schema(description = "채팅방 생성 시각", example = "2026-05-25T16:00:00")
     private LocalDateTime createTime;
 
-    public static PostChatRoomRspDto from(PostChatRoom r) {
+    public static ChatRoomRspDto from(ChatRoom r) {
         boolean partnerAnonymous = Boolean.TRUE.equals(r.getIsPartnerAnonymous());
-        return PostChatRoomRspDto.builder()
+        return ChatRoomRspDto.builder()
                 .id(r.getId())
                 .uuid(r.getUuid())
                 .postId(r.getPost() == null ? null : r.getPost().getId())
@@ -55,9 +55,9 @@ public class PostChatRoomRspDto {
                 .partnerId(partnerAnonymous ? null : (r.getPartner() == null ? null : r.getPartner().getId()))
                 .ownerDisplayName(r.getOwnerDisplayName())
                 .partnerDisplayName(r.getPartnerDisplayName())
-                .partnerAnonymous(partnerAnonymous)
-                .active(Boolean.TRUE.equals(r.getIsActive()))
-                .closed(Boolean.TRUE.equals(r.getIsClosed()))
+                .isPartnerAnonymous(partnerAnonymous)
+                .isActive(Boolean.TRUE.equals(r.getIsActive()))
+                .isClosed(Boolean.TRUE.equals(r.getIsClosed()))
                 .createTime(r.getCreateTime())
                 .build();
     }

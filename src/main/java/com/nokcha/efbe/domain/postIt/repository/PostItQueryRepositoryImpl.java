@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.postIt.repository;
 
 import com.nokcha.efbe.domain.area.entity.QCodeArea;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
-import com.nokcha.efbe.domain.postIt.entity.QPostChatRoom;
+import com.nokcha.efbe.domain.chat.entity.QChatRoom;
 import com.nokcha.efbe.domain.postIt.entity.QPostIt;
 import com.nokcha.efbe.domain.postIt.entity.QPostLike;
 import com.nokcha.efbe.domain.postIt.repository.projection.AdminPostItRow;
@@ -118,7 +118,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
     public List<UserActivityPostItRow> findMyPostsWithCounts(Long userId, PostItCursor cursor, int size) {
         QPostIt p = QPostIt.postIt;
         QPostLike pl = QPostLike.postLike;
-        QPostChatRoom r = QPostChatRoom.postChatRoom;
+        QChatRoom r = QChatRoom.chatRoom;
 
         Expression<Long> likeCountSub = JPAExpressions
                 .select(pl.count())
@@ -171,7 +171,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
         QUser u = QUser.user;
         QCodeArea a = QCodeArea.codeArea;
         QPostLike pl = QPostLike.postLike;
-        QPostChatRoom r = QPostChatRoom.postChatRoom;
+        QChatRoom r = QChatRoom.chatRoom;
 
         // 좋아요/채팅 카운트는 게시글 단위 전체 집계 (서브쿼리)
         Expression<Long> likeCountSub = JPAExpressions
@@ -192,7 +192,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                 .where(pl2.post.id.eq(p.id), pl2.user.id.eq(ConstantImpl.create(userId)))
                 .exists();
 
-        QPostChatRoom r2 = new QPostChatRoom("rMine");
+        QChatRoom r2 = new QChatRoom("rMine");
         Expression<Boolean> chattedByMeExpr = JPAExpressions
                 .selectOne()
                 .from(r2)

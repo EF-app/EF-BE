@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.postIt.dto.request;
+package com.nokcha.efbe.domain.chat.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@Schema(description = "포스트잇 채팅 메시지 전송 요청")
-public class PostChatMessageReqDto {
+@Schema(description = "채팅 메시지 전송 요청")
+public class ChatMessageReqDto {
 
     @NotBlank
     @Size(max = 2000)
