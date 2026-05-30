@@ -65,14 +65,7 @@ public class AdminSuspensionService {
 
     /* ─────────── 부과 / 해제 / 조회 ─────────── */
 
-    public UserSuspension applySuspension(
-            Long userId,
-            SuspensionType type,
-            String reason,
-            Integer durationDays,
-            ReportTargetType sourceTargetType,
-            Long sourceTargetId,
-            Long adminId) {
+    public UserSuspension applySuspension(Long userId, SuspensionType type, String reason, Integer durationDays, ReportTargetType sourceTargetType, Long sourceTargetId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
@@ -230,7 +223,7 @@ public class AdminSuspensionService {
         String reason = String.format(
                 "최근 %d일 경고 %d회 누적으로 자동 %d일 일시정지 (직전 사유: %s)",
                 WARNING_WINDOW_DAYS, warnings, days, triggerReason);
-        applySuspension(user.getId(), SuspensionType.TEMPORARY, reason, days, null, null, null);
+        applySuspension(user.getId(), SuspensionType.TEMPORARY, reason, days, null, null);
         log.info("자동 에스컬레이션: userId={} → TEMPORARY {}일", user.getId(), days);
     }
 
@@ -238,7 +231,7 @@ public class AdminSuspensionService {
         String reason = String.format(
                 "최근 %d일 경고 %d회 누적 + 직전 30일 정지 이력으로 자동 영구정지 (직전 사유: %s)",
                 WARNING_WINDOW_DAYS, warnings, triggerReason);
-        applySuspension(user.getId(), SuspensionType.PERMANENT, reason, null, null, null, null);
+        applySuspension(user.getId(), SuspensionType.PERMANENT, reason, null, null, null);
         log.info("자동 에스컬레이션: userId={} → PERMANENT", user.getId());
     }
 

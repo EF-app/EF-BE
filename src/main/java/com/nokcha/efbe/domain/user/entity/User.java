@@ -42,7 +42,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 50, unique = true)
     private String loginId;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, length = 20, unique = true)
@@ -78,19 +78,7 @@ public class User extends BaseEntity {
 
 
     @Builder
-    public User(String uuid,
-                String loginId,
-                String password,
-                String phone,
-                String email,
-                String scode,
-                String nickname,
-                LocalDate birth,
-                Integer age,
-                Long areaId,
-                LocalDateTime lastNicknameChangedAt,
-                UserStatus status,
-                LocalDateTime lastActiveAt) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, Long areaId, LocalDateTime lastNicknameChangedAt, UserStatus status, LocalDateTime lastActiveAt) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -126,7 +114,7 @@ public class User extends BaseEntity {
         this.lastNicknameChangedAt = when;
     }
 
-    // 상태 갱신 — SuspensionService.evaluateUserStatus() 가 호출
+    // 상태 갱신
     public void changeStatus(UserStatus next) {
         this.status = next;
     }
@@ -141,12 +129,8 @@ public class User extends BaseEntity {
         this.status = UserStatus.WITHDRAWN;
     }
 
-    // 편의 메서드 — UserAuthService 로그인 분기 등에서 사용
+    // 탈퇴 진행 여부
     public boolean isWithdrawnOrWithdrawing() {
         return this.status == UserStatus.WITHDRAWING || this.status == UserStatus.WITHDRAWN;
-    }
-
-    public boolean isSuspended() {
-        return this.status == UserStatus.TEMPORARY || this.status == UserStatus.PERMANENT;
     }
 }

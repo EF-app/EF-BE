@@ -168,9 +168,8 @@ public class AdminUserService {
                 .findLatestTemporaryByUserId(id, PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
-                .map(s -> s.getEndsAt() == null
-                        ? null
-                        : ChronoUnit.DAYS.between(s.getStartsAt(), s.getEndsAt()))
+                .filter(s -> s.getEndsAt() != null)
+                .map(s -> ChronoUnit.DAYS.between(s.getStartsAt(), s.getEndsAt()))
                 .orElse(null);
 
         return AdminUserDetailRspDto.of(user, area, profileDto, photos, loginLogs,

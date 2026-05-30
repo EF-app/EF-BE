@@ -43,7 +43,7 @@ public class AdminUserDetailRspDto {
     @Schema(description = "생년월일", example = "1998-01-01", nullable = true)
     private LocalDate birth;
 
-    @Schema(description = "지역 (\"국가 도시\" 조합)", example = "대한민국 서울특별시", nullable = true)
+    @Schema(description = "지역 (\"시 구\" 조합)", example = "서울특별시 강남구", nullable = true)
     private String area;
 
     @Schema(description = "유저 상태 — ACTIVE / TEMPORARY / PERMANENT / WITHDRAWING / WITHDRAWN", example = "ACTIVE")

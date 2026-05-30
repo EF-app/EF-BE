@@ -35,9 +35,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
                               @Param("statuses") List<UserStatus> statuses,
                               Pageable pageable);
 
-    // 특정 status 유저 전체 — 자동만료/무결성 배치용
-    List<User> findByStatus(UserStatus status);
-
     // 무결성 검증 대상 — 탈퇴중 아닌 모든 유저
     @Query("select u from User u where u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWING " +
             "and u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWN")

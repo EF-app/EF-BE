@@ -29,7 +29,7 @@ public class AdminUserSummaryRspDto {
     @Schema(description = "나이", example = "27", nullable = true)
     private Integer age;
 
-    @Schema(description = "지역 (\"국가 도시\" 조합, 미입력 시 null)", example = "대한민국 서울특별시", nullable = true)
+    @Schema(description = "지역 (\"시 구\" 조합, 미입력 시 null)", example = "서울특별시 강남구", nullable = true)
     private String area;
 
     @Schema(description = "유저 상태 — ACTIVE / TEMPORARY / PERMANENT / WITHDRAWING / WITHDRAWN", example = "ACTIVE")

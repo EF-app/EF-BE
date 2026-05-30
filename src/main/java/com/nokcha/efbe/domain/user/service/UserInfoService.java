@@ -10,9 +10,7 @@ import com.nokcha.efbe.domain.user.dto.response.AccountMaskedRspDto;
 import com.nokcha.efbe.domain.user.dto.response.AccountRevealRspDto;
 import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
-import com.nokcha.efbe.domain.user.entity.User;
-import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
-import com.nokcha.efbe.domain.user.entity.WithdrawStatus;
+import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -83,6 +81,7 @@ public class UserInfoService {
         }
 
         withdrawal.request(reqDto.getWithdrawReason(), reqDto.getDetailText(), loginUtil.resolveClientIp(request), now);
+        user.requestWithdrawal();   // 유저 테이블 수정
 
         userWithdrawalRepository.save(withdrawal);
     }
@@ -91,7 +90,7 @@ public class UserInfoService {
     @Transactional
     public void cancelWithdrawal() {
         Long userId = securityUtil.getCurrentUserId();
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
         UserWithdrawal withdrawal = userWithdrawalRepository.findByUserId(userId)
@@ -102,6 +101,7 @@ public class UserInfoService {
         }
 
         withdrawal.cancel(LocalDateTime.now(), null, null);
+        user.changeStatus(UserStatus.ACTIVE);
     }
 
     // 비밀번호 인증 전 계정 정보 마스킹 조회

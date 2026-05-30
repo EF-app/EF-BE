@@ -47,15 +47,7 @@ public class AdminSuspensionController {
     @PostMapping("/suspensions")
     public RspTemplate<AdminSuspensionRspDto> createSuspension(
             @Valid @RequestBody AdminSuspensionCreateReqDto req) {
-        Long adminId = securityUtil.getCurrentUserId();
-        UserSuspension suspension = adminSuspensionService.applySuspension(
-                req.getTargetUserId(),
-                req.getType(),
-                req.getReason(),
-                req.getDurationDays(),
-                req.getSourceTargetType(),
-                req.getSourceTargetId(),
-                adminId);
+        UserSuspension suspension = adminSuspensionService.applySuspension(req.getTargetUserId(), req.getType(), req.getReason(), req.getDurationDays(), req.getSourceTargetType(), req.getSourceTargetId());
         return new RspTemplate<>(HttpStatus.CREATED, "제재가 부과되었습니다.", adminSuspensionService.toDto(suspension));
     }
 
