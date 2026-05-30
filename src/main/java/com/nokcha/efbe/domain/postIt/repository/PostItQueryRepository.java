@@ -19,10 +19,10 @@ public interface PostItQueryRepository {
     // 활성 피드 — isHidden=false, isDeleted=false, expiresAt>now, 카테고리 코드(선택), 차단한 작성자 제외
     List<PostItRow> findActiveFeed(PostCategory categoryCode, LocalDateTime now, PostItCursor cursor, int size, Long viewerId, List<Long> blockedUserIds);
 
-    // "내가 붙인" — userId 본인 작성 글 + likeCount + chatCount(post_chat_room 전체)
+    // "내가 붙인" — userId 본인 작성 글 + likeCount + chatCount(chat_room 전체)
     List<UserActivityPostItRow> findMyPostsWithCounts(Long userId, PostItCursor cursor, int size);
 
-    // "내가 반응한" — 내가 좋아요(post_like) 했거나 partner_id 로 참여한 채팅방(post_chat_room) 의 상대 글
+    // "내가 반응한" — 내가 좋아요(post_like) 했거나 partner_id 로 참여한 채팅방(chat_room) 의 상대 글
     List<UserActivityReactedPostItRow> findMyReactedPosts(Long userId, UserActivityReactedPostItCursor cursor, int size);
 
     // 어드민 목록 — keyword(nickname OR content LIKE) / categoryCode / isHidden / isDeleted / userId 동적 필터.

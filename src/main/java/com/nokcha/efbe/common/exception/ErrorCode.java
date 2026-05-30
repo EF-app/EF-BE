@@ -127,7 +127,6 @@ public enum ErrorCode {
     POST_NOT_OWNER(403, "포스트 작성자만 수행할 수 있습니다."),
     POST_EXPIRED(400, "만료된 포스트입니다."),
     POST_LIGHTNING_ANONYMOUS(400, "번개 포스트는 닉네임으로만 작성할 수 있습니다."),
-    NOT_FOUND_POST_CHAT_ROOM(404, "포스트 채팅방을 찾을 수 없습니다."),
 
     // 약관/정책
     NOT_FOUND_POLICY_DOCUMENT(404, "활성화된 약관을 찾을 수 없습니다."),
