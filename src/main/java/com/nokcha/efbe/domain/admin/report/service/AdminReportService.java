@@ -65,9 +65,11 @@ public class AdminReportService {
             ReportStatus statusFilter,
             ReportGroupSort sort,
             Pageable pageable) {
-        Page<AdminReportGroupKey> keyPage = (sort == ReportGroupSort.MOST_REPORTED)
-                ? reportRepository.findGroupKeysByMostReported(statusFilter, pageable)
-                : reportRepository.findGroupKeysByOldest(statusFilter, pageable);
+        Page<AdminReportGroupKey> keyPage = switch (sort == null ? ReportGroupSort.OLDEST : sort) {
+            case LATEST -> reportRepository.findGroupKeysByLatest(statusFilter, pageable);
+            case MOST_REPORTED -> reportRepository.findGroupKeysByMostReported(statusFilter, pageable);
+            case OLDEST -> reportRepository.findGroupKeysByOldest(statusFilter, pageable);
+        };
 
         // 1) 페이지 내 모든 그룹의 신고 preload (페이지 size 만큼 쿼리).
         Map<String, List<Report>> reportsByGroup = new LinkedHashMap<>();
