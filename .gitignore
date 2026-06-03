@@ -51,3 +51,6 @@ application*.yml
 
 ### docs ###
 /docs
+
+### firebase 설정 파일 ###
+*.json
