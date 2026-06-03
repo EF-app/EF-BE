@@ -7,8 +7,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface R2ImageService {
 
-    // 프로필 이미지 업로드
+    // 프로필 이미지 업로드 (회원가입 세션 단계)
     UserProfileImage uploadProfileImage(MultipartFile multipartFile, String directory, Long signUpSessionId, int sortOrder);
+
+    // 프로필 이미지 업로드 (마이 프로필 수정)
+    UserProfileImage uploadProfileImageForUser(MultipartFile multipartFile, String directory, Long userId, int sortOrder);
 
     // 피드백 첨부 이미지 업로드
     FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, String directory, Feedback feedback, int sortOrder);

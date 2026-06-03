@@ -114,6 +114,17 @@ public class User extends BaseEntity {
         this.lastNicknameChangedAt = when;
     }
 
+    // 닉네임 변경 + 마지막 변경 시각 동시 갱신 (마이 프로필 수정)
+    public void updateNickname(String nickname, LocalDateTime when) {
+        this.nickname = nickname;
+        this.lastNicknameChangedAt = when;
+    }
+
+    // 지역 변경 (마이 프로필 수정)
+    public void updateAreaId(Long areaId) {
+        this.areaId = areaId;
+    }
+
     // 상태 갱신
     public void changeStatus(UserStatus next) {
         this.status = next;
