@@ -80,6 +80,41 @@ public class R2ImageServiceImpl implements R2ImageService {
         return profileImageRepository.save(userProfileImage);
     }
 
+    // 프로필 이미지 업로드 (마이 프로필 수정)
+    @Override
+    public UserProfileImage uploadProfileImageForUser(MultipartFile multipartFile, String directory, Long userId, int sortOrder) {
+        validateProfileImage(multipartFile);
+
+        String originalName = multipartFile.getOriginalFilename();
+        String storedName = createStoredName(originalName);
+        String objectKey = directory + "/" + storedName;
+
+        try {
+            s3Client.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(objectKey)
+                            .contentType(multipartFile.getContentType())
+                            .build(),
+                    RequestBody.fromBytes(multipartFile.getBytes())
+            );
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_PROFILE_IMAGE, e);
+        }
+
+        String imageUrl = publicUrl + "/" + objectKey;
+
+        UserProfileImage userProfileImage = UserProfileImage.builder()
+                .userId(userId)
+                .originalName(originalName)
+                .storedName(storedName)
+                .sortOrder(sortOrder)
+                .url(imageUrl)
+                .build();
+
+        return profileImageRepository.save(userProfileImage);
+    }
+
     // 피드백 첨부 이미지 업로드
     @Override
     public FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, String directory, Feedback feedback, int sortOrder) {

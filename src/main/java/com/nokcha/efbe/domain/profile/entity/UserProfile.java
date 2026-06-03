@@ -75,6 +75,27 @@ public class UserProfile {
         this.bioMessage = message;
     }
 
+    // 섹션별 부분 업데이트 (My 프로필 수정 화면)
+    public void updateMbti(Mbti mbti) {
+        this.mbti = mbti;
+    }
+
+    public void updateBio(String bioMessage) {
+        this.bioMessage = bioMessage;
+    }
+
+    public void updatePurpose(Purpose purpose) {
+        this.purpose = purpose;
+    }
+
+    public void updateJob(Job job) {
+        this.job = job;
+    }
+
+    public void updateIdealPointTypes(List<IdealPointType> idealPointTypes) {
+        this.idealPointTypes = idealPointTypes;
+    }
+
     // 관리자 승인
     public void approve(Long reviewerAdminId) {
         this.profileStatus = ProfileStatus.APPROVED;

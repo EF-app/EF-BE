@@ -10,7 +10,9 @@ import com.nokcha.efbe.domain.user.dto.response.AccountMaskedRspDto;
 import com.nokcha.efbe.domain.user.dto.response.AccountRevealRspDto;
 import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
+import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.entity.*;
+import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,11 +30,12 @@ public class UserInfoService {
     private final UserRepository userRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final AreaRepository areaRepository;
+    private final ProfileImageRepository profileImageRepository;
     private final SecurityUtil securityUtil;
     private final LoginUtil loginUtil;
     private final PasswordEncoder passwordEncoder;
 
-    // 내 정보 요약
+    // 내 정보 요약 — 닉네임/지역/나이/대표 사진 (MY 탭 ProfileHeroCard 용)
     @Transactional(readOnly = true)
     public UserSummaryRspDto getMySummary() {
         Long userId = securityUtil.getCurrentUserId();
@@ -41,7 +44,9 @@ public class UserInfoService {
         CodeArea area = user.getAreaId() == null
                 ? null
                 : areaRepository.findById(user.getAreaId()).orElse(null);
-        return UserSummaryRspDto.of(user, area);
+        String profileImageUrl = profileImageRepository.findByUserIdOrderBySortOrderAsc(userId)
+                .stream().findFirst().map(UserProfileImage::getUrl).orElse(null);
+        return UserSummaryRspDto.of(user, area, profileImageUrl);
     }
 
     // 보안코드 설정

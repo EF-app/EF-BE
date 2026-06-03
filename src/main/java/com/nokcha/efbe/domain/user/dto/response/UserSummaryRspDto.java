@@ -8,7 +8,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-@Schema(description = "내 정보 요약 (닉네임 / 지역 / 나이)")
+@Schema(description = "내 정보 요약 (닉네임 / 지역 / 나이 / 대표 사진)")
 public class UserSummaryRspDto {
 
     @Schema(description = "닉네임", example = "민들")
@@ -23,12 +23,17 @@ public class UserSummaryRspDto {
     @Schema(description = "나이", example = "27")
     private Integer age;
 
-    public static UserSummaryRspDto of(User user, CodeArea area) {
+    @Schema(description = "대표 프로필 사진 URL (sortOrder 가장 낮은 사진). 없으면 null",
+            example = "https://cdn.example.com/users/42/profile-0.jpg")
+    private String profileImageUrl;
+
+    public static UserSummaryRspDto of(User user, CodeArea area, String profileImageUrl) {
         return UserSummaryRspDto.builder()
                 .nickname(user.getNickname())
                 .country(area == null ? null : area.getCountry())
                 .city(area == null ? null : area.getCity())
                 .age(user.getAge())
+                .profileImageUrl(profileImageUrl)
                 .build();
     }
 }
