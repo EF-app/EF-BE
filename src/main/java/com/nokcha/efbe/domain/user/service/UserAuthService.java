@@ -695,12 +695,26 @@ public class UserAuthService {
         return request.getRemoteAddr();
     }
 
-    // 로그아웃 — refresh + access 토큰 둘 다 jti 블랙리스트에 추가.
+    // 로그아웃 — FCM 토큰 삭제 후 refresh + access 토큰 둘 다 jti 블랙리스트에 추가.
     // 멱등성: 토큰 검증 실패(서명/만료/형식 오류) 해도 throw 하지 않고 200 OK 반환.
     @Transactional
     public void logout(String accessToken, String refreshToken) {
+        clearFcmTokenQuietly(accessToken, refreshToken);
         revokeQuietly(refreshToken, "REFRESH");
         revokeQuietly(accessToken, "ACCESS");
+    }
+
+    // 단일 기기 토큰 구조이므로 로그아웃 시 현재 사용자의 저장 토큰 제거
+    private void clearFcmTokenQuietly(String accessToken, String refreshToken) {
+        try {
+            String token = accessToken != null && !accessToken.isBlank() ? accessToken : refreshToken;
+            if (token == null || token.isBlank()) return;
+
+            userRepository.findById(jwtTokenProvider.getUserId(token))
+                    .ifPresent(User::clearFcmToken);
+        } catch (Exception e) {
+            log.debug("[Logout] FCM 토큰 삭제 실패(무시): {}", e.getMessage());
+        }
     }
 
     // 토큰 1건을 blacklist 에 추가 — 어떤 예외도 무시 (멱등성 보장)

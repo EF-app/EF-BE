@@ -72,13 +72,15 @@ public class User extends BaseEntity {
     @Column
     private LocalDateTime lastNicknameChangedAt;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;
 
-
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, Long areaId, LocalDateTime lastNicknameChangedAt, UserStatus status, LocalDateTime lastActiveAt) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, Long areaId, String fcmToken, LocalDateTime lastNicknameChangedAt, UserStatus status, LocalDateTime lastActiveAt) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -89,6 +91,7 @@ public class User extends BaseEntity {
         this.birth = birth;
         this.age = age;
         this.areaId = areaId;
+        this.fcmToken = fcmToken;
         this.lastNicknameChangedAt = lastNicknameChangedAt;
         this.status = status == null ? UserStatus.ACTIVE : status;
         this.lastActiveAt = lastActiveAt;
@@ -97,6 +100,16 @@ public class User extends BaseEntity {
     // 마지막 활동 시각 갱신 (주요 액션 시)
     public void updateLastActiveAt(LocalDateTime lastActiveAt) {
         this.lastActiveAt = lastActiveAt;
+    }
+
+    // FCM 토큰 등록/갱신
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
+    // FCM 토큰 삭제
+    public void clearFcmToken() {
+        this.fcmToken = null;
     }
 
     // 보안코드 설정/수정

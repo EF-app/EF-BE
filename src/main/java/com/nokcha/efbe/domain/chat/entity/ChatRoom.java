@@ -2,25 +2,39 @@ package com.nokcha.efbe.domain.chat.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
-import com.nokcha.efbe.domain.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 포스트잇 답장 1:1 채팅방 엔티티
-// 방 생성 당시 닉네임 스냅샷 (owner/partner_display_name)
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
-@Table(name = "post_chat_room",
+@Table(name = "chat_room",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_post_chat_uuid", columnNames = "uuid"),
-                @UniqueConstraint(name = "uk_post_partner", columnNames = {"post_id", "partner_id"})
+                @UniqueConstraint(name = "uk_chat_room_uuid", columnNames = "uuid"),
+                @UniqueConstraint(name = "uk_chat_room_firebase_id", columnNames = "firebase_id")
         },
         indexes = {
-                @Index(name = "idx_chat_owner", columnList = "post_owner_id, create_time DESC"),
-                @Index(name = "idx_chat_partner", columnList = "partner_id, create_time DESC")
+                @Index(name = "idx_chat_room_pair", columnList = "pair_user_a_id, pair_user_b_id"),
+                @Index(name = "idx_chat_room_type_post", columnList = "room_type, post_id"),
+                @Index(name = "idx_chat_room_match", columnList = "match_result_id"),
+                @Index(name = "idx_chat_room_last_message_at", columnList = "last_message_at")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoom extends BaseEntity {
@@ -33,57 +47,66 @@ public class ChatRoom extends BaseEntity {
     @Column(name = "uuid", nullable = false, length = 36)
     private String uuid;
 
+    @Column(name = "firebase_id", nullable = false, length = 200)
+    private String firebaseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "room_type", nullable = false, length = 20)
+    private ChatRoomType roomType;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_post"))
+    @JoinColumn(name = "post_id", foreignKey = @ForeignKey(name = "fk_chat_room_post"))
     private PostIt post;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_owner_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_owner"))
-    private User postOwner;
+    @Column(name = "post_content_snapshot", columnDefinition = "TEXT")
+    private String postContentSnapshot;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "partner_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_partner"))
-    private User partner;
+    @Column(name = "power_message", columnDefinition = "TEXT")
+    private String powerMessage;
 
-    // 방 생성 당시 닉네임 스냅샷 (이후 변경돼도 표시 이름은 불변)
-    @Column(name = "owner_display_name", nullable = false, length = 30)
-    private String ownerDisplayName;
+    @Column(name = "power_pinned_until")
+    private LocalDateTime powerPinnedUntil;
 
-    @Column(name = "partner_display_name", nullable = false, length = 30)
-    private String partnerDisplayName;
+    @Column(name = "match_result_id")
+    private Long matchResultId;
+
+    @Column(name = "pair_user_a_id", nullable = false)
+    private Long pairUserAId;
+
+    @Column(name = "pair_user_b_id", nullable = false)
+    private Long pairUserBId;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = Boolean.TRUE;
 
-    @Column(name = "is_closed", nullable = false)
-    private Boolean isClosed = Boolean.FALSE;
+    @Column(name = "is_anonymous", nullable = false)
+    private Boolean isAnonymous = Boolean.FALSE;
 
-    // 첫 답장 시 결정 — true 면 partner 는 그 방에서 영원히 익명. 이후 변경 불가. // 수정필요
-    @Column(name = "is_partner_anonymous", nullable = false)
-    private Boolean isPartnerAnonymous = Boolean.FALSE;
+    @Column(name = "last_message", length = 100)
+    private String lastMessage;
+
+    @Column(name = "last_message_at")
+    private LocalDateTime lastMessageAt;
 
     @Builder
-    private ChatRoom(String uuid, PostIt post, User postOwner, User partner,
-                     String ownerDisplayName, String partnerDisplayName,
-                     Boolean isPartnerAnonymous) {
+    private ChatRoom(String uuid, String firebaseId, ChatRoomType roomType, PostIt post, String postContentSnapshot, String powerMessage, LocalDateTime powerPinnedUntil, Long matchResultId, Long pairUserAId, Long pairUserBId, Boolean isActive, Boolean isAnonymous, String lastMessage, LocalDateTime lastMessageAt) {
         this.uuid = uuid;
+        this.firebaseId = firebaseId;
+        this.roomType = roomType;
         this.post = post;
-        this.postOwner = postOwner;
-        this.partner = partner;
-        this.ownerDisplayName = ownerDisplayName;
-        this.partnerDisplayName = partnerDisplayName;
-        this.isActive = Boolean.TRUE;
-        this.isClosed = Boolean.FALSE;
-        this.isPartnerAnonymous = Boolean.TRUE.equals(isPartnerAnonymous);
+        this.postContentSnapshot = postContentSnapshot;
+        this.powerMessage = powerMessage;
+        this.powerPinnedUntil = powerPinnedUntil;
+        this.matchResultId = matchResultId;
+        this.pairUserAId = pairUserAId;
+        this.pairUserBId = pairUserBId;
+        this.isActive = isActive == null ? Boolean.TRUE : isActive;
+        this.isAnonymous = Boolean.TRUE.equals(isAnonymous);
+        this.lastMessage = lastMessage;
+        this.lastMessageAt = lastMessageAt;
     }
 
-    // 원글 Soft delete 시 비활성화 (진입 시 "원문이 삭제된 포스트잇입니다" 표시)
     public void deactivate() {
         this.isActive = Boolean.FALSE;
-    }
-
-    // 한쪽이 나간 경우 종료
-    public void close() {
-        this.isClosed = Boolean.TRUE;
     }
 }

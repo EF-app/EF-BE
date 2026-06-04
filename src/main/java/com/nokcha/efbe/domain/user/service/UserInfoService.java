@@ -49,6 +49,26 @@ public class UserInfoService {
         return UserSummaryRspDto.of(user, area, profileImageUrl);
     }
 
+    // FCM 토큰 등록/갱신
+    @Transactional
+    public void updateFcmToken(FcmTokenReqDto reqDto) {
+        User user = getCurrentUser();
+        String fcmToken = reqDto.getFcmToken().trim();
+
+        userRepository.findByFcmToken(fcmToken)
+                .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                .ifPresent(User::clearFcmToken);
+
+        user.updateFcmToken(fcmToken);
+    }
+
+    // FCM 토큰 삭제
+    @Transactional
+    public void deleteFcmToken() {
+        User user = getCurrentUser();
+        user.clearFcmToken();
+    }
+
     // 보안코드 설정
     @Transactional
     public void createScode(UserScodeReqDto reqDto) {

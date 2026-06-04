@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.chat.dto.response;
 
 import com.nokcha.efbe.domain.chat.entity.ChatRoom;
+import com.nokcha.efbe.domain.chat.entity.ChatRoomType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,43 +22,54 @@ public class ChatRoomRspDto {
     @Schema(description = "원본 포스트잇 ID", example = "77", nullable = true)
     private Long postId;
 
-    @Schema(description = "포스트 작성자 userId", example = "10", nullable = true)
-    private Long postOwnerId;
+    @Schema(description = "Firebase 채팅방 ID", example = "chat_1f0a2e5b")
+    private String firebaseId;
 
-    @Schema(description = "채팅 상대 userId. 익명 파트너면 null", example = "14", nullable = true)
-    private Long partnerId;
+    @Schema(description = "채팅방 타입", example = "POST")
+    private ChatRoomType roomType;
 
-    @Schema(description = "포스트 작성자 표시 이름", example = "포스트 작성자")
-    private String ownerDisplayName;
+    @Schema(description = "포스트잇 원글 내용 스냅샷", nullable = true)
+    private String postContentSnapshot;
 
-    @Schema(description = "채팅 상대 표시 이름", example = "익명의 대화상대")
-    private String partnerDisplayName;
+    @Schema(description = "파워메시지 첫 대화 내용", nullable = true)
+    private String powerMessage;
 
-    @Schema(description = "채팅 상대가 익명인지 여부", example = "true")
-    private Boolean isPartnerAnonymous;
+    @Schema(description = "파워메시지 상단 고정 만료 시각", nullable = true)
+    private LocalDateTime powerPinnedUntil;
+
+    @Schema(description = "매칭 결과 ID", example = "12", nullable = true)
+    private Long matchResultId;
+
+    @Schema(description = "페어 유저 A ID. 두 유저 ID 중 작은 값", example = "10")
+    private Long pairUserAId;
+
+    @Schema(description = "페어 유저 B ID. 두 유저 ID 중 큰 값", example = "14")
+    private Long pairUserBId;
 
     @Schema(description = "활성 채팅방 여부", example = "true")
     private Boolean isActive;
 
-    @Schema(description = "종료된 채팅방 여부", example = "false")
-    private Boolean isClosed;
+    @Schema(description = "익명 채팅방 여부", example = "false")
+    private Boolean isAnonymous;
 
     @Schema(description = "채팅방 생성 시각", example = "2026-05-25T16:00:00")
     private LocalDateTime createTime;
 
     public static ChatRoomRspDto from(ChatRoom r) {
-        boolean partnerAnonymous = Boolean.TRUE.equals(r.getIsPartnerAnonymous());
         return ChatRoomRspDto.builder()
                 .id(r.getId())
                 .uuid(r.getUuid())
                 .postId(r.getPost() == null ? null : r.getPost().getId())
-                .postOwnerId(r.getPostOwner() == null ? null : r.getPostOwner().getId())
-                .partnerId(partnerAnonymous ? null : (r.getPartner() == null ? null : r.getPartner().getId()))
-                .ownerDisplayName(r.getOwnerDisplayName())
-                .partnerDisplayName(r.getPartnerDisplayName())
-                .isPartnerAnonymous(partnerAnonymous)
+                .firebaseId(r.getFirebaseId())
+                .roomType(r.getRoomType())
+                .postContentSnapshot(r.getPostContentSnapshot())
+                .powerMessage(r.getPowerMessage())
+                .powerPinnedUntil(r.getPowerPinnedUntil())
+                .matchResultId(r.getMatchResultId())
+                .pairUserAId(r.getPairUserAId())
+                .pairUserBId(r.getPairUserBId())
                 .isActive(Boolean.TRUE.equals(r.getIsActive()))
-                .isClosed(Boolean.TRUE.equals(r.getIsClosed()))
+                .isAnonymous(Boolean.TRUE.equals(r.getIsAnonymous()))
                 .createTime(r.getCreateTime())
                 .build();
     }

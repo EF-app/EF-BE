@@ -24,6 +24,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 닉네임 존재 여부 조회
     boolean existsByNickname(String nickname);
 
+    // 동일 기기에서 계정이 바뀐 경우 기존 FCM 토큰 소유자 해제용
+    Optional<User> findByFcmToken(String fcmToken);
+
     // 어드민 유저 목록 — keyword(닉네임/로그인ID/UUID LIKE) + status 다중 필터.
     @Query("select u from User u " +
             "where (:keyword is null " +

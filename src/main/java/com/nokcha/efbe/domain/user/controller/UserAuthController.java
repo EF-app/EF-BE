@@ -165,6 +165,7 @@ public class UserAuthController {
     // 멱등성: 검증 실패해도 200 OK (클라이언트는 어쨌든 로컬 store 비우면 됨).
     @Operation(summary = "로그아웃",
             description = "현재 access 토큰(Authorization 헤더)과 refresh 토큰(body)을 서버 블랙리스트에 등록. " +
+                    "저장된 FCM 토큰도 삭제함. " +
                     "이후 해당 토큰들은 만료 전이라도 모든 인증 요청·재발급에서 거부됨. " +
                     "토큰 검증 실패해도 200 OK 반환 (멱등성 보장).")
     @PostMapping("/logout")
