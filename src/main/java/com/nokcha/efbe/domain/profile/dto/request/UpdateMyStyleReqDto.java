@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.profile.edit.dto.request;
+package com.nokcha.efbe.domain.profile.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
