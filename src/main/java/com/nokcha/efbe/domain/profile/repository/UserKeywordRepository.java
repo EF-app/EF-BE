@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -14,6 +15,9 @@ public interface UserKeywordRepository extends JpaRepository<UserKeyword, Long> 
 
     // 어드민 유저 상세 — 유저의 관심사 키워드
     List<UserKeyword> findByUserId(Long userId);
+
+    // 매칭 배치 — 후보 풀 전체 한 번에 적재
+    List<UserKeyword> findByUserIdIn(Collection<Long> userIds);
 
     // 섹션 수정 — 유저의 키워드 전체 삭제 후 재삽입 (전체 교체 패턴)
     @Modifying

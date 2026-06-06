@@ -18,6 +18,9 @@ public interface UserPersonalRepository extends JpaRepository<UserPersonal, Long
     // 어드민 유저 상세 — 유저의 성향(SELF) / 이상형(IDEAL)
     List<UserPersonal> findByUserId(Long userId);
 
+    // 매칭 배치 — 후보 풀 전체 한 번에 적재
+    List<UserPersonal> findByUserIdIn(Collection<Long> userIds);
+
     // 섹션 수정 — 특정 type 의 row 만 일괄 삭제 후 재삽입(1단계 ideal / self)
     @Modifying
     @Query("delete from UserPersonal up where up.userId = :userId and up.type = :type")

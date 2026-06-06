@@ -24,8 +24,8 @@ import java.util.List;
  *    2) KeywordFreqService 캐시 갱신
  *    3) 활성 뷰어 순회:
  *         a. 후보 풀 500 (CandidateSelector)
- *         b. 페어별 점수 + 태그 (MatchCalculator) + match_score_cache upsert
- *         c. 슬롯 50 선정 (FeedSelector) → match_daily_feed 교체
+ *         b. 페어별 점수 + 태그 (MatchCalculator) — 메모리만 계산 (§10.20 score_cache 야간 적재 제거)
+ *         c. 슬롯 50 선정 (FeedSelector) → match_daily_feed 교체 (+ §10.21 emptyRanks 백필)
  *
  *  05:00 보정 흐름 (retryFailedViewers):
  *    04:00 에 실패해 오늘 daily_feed row 가 없는 활성 viewer 만 재시도.
