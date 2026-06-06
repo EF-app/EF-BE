@@ -5,8 +5,10 @@ import com.nokcha.efbe.domain.suspension.entity.UserSuspension;
 import com.nokcha.efbe.domain.suspension.repository.UserSuspensionRepository;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
+import com.nokcha.efbe.domain.user.event.UserReactivatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +28,25 @@ import java.util.Optional;
 public class SuspensionService {
 
     private final UserSuspensionRepository userSuspensionRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 활성 제재 기반으로 users.status 를 update. 부과/해제/배치/정합성 검증에서 호출
     public void evaluateAndUpdateStatus(User user) {
         if (user.getStatus() == UserStatus.WITHDRAWING || user.getStatus() == UserStatus.WITHDRAWN) {
             return;
         }
+        UserStatus prev = user.getStatus();
         UserStatus next = evaluateUserStatus(user.getId());
-        if (user.getStatus() != next) {
+        if (prev != next) {
             user.changeStatus(next);
+            // 제재 해제 (TEMPORARY/PERMANENT → ACTIVE) — 매칭 피드 즉시 재계산 트리거 (§10.22)
+            if ((prev == UserStatus.TEMPORARY || prev == UserStatus.PERMANENT)
+                    && next == UserStatus.ACTIVE) {
+                eventPublisher.publishEvent(new UserReactivatedEvent(
+                        user.getId(), UserReactivatedEvent.Reason.SUSPENSION_LIFTED));
+            }
+            // ※ daily_feed 정리는 별도 처리 X — read-time 오버레이가 target.status 기준 자동 필터링하고,
+            //   본인이 정지되면 SuspensionGuardFilter 가 진입 차단 + 다음 04:00 배치가 자연 교체.
         }
     }
 

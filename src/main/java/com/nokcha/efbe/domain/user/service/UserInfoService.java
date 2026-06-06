@@ -12,11 +12,13 @@ import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.entity.*;
+import com.nokcha.efbe.domain.user.event.UserReactivatedEvent;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,7 @@ public class UserInfoService {
     private final SecurityUtil securityUtil;
     private final LoginUtil loginUtil;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 내 정보 요약 — 닉네임/지역/나이/대표 사진 (MY 탭 ProfileHeroCard 용)
     @Transactional(readOnly = true)
@@ -107,6 +110,10 @@ public class UserInfoService {
 
         withdrawal.cancel(LocalDateTime.now(), null, null);
         user.changeStatus(UserStatus.ACTIVE);
+
+        // 매칭 피드 즉시 재계산 트리거 (§10.22)
+        eventPublisher.publishEvent(new UserReactivatedEvent(
+                userId, UserReactivatedEvent.Reason.WITHDRAW_CANCELLED));
     }
 
     // 비밀번호 인증 전 계정 정보 마스킹 조회

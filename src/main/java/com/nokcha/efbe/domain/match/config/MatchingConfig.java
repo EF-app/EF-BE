@@ -83,7 +83,13 @@ public class MatchingConfig {
     /* ─── 11. 표시 ─── */
     private int keywordChipCount = 3;   // 키워드 몇 개 나올지
 
-    /* ─── 12. 신규자 fan-out (매시간 미니 배치) ─── */
+    /* ─── 12. ProfileChangeListener 어뷰즈 가드 (§10.22) ─── */
+    /** 본인이 오늘 한 액션 수가 이 값 이상이면 프로필 변경 시 재계산 차단. */
+    private int recomputeActionThreshold = 5;
+    /** 일일 프로필 변경 재계산 최대 횟수. 0 = 즉시 재계산 비활성. */
+    private int recomputeMaxPerDay = 1;
+
+    /* ─── 13. 신규자 fan-out (매시간 미니 배치) ─── */
     /** 가입 후 N 시간 이내면 "신규자" 로 간주 — 04:00 정상 배치 갭(최대 28h) 완화용. */
     private int freshNewbieWindowHours = 24;
     /** 신규자 1 명이 등장할 viewer 최대 수. 시간당 INSERT 부하 cap. */

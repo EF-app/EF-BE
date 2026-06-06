@@ -22,6 +22,8 @@ import com.nokcha.efbe.domain.profile.entity.UserPersonal;
 import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
 import com.nokcha.efbe.domain.profile.entity.UserProfile;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
+import com.nokcha.efbe.domain.profile.event.ProfileChangeKind;
+import com.nokcha.efbe.domain.profile.event.ProfileUpdatedEvent;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
@@ -32,6 +34,7 @@ import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.infra.r2.service.R2ImageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,6 +80,7 @@ public class ProfileEditService {
     private final UserPersonalRepository userPersonalRepository;
     private final CodePersonalRepository codePersonalRepository;
     private final R2ImageService r2ImageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /* ─────────── 풀 조회 ─────────── */
 
@@ -142,6 +146,8 @@ public class ProfileEditService {
                 throw new BusinessException(ErrorCode.AREA_REQUIRED);
             }
             user.updateAreaId(req.getAreaId());
+            // 지역 변경 — 후보 풀/거리/국내·해외 그룹 자체가 바뀜 → 본인 피드 재계산
+            eventPublisher.publishEvent(new ProfileUpdatedEvent(userId, ProfileChangeKind.AREA));
         }
     }
 
@@ -260,7 +266,14 @@ public class ProfileEditService {
 
         // idealPointTypes 동시 갱신
         UserProfile profile = loadOrInitProfile();
-        profile.updateIdealPointTypes(req.getIdealPointTypes() == null ? List.of() : req.getIdealPointTypes());
+        List<com.nokcha.efbe.domain.profile.entity.IdealPointType> before =
+                profile.getIdealPointTypes() == null ? List.of() : profile.getIdealPointTypes();
+        List<com.nokcha.efbe.domain.profile.entity.IdealPointType> next =
+                req.getIdealPointTypes() == null ? List.of() : req.getIdealPointTypes();
+        profile.updateIdealPointTypes(next);
+
+        // §10.22 정책 — 이상형 중요포인트 변경은 즉시 재계산 안 함 (어뷰즈 통로 차단).
+        // 다음 04:00 배치 때 sortKey 가중치 반영. before/next 비교는 향후 다른 트리거 필요 시 활용.
     }
 
     /* ─────────── 내부 헬퍼 ─────────── */
