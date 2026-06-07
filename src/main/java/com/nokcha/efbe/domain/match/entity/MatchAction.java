@@ -26,6 +26,11 @@ import java.time.LocalDateTime;
  *  expires_at:
  *    - PASS         → NOW() + cfg.passCooldownDays
  *    - 그 외        → null (영구 제외)
+ *
+ *  tagsJson (LIKE 류만 채움):
+ *    - 액션 시점 actor 관점 매칭 태그 freeze (MatchCalculator + TagDisplayFormatter)
+ *    - 카드 표시 — "내가 누른 좋아요" 는 그대로, "받은 좋아요" 는 표시 시점 #내가/#나를 반전
+ *    - PASS 는 null (카드 노출 X)
  */
 @Getter
 @Entity
@@ -64,12 +69,17 @@ public class MatchAction extends BaseEntity {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    /** LIKE/SUPER_LIKE/POWER_MESSAGE — actor 관점 매칭 태그 JSON freeze. PASS 는 NULL. */
+    @Column(name = "tags_json", columnDefinition = "JSON")
+    private String tagsJson;
+
     @Builder
     private MatchAction(Long actorId, Long targetId, MatchActionType actionType,
-                        LocalDateTime expiresAt) {
+                        LocalDateTime expiresAt, String tagsJson) {
         this.actorId = actorId;
         this.targetId = targetId;
         this.actionType = actionType;
         this.expiresAt = expiresAt;
+        this.tagsJson = tagsJson;
     }
 }
