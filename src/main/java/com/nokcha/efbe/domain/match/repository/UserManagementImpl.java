@@ -285,7 +285,8 @@ public class UserManagementImpl implements UserManagement {
      *  batch fetch 7회: users / user_profile / user_personal / user_keyword / user_custom_keyword
      *                   / code_area / code_keyword + code_personal
      */
-    private List<UserContext> loadContexts(List<Long> ids) {
+    @Override
+    public List<UserContext> loadContexts(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return List.of();
 
         // ── 1. users / user_profile

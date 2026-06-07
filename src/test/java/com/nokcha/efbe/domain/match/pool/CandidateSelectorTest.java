@@ -137,6 +137,7 @@ class CandidateSelectorTest {
             @Override public List<UserContext> findEligible(UserContext me, MatchingConfig cfg) { return eligible; }
             @Override public List<UserContext> findEligibleViewers(MatchingConfig cfg)         { return List.of(); }
             @Override public UserContext loadContext(long userId)                              { return null; }
+            @Override public List<UserContext> loadContexts(List<Long> userIds)                { return List.of(); }
             @Override public List<UserContext> topLikedYesterday(UserContext me, MatchingConfig cfg) { return List.of(); }
             @Override public List<UserContext> recentlyActive(UserContext me, MatchingConfig cfg)   { return List.of(); }
             @Override public List<Long> findCompatibleViewerIds(long targetUserId, int cap, MatchingConfig cfg) { return List.of(); }

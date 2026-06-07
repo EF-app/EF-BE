@@ -37,6 +37,13 @@ public interface UserManagement {
     /** 단건 컨텍스트 — "받은 좋아요" 단건 계산용. */
     UserContext loadContext(long userId);
 
+    /**
+     * 다건 컨텍스트 — id 리스트를 batch fetch 로 한 번에 로드.
+     *  사용처: RecentNewbieBatch.fanOut — viewer 200 명 컨텍스트 1회 batch.
+     *   단건 loadContext 호출 (200 × 7쿼리) 대비 7쿼리로 절감.
+     */
+    List<UserContext> loadContexts(List<Long> userIds);
+
     /** 콜드스타트: 전날 좋아요 많이 받은 사람 (지역·나이 필터 적용). */
     List<UserContext> topLikedYesterday(UserContext me, MatchingConfig cfg);
 
