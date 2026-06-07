@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,13 @@ public class RecentNewbieBatch {
     private final SortKeyCalculator sortKeyCalculator;
     private final TagDisplayFormatter tagFormatter;
 
-    @Scheduled(cron = "0 0 * * * *", zone = "Asia/Seoul")
+    /**
+     * 매시 30분 KST — 04:00 NightlyMatchBatch 와 시간차 30분 확보.
+     *  매시 0분 트리거였을 때 04:00 정시에 두 배치가 동시 실행되어
+     *  같은 viewer 의 match_daily_feed row 에 락 충돌 → fanOut 일부 실패 가능성이 있었음.
+     *  30분 시프트로 NightlyMatchBatch (~10~20분 소요) 종료 후 진입 보장.
+     */
+    @Scheduled(cron = "0 30 * * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "RecentNewbieBatch.run",
             lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
     @Transactional
@@ -102,6 +109,15 @@ public class RecentNewbieBatch {
         return new ArrayList<>(new TreeSet<>(reserved));  // 오름차순
     }
 
+    /**
+     * 지난 freshNewbieWindowHours 시간 안에 가입한 신규자 ID 목록.
+     *  최신 가입자 우선 처리 — viewer 의 reserved 5자리 (5/10/15/20/25) 가 INSERT IGNORE first-fit 으로
+     *  채워지므로, 처리 순서가 자리 선점 순서가 됨. 신선도 보장을 위해 DESC.
+     *
+     *  인덱스 노트: users.create_time 별도 인덱스 없음 (PK + uk_* 만).
+     *  24h 안 가입자만 필터 + status/profile_status 추가 필터 → 풀스캔이라도 결과 row 가 적음.
+     *  users 행이 10만 넘으면 (create_time, status) 복합 인덱스 검토.
+     */
     @SuppressWarnings("unchecked")
     private List<Long> findRecentNewcomers(LocalDateTime since) {
         return ((List<Number>) em.createNativeQuery("""
@@ -110,6 +126,7 @@ public class RecentNewbieBatch {
                  WHERE u.create_time >= :since
                    AND u.status = 'ACTIVE'
                    AND up.profile_status = 'APPROVED'
+                 ORDER BY u.create_time DESC
                 """)
                 .setParameter("since", since)
                 .getResultList()).stream()
@@ -130,9 +147,26 @@ public class RecentNewbieBatch {
             return 0;
         }
 
-        List<Long> viewerIds = userMgmt.findCompatibleViewerIds(
-                newcomerId, cfg.getFreshNewbieFanOut(), cfg);
-        if (viewerIds.isEmpty()) return 0;
+        /*
+         * 호환 viewer 전체 → 메모리 셔플 → cap 만큼 자르기.
+         *  SQL 의 `ORDER BY RAND() LIMIT cap` 는 후보 수 N 에 비례한 filesort 비용이 발생해 N 이 커질수록 비싸짐.
+         *  메모리 셔플 (`Collections.shuffle` = Fisher–Yates O(n)) 로 대체:
+         *    - 후보 ≤ 1만 수준에서 명확히 유리, 그 이상도 손해 없음.
+         *    - 10만 이상으로 커지면 별도 sampling 패턴 (random offset / id 범위 / Bernoulli) 검토.
+         */
+        List<Long> allViewerIds = userMgmt.findCompatibleViewerIds(newcomerId, cfg);
+        if (allViewerIds.isEmpty()) return 0;
+
+        int cap = cfg.getFreshNewbieFanOut();
+        List<Long> viewerIds;
+        if (allViewerIds.size() <= cap) {
+            viewerIds = new ArrayList<>(allViewerIds);
+            Collections.shuffle(viewerIds);
+        } else {
+            List<Long> mutable = new ArrayList<>(allViewerIds);
+            Collections.shuffle(mutable);
+            viewerIds = mutable.subList(0, cap);
+        }
 
         Map<Long, UserContext> viewerCtxByid = new HashMap<>(viewerIds.size() * 2);
         for (UserContext v : userMgmt.loadContexts(viewerIds)) {

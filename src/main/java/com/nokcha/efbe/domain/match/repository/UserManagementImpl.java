@@ -242,7 +242,7 @@ public class UserManagementImpl implements UserManagement {
     }
 
     @Override
-    public List<Long> findCompatibleViewerIds(long targetUserId, int cap, MatchingConfig cfg) {
+    public List<Long> findCompatibleViewerIds(long targetUserId, MatchingConfig cfg) {
         @SuppressWarnings("unchecked")
         List<Number> rows = em.createNativeQuery("""
                 SELECT v.id FROM users v
@@ -267,13 +267,10 @@ public class UserManagementImpl implements UserManagement {
                               OR (ma.action_type = 'PASS' AND ma.expires_at >= NOW())
                           )
                    )
-                 ORDER BY RAND()
-                 LIMIT :cap
                 """)
                 .setParameter("target", targetUserId)
                 .setParameter("lastActiveDays", cfg.getLastActiveDays())
                 .setParameter("ageMaxDiff", cfg.getAgeMaxDiff())
-                .setParameter("cap", cap)
                 .getResultList();
         return toLongIds(rows);
     }

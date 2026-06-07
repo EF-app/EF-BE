@@ -140,7 +140,7 @@ class CandidateSelectorTest {
             @Override public List<UserContext> loadContexts(List<Long> userIds)                { return List.of(); }
             @Override public List<UserContext> topLikedYesterday(UserContext me, MatchingConfig cfg) { return List.of(); }
             @Override public List<UserContext> recentlyActive(UserContext me, MatchingConfig cfg)   { return List.of(); }
-            @Override public List<Long> findCompatibleViewerIds(long targetUserId, int cap, MatchingConfig cfg) { return List.of(); }
+            @Override public List<Long> findCompatibleViewerIds(long targetUserId, MatchingConfig cfg) { return List.of(); }
             @Override public List<UserContext> findFailedViewersToday(MatchingConfig cfg) { return List.of(); }
         };
     }
