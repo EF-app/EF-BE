@@ -19,7 +19,10 @@ import java.util.Set;
  * PairScore.tags → 카드 표시용 tags_json 그룹핑 (명세서 §3.6 + 부록 B).
  *
  *  ── 그룹 규칙 ──────────────────────────────────────────────
- *    (1) 키워드 묶음  : KEYWORD + CATEGORY_MATE (라벨만 categories[]로 부착)
+ *    (1) 키워드 묶음  : KEYWORD + CATEGORY_MATE 다수
+ *        - KEYWORD 발동 → type=KEYWORD 메인 + categories: [{label, chips}, ...]
+ *        - KEYWORD 미발동 + cat 1개   → type=CATEGORY_MATE 메인 (label + chips)
+ *        - KEYWORD 미발동 + cat 다수  → type=CATEGORY_MATE 메인 + categories: [{label, chips}, ...] (나머지 부착)
  *    (2) 이상형 묶음  : IDEAL / I_LIKE / LIKES_ME → 1 개 선택
  *    (3) 개인키워드   : CUSTOM_KW
  *    (4) 정반대       : TOTAL_OPPOSITE (단독)
@@ -42,13 +45,20 @@ public class TagDisplayFormatter {
                 .filter(t -> t.type() == TagType.CATEGORY_MATE)
                 .toList();
         if (keyword != null) {
+            // KEYWORD 메인 + 모든 cats 를 categories 객체 배열로 부착
             Map<String, Object> block = baseTag(TagType.KEYWORD, keyword, ip);
             if (!cats.isEmpty()) {
-                block.put("categories", cats.stream().map(Tag::label).toList());
+                block.put("categories", buildCategoryEntries(cats));
             }
             out.add(block);
         } else if (!cats.isEmpty()) {
-            out.add(baseTag(TagType.CATEGORY_MATE, cats.get(0), ip));
+            // KEYWORD 미발동 → 첫 cat 을 메인 + 나머지 cats 를 categories 부착
+            Tag mainCat = cats.get(0);
+            Map<String, Object> block = baseTag(TagType.CATEGORY_MATE, mainCat, ip);
+            if (cats.size() > 1) {
+                block.put("categories", buildCategoryEntries(cats.subList(1, cats.size())));
+            }
+            out.add(block);
         }
 
         /* (2) 이상형 묶음 — 1 개 선택 */
@@ -89,6 +99,23 @@ public class TagDisplayFormatter {
         if (iLike)   return idx.get(TagType.I_LIKE);
         if (likesMe) return idx.get(TagType.LIKES_ME);
         return idx.get(TagType.IDEAL);
+    }
+
+    /**
+     * 카테고리 nested 항목 빌드 — [{label, chips?}, ...].
+     *  chips 가 비어있으면 chips 키 생략.
+     */
+    private List<Map<String, Object>> buildCategoryEntries(List<Tag> cats) {
+        List<Map<String, Object>> out = new ArrayList<>(cats.size());
+        for (Tag cat : cats) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("label", cat.label());
+            if (cat.chips() != null && !cat.chips().isEmpty()) {
+                entry.put("chips", cat.chips());
+            }
+            out.add(entry);
+        }
+        return out;
     }
 
     private Map<String, Object> baseTag(TagType type, Tag tag, Set<ImportantPoint> ip) {
