@@ -26,6 +26,14 @@ public class BusinessException extends RuntimeException {
         this.errorCode = errorCode.name();
     }
 
+    // 같은 ErrorCode 안에서 상세 메시지만 다른 케이스 — 예: "weight_keyword: DOUBLE 파싱 실패"
+    public BusinessException(ErrorCode errorCode, String detailMessage) {
+        super(detailMessage);
+        this.code = errorCode.getCode();
+        this.httpStatus = HttpStatus.valueOf(errorCode.getCode());
+        this.errorCode = errorCode.name();
+    }
+
     public BusinessException(String message, HttpStatus httpStatus) {
         super(message);
         this.code = httpStatus.value();

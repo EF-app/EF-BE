@@ -2,9 +2,9 @@ package com.nokcha.efbe.domain.admin.match.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-// 강제 재계산 결과 — POST /v1/admin/matches/users/{userId}/recompute 응답
-@Schema(description = "강제 피드 재계산 결과")
-public record AdminMatchRecomputeRspDto(
+// 특정 유저 피드 재계산 결과 — POST /v1/admin/matches/batch/user/{userId} 응답
+@Schema(description = "특정 유저 피드 재계산 결과")
+public record AdminMatchUserBatchRspDto(
         @Schema(description = "대상 유저 id", example = "1234")
         long userId,
 

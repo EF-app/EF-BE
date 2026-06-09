@@ -44,4 +44,10 @@ public class CodeMatchConfig {
 
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
+
+    /** 관리자 PATCH 진입점 — value/updatedBy 동시 갱신 */
+    public void applyUpdate(String newValue, String adminIdentifier) {
+        this.configValue = newValue;
+        this.updatedBy = adminIdentifier;
+    }
 }
