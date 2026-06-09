@@ -13,6 +13,10 @@ import java.math.BigDecimal;
 @Table(name = "code_area",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_code_area_country_city", columnNames = {"country", "city"})
+        },
+        // 좌표 필터를 위한 복합 인덱스 — findEligibleIds 가 latitude/longitude BETWEEN 범위 검색.
+        indexes = {
+                @Index(name = "idx_code_area_lat_lon", columnList = "latitude, longitude")
         })
 public class CodeArea {
 

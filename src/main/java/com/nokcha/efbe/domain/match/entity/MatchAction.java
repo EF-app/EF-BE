@@ -21,16 +21,15 @@ import java.time.LocalDateTime;
 
 /**
  * match_actions 엔티티 — 단방향 액션 (LIKE / PASS / SUPER_LIKE / POWER_MESSAGE).
- *  한 페어(actor → target) 당 활성 액션 1개 정책 — 변경 시 DELETE + INSERT.
- *
- *  expires_at:
- *    - PASS         → NOW() + cfg.passCooldownDays
- *    - 그 외        → null (영구 제외)
+ *  한 페어(actor → target) 당 활성 액션 1개 정책
  *
  *  tagsJson (LIKE 류만 채움):
  *    - 액션 시점 actor 관점 매칭 태그 freeze (MatchCalculator + TagDisplayFormatter)
  *    - 카드 표시 — "내가 누른 좋아요" 는 그대로, "받은 좋아요" 는 표시 시점 #내가/#나를 반전
  *    - PASS 는 null (카드 노출 X)
+ *
+ *  ※ mutual 성사 정보는 match_results 테이블에 별도 보존  match_actions 의 양방향 row 로
+ *    mutual 자체는 판별 가능하지만 cleanup 30일 정책 이후엔 match_results 가 영구 보존.
  */
 @Getter
 @Entity
@@ -81,5 +80,30 @@ public class MatchAction extends BaseEntity {
         this.actionType = actionType;
         this.expiresAt = expiresAt;
         this.tagsJson = tagsJson;
+    }
+
+    /**
+     * 내가 누른 좋아요 취소 / mutual 카드 cancel — LIKE/SUPER_LIKE 행을 PASS 로 UPDATE.
+     *  - action_type = PASS, expires_at = NOW + cooldown, tags_json = NULL (정책 일관)
+     *  - update_time 은 BaseEntity @LastModifiedDate 자동
+     *  - row id / create_time 보존 — 매칭 풀 제외 시점은 그대로
+     *
+     *  SUPER_LIKE 도 동일 처리 — 별 환불 X
+     */
+    public void changeToPass(LocalDateTime expiresAt) {
+        this.actionType = MatchActionType.PASS;
+        this.expiresAt  = expiresAt;
+        this.tagsJson   = null;
+    }
+
+    /**
+     * mutual restore — 사용자가 cancel 토글로 PASS 됐던 row 를 다시 LIKE 로 복원.
+     *  - action_type = LIKE, expires_at = NULL (영구 제외 효과), tags_json 재freeze
+     *  - SUPER_LIKE 였더라도 LIKE 로 복원 (단순화 — 별 환불 X)
+     */
+    public void changeToLike(String tagsJson) {
+        this.actionType = MatchActionType.LIKE;
+        this.expiresAt  = null;
+        this.tagsJson   = tagsJson;
     }
 }

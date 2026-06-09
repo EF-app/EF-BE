@@ -27,8 +27,8 @@ public class MatchingConfig {
 
     /* ─── 2. 풀 ─── */
     private int poolSize         = 500; // 후보 풀
-    private double newbieRatio   = 0.40;    // 뉴비 양동이 비율
-    private int newbieWindowDays = 3;   // 가입 후 N일 = 뉴비
+    private double newbieRatio   = 0.60;    // 뉴비 양동이 비율
+    private int newbieWindowDays = 5;   // 가입 후 N일 = 뉴비
     /** 반경 확장 step (km). -1 = 전국. */
     private int[] radiusStepsKm  = {20, 50, 100, -1};   // 반경 확장 단계
 

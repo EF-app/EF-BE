@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * §9.2 체크리스트 (후보·슬롯):
+ * 체크리스트 (후보·슬롯):
  *  - 두 양동이 (뉴비/베테랑) 비율
  *  - 반경 20→50→100→전국(-1) 확장
  *  - 백필로 총 poolSize 유지
@@ -28,7 +28,7 @@ class CandidateSelectorTest {
         MatchingConfig cfg = new MatchingConfig();
         cfg.setPoolSize(100);
         cfg.setNewbieRatio(0.40);
-        cfg.setNewbieWindowDays(7);
+        cfg.setNewbieWindowDays(5);
         cfg.setRadiusStepsKm(new int[]{-1});  // 전국 (반경 영향 제거)
 
         // 뉴비 100 명 + 베테랑 100 명 → 정확히 40 / 60 채워야
@@ -54,7 +54,7 @@ class CandidateSelectorTest {
         MatchingConfig cfg = new MatchingConfig();
         cfg.setPoolSize(10);
         cfg.setNewbieRatio(0.0);  // 베테랑만
-        cfg.setNewbieWindowDays(7);
+        cfg.setNewbieWindowDays(5);
         cfg.setRadiusStepsKm(new int[]{20, 50, 100, -1});
 
         List<UserContext> eligible = new ArrayList<>();
@@ -77,7 +77,7 @@ class CandidateSelectorTest {
         MatchingConfig cfg = new MatchingConfig();
         cfg.setPoolSize(50);
         cfg.setNewbieRatio(0.40);  // 20 명 뉴비 목표
-        cfg.setNewbieWindowDays(7);
+        cfg.setNewbieWindowDays(5);
         cfg.setRadiusStepsKm(new int[]{-1});
 
         // 뉴비 5명만 (목표 20 미달) + 베테랑 100 명 → 백필로 총 50 채워야
@@ -101,7 +101,7 @@ class CandidateSelectorTest {
         MatchingConfig cfg = new MatchingConfig();
         cfg.setPoolSize(50);
         cfg.setNewbieRatio(0.40);
-        cfg.setNewbieWindowDays(7);
+        cfg.setNewbieWindowDays(5);
         cfg.setRadiusStepsKm(new int[]{-1});
 
         List<UserContext> eligible = new ArrayList<>();
@@ -142,6 +142,8 @@ class CandidateSelectorTest {
             @Override public List<UserContext> recentlyActive(UserContext me, MatchingConfig cfg)   { return List.of(); }
             @Override public List<Long> findCompatibleViewerIds(long targetUserId, MatchingConfig cfg) { return List.of(); }
             @Override public List<UserContext> findFailedViewersToday(MatchingConfig cfg) { return List.of(); }
+            @Override public java.util.Map<Long, UserContext> loadAllActiveContextsAsMap(MatchingConfig cfg) { return java.util.Map.of(); }
+            @Override public List<Long> findEligibleIds(UserContext me, MatchingConfig cfg, int radiusKm) { return List.of(); }
         };
     }
 }

@@ -13,17 +13,14 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 통합 지점 3 — match_daily_feed 저장 + read-time 오버레이 조회.
  *  - {@link #replaceDailyFeed}: viewer 의 모든 row 를 지우고 새로 저장 (배치/콜드스타트/단건 재계산)
  *  - {@link #findCurrentFeed}: 피드 조회 시 read-time 오버레이
- *
- *  ── feed_date 의 의미 ──
- *    "노출 날짜" → "생성 날짜" 로 변경. viewer 당 row 1 세트만 유지.
- *    04:00 배치가 매일 viewer 전체 row 를 교체 — 자정 ~ 04:00 사이엔 어제 생성 피드 그대로 노출.
- *    명세서 §4.4 의 자정 리셋은 폐기 — UX 상 04:00 까지 빈 피드가 어색하다는 결정.
  *
  *  ── read-time 오버레이 ──
  *    - target status≠ACTIVE 또는 profile_status≠APPROVED → 제외 (정지/탈퇴/미승인)
@@ -40,13 +37,10 @@ public class DailyFeedRepository {
 
     /**
      * 현재 피드 조회 (read-time 오버레이 + 카드 표시 필드 join + 거리 km 계산).
-     *  - viewer 당 1 세트만 있으므로 feed_date 필터 없이 viewer 의 모든 row
      *  - rank 오름차순
      *  - 대표 사진: user_profile_image 의 sort_order 가장 낮은 것 (서브쿼리)
      *  - 거리: {@code ST_Distance_Sphere}(POINT(viewer 좌표), POINT(target 좌표)) / 1000 (km)
      *           viewer 또는 target 의 area 가 null 이면 distanceKm = null
-     *
-     *  N+1 회피 — 1 쿼리에 user / profile / area / 대표 사진 / 거리 모두 처리.
      */
     public List<FeedView> findCurrentFeed(long viewerId) {
         @SuppressWarnings("unchecked")
@@ -116,7 +110,6 @@ public class DailyFeedRepository {
     }
 
     /**
-     * read-time 오버레이 적용 전 raw row 수 — viewer 의 daily_feed 자체가 비어있는지 판별.
      *  본인이 다 액션해서 오버레이로 0건이 된 경우 vs 04:00 배치 자체가 안 돈 경우 구분 (§10.20 lazy fallback).
      */
     public int countByViewerId(long viewerId) {
@@ -124,6 +117,21 @@ public class DailyFeedRepository {
                 "SELECT COUNT(*) FROM match_daily_feed WHERE viewer_id = :v")
                 .setParameter("v", viewerId)
                 .getSingleResult()).intValue();
+    }
+
+    /**
+     * 어제 viewer 의 target_id set. 오늘 계산 결과와 비교해 같으면 replace skip.
+     *  read-time 오버레이 무시 — 실제 저장된 row 기준. 비어있으면 빈 Set 반환.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<Long> findTargetIdsByViewerId(long viewerId) {
+        List<Number> rows = em.createNativeQuery(
+                "SELECT target_id FROM match_daily_feed WHERE viewer_id = :v")
+                .setParameter("v", viewerId)
+                .getResultList();
+        Set<Long> set = new HashSet<>(rows.size() * 2);
+        for (Number n : rows) set.add(n.longValue());
+        return set;
     }
 
     /** 피드 한 행의 표시용 view (read-time 결과 + 카드 표시 데이터 + 거리 km). */
@@ -145,7 +153,7 @@ public class DailyFeedRepository {
 
     /**
      * viewer 의 모든 row 를 교체 — DELETE (전체 날짜) + INSERT.
-     *  feed_date 는 생성 시각의 날짜로 저장 (운영 디버깅용).
+     *  feed_date 는 생성 시각의 날짜로 저장
      */
     @Transactional
     public void replaceDailyFeed(long viewerId, LocalDate date, List<DailyFeedRow> rows) {

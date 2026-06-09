@@ -32,7 +32,13 @@ import java.util.Objects;
 @Entity
 @Table(
         name = "match_daily_feed",
-        indexes = @Index(name = "idx_feed_viewer", columnList = "viewer_id, feed_date")
+        indexes = {
+                @Index(name = "idx_feed_viewer", columnList = "viewer_id, feed_date"),
+                // 관리자 일일 피드 조회 — viewer_id 없이 feed_date 만 (default = 오늘) 검색 시 풀 스캔 방지.
+                @Index(name = "idx_feed_date", columnList = "feed_date"),
+                // 관리자 일일 피드 조회 — target_id 단독/결합 검색 빠르게 + FK lookup 안정성.
+                @Index(name = "idx_feed_target", columnList = "target_id")
+        }
 )
 @IdClass(MatchDailyFeed.PK.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -63,9 +69,9 @@ public class MatchDailyFeed {
     @Column(name = "tags_json", nullable = false, columnDefinition = "JSON")
     private String tagsJson;
 
-    @Column(name = "created_at", nullable = false,
+    @Column(name = "create_time", nullable = false,
             columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 
     @Builder
     private MatchDailyFeed(LocalDate feedDate, Long viewerId, Short rank, Long targetId,
@@ -77,7 +83,7 @@ public class MatchDailyFeed {
         this.sortKey = sortKey;
         this.slotType = slotType;
         this.tagsJson = tagsJson;
-        this.createdAt = LocalDateTime.now();
+        this.createTime = LocalDateTime.now();
     }
 
     public enum SlotType { SCORE, NEWBIE, RANDOM, CUSTOM_KW, FRESH_NEWBIE }
