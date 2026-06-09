@@ -27,10 +27,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * 매 정시 신규자 fan-out — 04:00 정상 배치가 비워둔 예약 rank 자리에 신규자 채움.
+ * 매 30분 신규자 fan-out — 04:00 정상 배치가 비워둔 예약 rank 자리에 신규자 채움.
  *
  *  슬롯 정책 ({@link FeedSelector#computeReservedRanks}):
- *    dailyShow=50, freshNewbieReservedSlots=5 → reserved = {10, 20, 30, 40, 50}
+ *    dailyShow=55, freshNewbieReservedSlots=5 → reserved = {5, 10, 15, 25, 25}
  *    04:00 배치는 reserved rank 를 skip 하고 나머지 자리 채움
  *    미니 배치는 viewer 의 reserved rank 중 비어있는 첫 자리에 INSERT (오름차순 시도)
  *
@@ -48,7 +48,7 @@ import java.util.TreeSet;
  *  점수/태그 정책 (FRESH_NEWBIE 슬롯):
  *    sort_key/tags_json 정상 계산값 적용 — rank 만 reserved 자리에 강제 배치.
  *    카드 표시 시 (#키워드/#이상형/#가까운지역 등) 일반 슬롯과 일관된 태그 노출.
- *    created_at 은 NOW() 명시 (운영 sql_mode 가 NO_ZERO_DATE 미적용 시 안전장치).
+ *    create_time 은 NOW() 명시
  */
 @Slf4j
 @Component
@@ -64,9 +64,6 @@ public class RecentNewbieBatch {
 
     /**
      * 매시 30분 KST — 04:00 NightlyMatchBatch 와 시간차 30분 확보.
-     *  매시 0분 트리거였을 때 04:00 정시에 두 배치가 동시 실행되어
-     *  같은 viewer 의 match_daily_feed row 에 락 충돌 → fanOut 일부 실패 가능성이 있었음.
-     *  30분 시프트로 NightlyMatchBatch (~10~20분 소요) 종료 후 진입 보장.
      */
     @Scheduled(cron = "0 30 * * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "RecentNewbieBatch.run",
@@ -149,8 +146,7 @@ public class RecentNewbieBatch {
 
         /*
          * 호환 viewer 전체 → 메모리 셔플 → cap 만큼 자르기.
-         *  SQL 의 `ORDER BY RAND() LIMIT cap` 는 후보 수 N 에 비례한 filesort 비용이 발생해 N 이 커질수록 비싸짐.
-         *  메모리 셔플 (`Collections.shuffle` = Fisher–Yates O(n)) 로 대체:
+         *  메모리 셔플 (`Collections.shuffle` = Fisher–Yates O(n))
          *    - 후보 ≤ 1만 수준에서 명확히 유리, 그 이상도 손해 없음.
          *    - 10만 이상으로 커지면 별도 sampling 패턴 (random offset / id 범위 / Bernoulli) 검토.
          */
@@ -187,7 +183,7 @@ public class RecentNewbieBatch {
             for (Integer r : reservedRanks) {
                 int rows = em.createNativeQuery("""
                         INSERT IGNORE INTO match_daily_feed
-                               (feed_date, viewer_id, `rank`, target_id, sort_key, slot_type, tags_json, created_at)
+                               (feed_date, viewer_id, `rank`, target_id, sort_key, slot_type, tags_json, create_time)
                         VALUES (CURDATE(), :v, :r, :newcomer, :sortKey, 'FRESH_NEWBIE', :tagsJson, NOW())
                         """)
                         .setParameter("v", viewerId)

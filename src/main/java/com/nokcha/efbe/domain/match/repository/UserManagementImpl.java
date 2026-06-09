@@ -33,6 +33,7 @@ import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
  *
  *  ── 흐름 ────────────────────────────────────────────
  *    findEligible(me, cfg):
- *      1) native SQL 로 후보 ID 풀 추리기 (명세서 §7.3)
+ *      1) native SQL 로 후보 ID 풀 추리기
  *         · users + user_profile + code_area JOIN
  *         · status / profile_status / last_active / age / 국내·해외 그룹
  *         · block 양방향 제외
@@ -65,9 +66,6 @@ import java.util.stream.Collectors;
  *      2) ID 목록으로 batch fetch (User/Profile/Personal/Keyword/CustomKeyword/CodeArea/CodeKeyword/CodePersonal)
  *      3) 메모리에서 UserContext 조립
  *
- *  ── 성능 노트 ───────────────────────────────────────
- *    · batch fetch 7회 + IN 절. 풀 500 명 기준 < 100ms 목표.
- *    · 트래픽 커지면 좌표 인덱스 + 바운딩박스 + 캐시 도입 (§8).
  */
 @Slf4j
 @Repository
@@ -189,8 +187,8 @@ public class UserManagementImpl implements UserManagement {
                       SELECT ma.target_id, COUNT(*) AS likes
                         FROM match_actions ma
                        WHERE ma.action_type IN ('LIKE','SUPER_LIKE')
-                         AND ma.created_at >= :yStart
-                         AND ma.created_at <  :yEnd
+                         AND ma.create_time >= :yStart
+                         AND ma.create_time <  :yEnd
                        GROUP BY ma.target_id
                   ) liked ON liked.target_id = u.id
                  WHERE u.status = 'ACTIVE'
@@ -239,6 +237,82 @@ public class UserManagementImpl implements UserManagement {
                 .getResultList();
 
         return loadContexts(toLongIds(rows));
+    }
+
+    /**
+     * 활성 viewer 전체 → Map<id, UserContext>.
+     *  내부 = findEligibleViewers + List → Map. loadContexts 1회만.
+     */
+    @Override
+    public Map<Long, UserContext> loadAllActiveContextsAsMap(MatchingConfig cfg) {
+        List<UserContext> all = findEligibleViewers(cfg);
+        Map<Long, UserContext> map = new HashMap<>(Math.max(16, all.size() * 2));
+        for (UserContext ctx : all) {
+            map.put(ctx.id(), ctx);
+        }
+        return map;
+    }
+
+    /**
+     *  하드필터 + bbox 좌표 필터 적용 후 ID 만 반환
+     *
+     *  bbox: viewer 의 좌표 기준 radiusKm 반경의 위경도 사각형. code_area.(latitude, longitude) 의
+     *        복합 인덱스가 있으면 인덱스 range scan. 해외 그룹은 좌표 필터 skip (그룹 크기 작음).
+     */
+    @Override
+    public List<Long> findEligibleIds(UserContext me, MatchingConfig cfg, int radiusKm) {
+        boolean meIsOverseas = !CandidateSelector.isDomestic(me);
+        LocalDateTime since = LocalDateTime.now().minusDays(cfg.getLastActiveDays());
+
+        // bbox 계산 — 위도 1도 ≈ 111km, 경도 1도 ≈ 111km × cos(latitude).
+        // 국내 그룹만 bbox 적용. 해외 그룹은 좌표 비교 의미가 없어 skip.
+        StringBuilder bboxClause = new StringBuilder();
+        if (!meIsOverseas && me.lat() != 0 && me.lon() != 0) {
+            bboxClause.append(" AND ca.latitude  BETWEEN :latMin  AND :latMax ");
+            bboxClause.append(" AND ca.longitude BETWEEN :lonMin AND :lonMax ");
+        }
+
+        String sql = """
+                SELECT u.id
+                  FROM users u
+                  JOIN user_profile up ON up.user_id = u.id
+                  JOIN code_area ca    ON ca.id = u.area_id
+                 WHERE u.id != :meId
+                   AND u.status = 'ACTIVE'
+                   AND up.profile_status = 'APPROVED'
+                   AND u.last_active_at >= :since
+                   AND ABS(u.age - :myAge) <= :ageMaxDiff
+                   AND (ca.country = '해외') = :meIsOverseas
+                   AND u.id NOT IN (SELECT b.blocked_id FROM block b WHERE b.blocker_id = :meId)
+                   AND u.id NOT IN (SELECT b.blocker_id FROM block b WHERE b.blocked_id = :meId)
+                   AND u.id NOT IN (
+                       SELECT ma.target_id FROM match_actions ma
+                        WHERE ma.actor_id = :meId
+                          AND (
+                              ma.action_type IN ('LIKE','SUPER_LIKE','POWER_MESSAGE')
+                              OR (ma.action_type = 'PASS' AND ma.expires_at >= NOW())
+                          )
+                   )
+                """ + bboxClause;
+
+        Query q = em.createNativeQuery(sql)
+                .setParameter("meId", me.id())
+                .setParameter("myAge", me.age())
+                .setParameter("ageMaxDiff", cfg.getAgeMaxDiff())
+                .setParameter("since", since)
+                .setParameter("meIsOverseas", meIsOverseas ? 1 : 0);
+        if (!meIsOverseas && me.lat() != 0 && me.lon() != 0) {
+            double latDelta = radiusKm / 111.0;
+            double lonDelta = radiusKm / (111.0 * Math.max(0.1, Math.cos(Math.toRadians(me.lat()))));
+            q.setParameter("latMin", me.lat() - latDelta);
+            q.setParameter("latMax", me.lat() + latDelta);
+            q.setParameter("lonMin", me.lon() - lonDelta);
+            q.setParameter("lonMax", me.lon() + lonDelta);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Number> rows = q.getResultList();
+        return toLongIds(rows);
     }
 
     @Override
@@ -342,7 +416,6 @@ public class UserManagementImpl implements UserManagement {
                                   List<UserKeyword> keywords, Map<Long, CodeKeyword> codeKeywordMap,
                                   List<UserCustomKeyword> customs) {
 
-        /* signupAt: BaseEntity.createTime → LocalDate */
         LocalDate signupAt = u.getCreateTime() == null
                 ? LocalDate.now() : u.getCreateTime().toLocalDate();
 
