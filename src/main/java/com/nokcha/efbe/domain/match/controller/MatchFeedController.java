@@ -3,7 +3,7 @@ package com.nokcha.efbe.domain.match.controller;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.match.dto.response.FeedCardRspDto;
-import com.nokcha.efbe.domain.match.service.FeedService;
+import com.nokcha.efbe.domain.match.service.MatchFeedService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/matches/feed")
 @RequiredArgsConstructor
-public class FeedController {
+public class MatchFeedController {
 
-    private final FeedService feedService;
+    private final MatchFeedService matchFeedService;
     private final SecurityUtil securityUtil;
 
     @Operation(summary = "현재 피드 조회",
@@ -28,7 +28,7 @@ public class FeedController {
     @GetMapping
     public RspTemplate<List<FeedCardRspDto>> getCurrentFeed() {
         Long viewerId = securityUtil.getCurrentUserId();
-        List<FeedCardRspDto> data = feedService.getCurrentFeed(viewerId);
+        List<FeedCardRspDto> data = matchFeedService.getCurrentFeed(viewerId);
         return new RspTemplate<>(HttpStatus.OK, "피드 조회 성공", data);
     }
 }
