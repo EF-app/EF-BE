@@ -111,7 +111,7 @@ public class NightlyMatchBatch {
         AtomicInteger failCount = new AtomicInteger();
 
         long viewerStart = System.currentTimeMillis();
-        runViewersParallel(activeCache.values(), cfg, today, activeCache, metrics, successCount, failCount);
+        runViewersParallel(activeCache.values(), activeCache.size(), cfg, today, activeCache, metrics, successCount, failCount);
         long viewerMs = System.currentTimeMillis() - viewerStart;
 
         long ms = System.currentTimeMillis() - start;
@@ -166,6 +166,8 @@ public class NightlyMatchBatch {
         AtomicInteger recoverCount = new AtomicInteger();
         AtomicInteger coldStartCount = new AtomicInteger();
         AtomicInteger failCount = new AtomicInteger();
+        AtomicInteger doneCounter = new AtomicInteger();
+        int totalFailed = failed.size();
 
         List<CompletableFuture<Void>> futures = new ArrayList<>(failed.size());
         for (UserContext me : failed) {
@@ -184,6 +186,11 @@ public class NightlyMatchBatch {
                         log.warn("[NightlyMatchBatch.recover] ColdStartFeed 도 실패 — userId={}, err={}",
                                 me.id(), e2.getMessage(), e2);
                     }
+                }
+                int done = doneCounter.incrementAndGet();
+                if (done % PROGRESS_LOG_EVERY == 0) {
+                    log.info("[NightlyMatchBatch.recover] 진행 — {}/{} done, {}",
+                            done, totalFailed, metrics.summary());
                 }
             }, matchBatchExecutor));
         }
@@ -204,21 +211,23 @@ public class NightlyMatchBatch {
      *  mid-progress 로그: PROGRESS_LOG_EVERY 마다 진행 보고.
      */
     private void runViewersParallel(Iterable<UserContext> viewers,
+                                    int totalViewers,
                                     MatchingConfig cfg, LocalDate today,
                                     Map<Long, UserContext> activeCache,
                                     BatchPhaseMetrics metrics,
                                     AtomicInteger successCount, AtomicInteger failCount) {
+        AtomicInteger doneCounter = new AtomicInteger();    // F1 — race 없는 atomic 카운터
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (UserContext me : viewers) {
             futures.add(CompletableFuture.runAsync(() -> {
                 try {
                     recomputer.process(me, cfg, today, activeCache, metrics);
-                    int done = (int) metrics.viewersDone.sum();
+                    int done = doneCounter.incrementAndGet();
                     metrics.viewersDone.increment();
                     successCount.incrementAndGet();
-                    if ((done + 1) % PROGRESS_LOG_EVERY == 0) {
+                    if (done % PROGRESS_LOG_EVERY == 0) {
                         log.info("[NightlyMatchBatch] 진행 — {}/{} done, {}",
-                                done + 1, "?", metrics.summary());
+                                done, totalViewers, metrics.summary());
                     }
                 } catch (Exception e) {
                     failCount.incrementAndGet();

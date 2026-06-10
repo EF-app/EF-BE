@@ -262,15 +262,21 @@ public class UserManagementImpl implements UserManagement {
     @Override
     public List<Long> findEligibleIds(UserContext me, MatchingConfig cfg, int radiusKm) {
         boolean meIsOverseas = !CandidateSelector.isDomestic(me);
-        LocalDateTime since = LocalDateTime.now().minusDays(cfg.getLastActiveDays());
+        boolean bboxApplied  = !meIsOverseas && me.lat() != 0 && me.lon() != 0;
+        LocalDateTime since  = LocalDateTime.now().minusDays(cfg.getLastActiveDays());
 
         // bbox 계산 — 위도 1도 ≈ 111km, 경도 1도 ≈ 111km × cos(latitude).
-        // 국내 그룹만 bbox 적용. 해외 그룹은 좌표 비교 의미가 없어 skip.
+        // 국내 + 좌표 있는 viewer 만 bbox 적용. 해외/좌표 0 은 skip.
         StringBuilder bboxClause = new StringBuilder();
-        if (!meIsOverseas && me.lat() != 0 && me.lon() != 0) {
+        if (bboxApplied) {
             bboxClause.append(" AND ca.latitude  BETWEEN :latMin  AND :latMax ");
             bboxClause.append(" AND ca.longitude BETWEEN :lonMin AND :lonMax ");
         }
+
+        //  bbox 못 적용 (좌표 0 / 해외) 면 결과셋이 모든 호환 ACTIVE 후보로 폭주 가능.
+        //   안전망으로 cap = poolSize × 4 의 LIMIT 부여. cap 안 후보가 충분히 있으므로 풀 500 구성에 무리 X.
+        //   PK 순으로 잘리는 편향은 호출처 (CandidateSelector) 의 메모리 셔플로 흡수.
+        String limitClause = bboxApplied ? "" : " LIMIT :fallbackCap ";
 
         String sql = """
                 SELECT u.id
@@ -293,7 +299,7 @@ public class UserManagementImpl implements UserManagement {
                               OR (ma.action_type = 'PASS' AND ma.expires_at >= NOW())
                           )
                    )
-                """ + bboxClause;
+                """ + bboxClause + limitClause;
 
         Query q = em.createNativeQuery(sql)
                 .setParameter("meId", me.id())
@@ -301,13 +307,15 @@ public class UserManagementImpl implements UserManagement {
                 .setParameter("ageMaxDiff", cfg.getAgeMaxDiff())
                 .setParameter("since", since)
                 .setParameter("meIsOverseas", meIsOverseas ? 1 : 0);
-        if (!meIsOverseas && me.lat() != 0 && me.lon() != 0) {
+        if (bboxApplied) {
             double latDelta = radiusKm / 111.0;
             double lonDelta = radiusKm / (111.0 * Math.max(0.1, Math.cos(Math.toRadians(me.lat()))));
             q.setParameter("latMin", me.lat() - latDelta);
             q.setParameter("latMax", me.lat() + latDelta);
             q.setParameter("lonMin", me.lon() - lonDelta);
             q.setParameter("lonMax", me.lon() + lonDelta);
+        } else {
+            q.setParameter("fallbackCap", cfg.getPoolSize() * 4);
         }
 
         @SuppressWarnings("unchecked")
