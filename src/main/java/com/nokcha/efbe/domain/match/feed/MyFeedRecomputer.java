@@ -93,7 +93,6 @@ public class MyFeedRecomputer {
      *
      *  풀 0명 fallback: ColdStartFeed.
      *  emptyRanks 백필: — reserved rank 자리 skip 하고 빈 자리 채움.
-     *  Step 5 skip: 어제 top-N target set 과 같으면 replaceDailyFeed 자체 skip.
      */
     public void process(UserContext me, MatchingConfig cfg, LocalDate today,
                         Map<Long, UserContext> activeCache, BatchPhaseMetrics metrics) {
@@ -122,27 +121,9 @@ public class MyFeedRecomputer {
         rows = backfillEmptyRanks(me, cfg, rows);
         if (metrics != null) metrics.backfillNs.add(System.nanoTime() - t3);
 
-        // 어제 target set 과 같으면 DB write skip
         long t4 = System.nanoTime();
-        if (isFeedUnchanged(me.id(), rows)) {
-            if (metrics != null) metrics.feedSkipped.increment();
-            log.debug("[MyFeedRecomputer] feed 변화 없음 — DB write skip. userId={}", me.id());
-        } else {
-            dailyFeedRepo.replaceDailyFeed(me.id(), today, rows);
-        }
+        dailyFeedRepo.replaceDailyFeed(me.id(), today, rows);
         if (metrics != null) metrics.replaceNs.add(System.nanoTime() - t4);
-    }
-
-    /**
-     *  어제 daily_feed 의 target_id set 과 오늘 계산 결과 set 이 같으면 skip.
-     *  주의: tags_json / sort_key / rank 가 같이 바뀔 수 있어 (KeywordFreqService 빈도 영향)
-     *       엄밀히는 row 전체 hash 비교가 옳음. 보수적 단순화 — set 만 비교. -- 아직 보류
-     *       hit ratio 측정 후 실제 카드 표시에 차이가 있는지 운영 검증 필요.
-     */
-    private boolean isFeedUnchanged(long viewerId, List<DailyFeedRow> newRows) {
-        Set<Long> newSet = newRows.stream().map(DailyFeedRow::targetId).collect(Collectors.toSet());
-        Set<Long> oldSet = dailyFeedRepo.findTargetIdsByViewerId(viewerId);
-        return !oldSet.isEmpty() && oldSet.equals(newSet);
     }
 
     /**

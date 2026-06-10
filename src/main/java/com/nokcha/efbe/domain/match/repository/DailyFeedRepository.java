@@ -13,9 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 통합 지점 3 — match_daily_feed 저장 + read-time 오버레이 조회.
@@ -117,21 +115,6 @@ public class DailyFeedRepository {
                 "SELECT COUNT(*) FROM match_daily_feed WHERE viewer_id = :v")
                 .setParameter("v", viewerId)
                 .getSingleResult()).intValue();
-    }
-
-    /**
-     * 어제 viewer 의 target_id set. 오늘 계산 결과와 비교해 같으면 replace skip.
-     *  read-time 오버레이 무시 — 실제 저장된 row 기준. 비어있으면 빈 Set 반환.
-     */
-    @SuppressWarnings("unchecked")
-    public Set<Long> findTargetIdsByViewerId(long viewerId) {
-        List<Number> rows = em.createNativeQuery(
-                "SELECT target_id FROM match_daily_feed WHERE viewer_id = :v")
-                .setParameter("v", viewerId)
-                .getResultList();
-        Set<Long> set = new HashSet<>(rows.size() * 2);
-        for (Number n : rows) set.add(n.longValue());
-        return set;
     }
 
     /** 피드 한 행의 표시용 view (read-time 결과 + 카드 표시 데이터 + 거리 km). */

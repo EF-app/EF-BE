@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.LongAdder;
  *    - select:    FeedSelector 슬롯 선정 + sortKey + tags_json 렌더
  *    - backfill:  emptyRanks 백필 (§10.21)
  *    - replace:   DELETE + INSERT (replaceDailyFeed)
- *    - skipped:   변화 없음으로 replace 자체를 skip 한 viewer 수 (§10.25 Step 5)
  *
  *  소요 ms 합 = wall-clock 아님 (병렬 처리 시 thread 누계). thread 수로 나눠 평균 활용.
  */
@@ -25,7 +24,6 @@ public final class BatchPhaseMetrics {
     public final LongAdder replaceNs   = new LongAdder();
 
     public final LongAdder viewersDone = new LongAdder();
-    public final LongAdder feedSkipped = new LongAdder();   // Step 5 set-equal skip
 
     public long buildPoolMs() { return buildPoolNs.sum() / 1_000_000; }
     public long scoreMs()     { return scoreNs.sum() / 1_000_000; }
@@ -35,8 +33,8 @@ public final class BatchPhaseMetrics {
 
     public String summary() {
         return String.format(
-                "buildPool=%dms score=%dms select=%dms backfill=%dms replace=%dms viewers=%d skipped=%d",
+                "buildPool=%dms score=%dms select=%dms backfill=%dms replace=%dms viewers=%d",
                 buildPoolMs(), scoreMs(), selectMs(), backfillMs(), replaceMs(),
-                viewersDone.sum(), feedSkipped.sum());
+                viewersDone.sum());
     }
 }

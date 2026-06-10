@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *         a. 후보 풀 500 (CandidateSelector)
  *         b. 페어별 점수 + 태그 (MatchCalculator) — 메모리만 계산 (§10.20 score_cache 야간 적재 제거)
  *         c. 슬롯 50 선정 (FeedSelector) → match_daily_feed 교체 (+ §10.21 emptyRanks 백필)
- *         d. 어제 set 과 같으면 DB write skip
  *    5) BatchPhaseMetrics 합산 로그
  *
  *  05:00 보정 흐름 (recoverFailedViewers):
