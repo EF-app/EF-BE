@@ -13,6 +13,7 @@ import com.nokcha.efbe.domain.chat.dto.response.ChatProfileOpenRspDto;
 import com.nokcha.efbe.domain.chat.dto.response.ChatRoomRspDto;
 import com.nokcha.efbe.domain.chat.entity.ChatParticipant;
 import com.nokcha.efbe.domain.chat.entity.ChatReportEvidence;
+import com.nokcha.efbe.domain.chat.entity.ChatReportMessageType;
 import com.nokcha.efbe.domain.chat.entity.ChatRoom;
 import com.nokcha.efbe.domain.chat.entity.ChatRoomType;
 import com.nokcha.efbe.domain.chat.repository.ChatParticipantRepository;
@@ -291,12 +292,18 @@ public class ChatService {
                 .filter(this::hasEvidenceValue)
                 .map(message -> {
                     validateMessageSender(room, message.getSenderUserId());
+                    ChatReportMessageType messageType = resolveReportMessageType(message);
+                    validateReportEvidence(message, messageType);
                     return ChatReportEvidence.builder()
                             .report(report)
                             .chatRoom(room)
                             .firebaseMessageId(trimToNull(message.getFirebaseMessageId()))
+                            .messageType(messageType)
                             .senderUserId(message.getSenderUserId())
                             .contentSnapshot(trimToNull(message.getContentSnapshot()))
+                            .imageStoragePath(trimToNull(message.getImageStoragePath()))
+                            .imageUrlSnapshot(trimToNull(message.getImageUrlSnapshot()))
+                            .mimeType(trimToNull(message.getMimeType()))
                             .sentAt(message.getSentAt())
                             .build();
                 })
@@ -308,8 +315,32 @@ public class ChatService {
     private boolean hasEvidenceValue(ChatReportLeaveReqDto.MessageEvidence message) {
         return trimToNull(message.getFirebaseMessageId()) != null
                 || trimToNull(message.getContentSnapshot()) != null
+                || trimToNull(message.getImageStoragePath()) != null
+                || trimToNull(message.getImageUrlSnapshot()) != null
+                || trimToNull(message.getMimeType()) != null
                 || message.getSenderUserId() != null
                 || message.getSentAt() != null;
+    }
+
+    private ChatReportMessageType resolveReportMessageType(ChatReportLeaveReqDto.MessageEvidence message) {
+        if (message.getMessageType() != null) {
+            return message.getMessageType();
+        }
+        if (hasImageEvidenceValue(message)) {
+            return ChatReportMessageType.IMAGE;
+        }
+        return ChatReportMessageType.TEXT;
+    }
+
+    private void validateReportEvidence(ChatReportLeaveReqDto.MessageEvidence message, ChatReportMessageType messageType) {
+        if (messageType == ChatReportMessageType.IMAGE && !hasImageEvidenceValue(message)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    private boolean hasImageEvidenceValue(ChatReportLeaveReqDto.MessageEvidence message) {
+        return trimToNull(message.getImageStoragePath()) != null
+                || trimToNull(message.getImageUrlSnapshot()) != null;
     }
 
     private void validateMessageSender(ChatRoom room, Long senderUserId) {

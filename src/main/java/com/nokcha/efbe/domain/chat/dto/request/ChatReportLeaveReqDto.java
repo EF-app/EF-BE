@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.chat.dto.request;
 
+import com.nokcha.efbe.domain.chat.entity.ChatReportMessageType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -28,12 +29,27 @@ public class ChatReportLeaveReqDto {
         @Size(max = 200)
         private String firebaseMessageId;
 
+        @Schema(description = "신고 메시지 타입. null이면 이미지 필드 존재 여부에 따라 서버가 추론합니다.", example = "IMAGE", nullable = true)
+        private ChatReportMessageType messageType;
+
         @Schema(description = "메시지 발신자 유저 ID", example = "12", nullable = true)
         private Long senderUserId;
 
         @Schema(description = "신고 시점 메시지 본문 스냅샷", example = "욕설 메시지", nullable = true)
         @Size(max = 2000)
         private String contentSnapshot;
+
+        @Schema(description = "Firebase Storage path. 이미지 메시지 신고 시 권장", example = "chat/rooms/21/messages/9Lpm7VjM3Qe2/image.jpg", nullable = true)
+        @Size(max = 500)
+        private String imageStoragePath;
+
+        @Schema(description = "신고 시점 이미지 다운로드 URL 스냅샷", nullable = true)
+        @Size(max = 1000)
+        private String imageUrlSnapshot;
+
+        @Schema(description = "이미지 MIME 타입", example = "image/jpeg", nullable = true)
+        @Size(max = 100)
+        private String mimeType;
 
         @Schema(description = "Firebase 메시지 전송 시각", example = "2026-06-03T22:10:00", nullable = true)
         private LocalDateTime sentAt;
