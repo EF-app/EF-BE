@@ -11,6 +11,7 @@ import com.nokcha.efbe.domain.match.pool.CandidateSelector;
 import com.nokcha.efbe.domain.match.repository.DailyFeedRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
+import com.nokcha.efbe.infra.scheduler.match.BatchPhaseMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,15 +30,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+// MyFeedRecomputer = viewer 1명 단위 재계산 엔진.
+// 단건 트리거(관리자 강제, 프로필 변경, 복귀 3종) 와
+// 배치(04:00 정상 / 05:00 보정 / 부팅 catch-up / 관리자 full·recover)에서 모두 호출되는 매칭 도메인의 공용 진입점.
+// - 운영 관찰 후 필요하면 viewer 별 ShedLock 또는 row-level mutex 검토
+
 /**
  * 단건 (뷰어 1명) 피드 재계산.
  *  - NightlyMatchBatch 의 뷰어 1명 처리 흐름과 동일 (후보 풀 → 점수 → 슬롯 → 백필 → 교체 저장)
- *  - 풀 0명 fallback (§10.19): {@link ColdStartFeed#build} 흐름으로 대체
- *  - emptyRanks 백필 (§10.21): picked 가 dailyShow 미만이면 ColdStartFeed 풀에서 dedup 후 빈 자리 채움
+ *  - 풀 0명 fallback : {@link ColdStartFeed#build} 흐름으로 대체
+ *  - emptyRanks 백필 : picked 가 dailyShow 미만이면 ColdStartFeed 풀에서 dedup 후 빈 자리 채움
  *  - 호출처:
  *      · {@code NightlyMatchBatch.run} (04:00 전체 배치, 각 viewer 순회)
- *      · {@code NightlyMatchBatch.retryFailedViewers} (05:00 보정 배치)
- *      · {@code ProfileChangeListener.onProfileUpdated} (지역 / 이상형 중요포인트 변경)
+ *      · {@code NightlyMatchBatch.recoverFailedViewers} (05:00 보정 배치)
+ *      · {@code ProfileChangeListener.onProfileUpdated} (지역 변경)
  *
  *  ※ MatchingConfig 는 호출자가 한 번 로드해 넘기는 게 효율적 (배치 케이스). 단건 호출은
  *     {@link #recompute(long)} 가 내부에서 로드.
@@ -57,7 +63,7 @@ public class MyFeedRecomputer {
     private final SortKeyCalculator sortKeyCalc;
     private final TagDisplayFormatter tagFormatter;
 
-    /** 단건 호출 (편집 후 트리거) — cfg 로드 포함. */
+    /** 단건 호출 (편집 후 트리거) — cfg 로드 포함. 캐시 없음. */
     @Transactional
     public void recompute(long meUserId) {
         UserContext me = userMgmt.loadContext(meUserId);
@@ -65,38 +71,78 @@ public class MyFeedRecomputer {
             log.warn("[MyFeedRecomputer] UserContext 로드 실패 — userId={}", meUserId);
             return;
         }
-        process(me, configLoader.load(), LocalDate.now());
+        process(me, configLoader.load(), LocalDate.now(), null, null);
+    }
+
+    /** 캐시 없이 호출 — 기존 시그니처 호환 (CandidateSelector 가 null fallback). */
+    public void process(UserContext me, MatchingConfig cfg, LocalDate today) {
+        process(me, cfg, today, null, null);
+    }
+
+    /** activeCache 만 — metrics 없는 호출. */
+    public void process(UserContext me, MatchingConfig cfg, LocalDate today,
+                        Map<Long, UserContext> activeCache) {
+        process(me, cfg, today, activeCache, null);
     }
 
     /**
-     * 배치 호출 — 미리 로드된 cfg / today 재사용. NightlyMatchBatch 가 뷰어마다 호출.
+     * 배치 호출 — 미리 로드된 cfg / today / activeCache / metrics 재사용.
+     *  activeCache: 활성 viewer 전체 Map<id, UserContext> — viewer 1명당 loadContexts 의 N² 부하 회피.
+     *               null 이면 단건 호출 흐름 (CandidateSelector 가 findEligible 로 fallback).
+     *  metrics:     phase 별 ns 누계. null 이면 측정 skip.
      *
-     *  풀 0명 fallback: `CandidateSelector.buildPool` 결과가 비면 매칭 가능한 후보가 없는 상황
-     *  (예: 매우 좁은 인구 통계, 초기 운영 시점). ColdStartFeed 흐름으로 자동 대체.
-     *
-     *  emptyRanks 백필: 자격 풀은 있지만 dailyShow 미만으로 채워진 경우, ColdStartFeed 풀
-     *  (topLikedYesterday + recentlyActive) 에서 dedup 후 빈 자리 채움. reserved rank 자리는
-     *  RecentNewbieBatch 가 채울 자리라 백필에서도 skip.
+     *  풀 0명 fallback: ColdStartFeed.
+     *  emptyRanks 백필: — reserved rank 자리 skip 하고 빈 자리 채움.
+     *  Step 5 skip: 어제 top-N target set 과 같으면 replaceDailyFeed 자체 skip.
      */
-    public void process(UserContext me, MatchingConfig cfg, LocalDate today) {
-        List<UserContext> pool = candidateSelector.buildPool(me, cfg);
+    public void process(UserContext me, MatchingConfig cfg, LocalDate today,
+                        Map<Long, UserContext> activeCache, BatchPhaseMetrics metrics) {
+        long t0 = System.nanoTime();
+        List<UserContext> pool = candidateSelector.buildPool(me, cfg, activeCache);
+        if (metrics != null) metrics.buildPoolNs.add(System.nanoTime() - t0);
         if (pool.isEmpty()) {
             log.info("[MyFeedRecomputer] 풀 0명 — ColdStartFeed fallback. userId={}", me.id());
             coldStartFeed.build(me, cfg);
             return;
         }
 
-        // score_cache 야간 적재 제거 (§10.20) — 페어 점수는 메모리 안에서만 계산
+        long t1 = System.nanoTime();
         List<PairScore> scored = new ArrayList<>(pool.size());
         for (UserContext other : pool) {
             scored.add(calculator.score(me, other, cfg));
         }
+        if (metrics != null) metrics.scoreNs.add(System.nanoTime() - t1);
+
+        long t2 = System.nanoTime();
         List<DailyFeedRow> rows = feedSelector.select(me, scored, cfg);
+        if (metrics != null) metrics.selectNs.add(System.nanoTime() - t2);
 
-        // §10.21 백필 — 분기 없이 항상 호출. emptyRanks 가 0 이면 자연 종료.
+        // 백필 — 분기 없이 항상 호출. emptyRanks 가 0 이면 자연 종료.
+        long t3 = System.nanoTime();
         rows = backfillEmptyRanks(me, cfg, rows);
+        if (metrics != null) metrics.backfillNs.add(System.nanoTime() - t3);
 
-        dailyFeedRepo.replaceDailyFeed(me.id(), today, rows);
+        // 어제 target set 과 같으면 DB write skip
+        long t4 = System.nanoTime();
+        if (isFeedUnchanged(me.id(), rows)) {
+            if (metrics != null) metrics.feedSkipped.increment();
+            log.debug("[MyFeedRecomputer] feed 변화 없음 — DB write skip. userId={}", me.id());
+        } else {
+            dailyFeedRepo.replaceDailyFeed(me.id(), today, rows);
+        }
+        if (metrics != null) metrics.replaceNs.add(System.nanoTime() - t4);
+    }
+
+    /**
+     *  어제 daily_feed 의 target_id set 과 오늘 계산 결과 set 이 같으면 skip.
+     *  주의: tags_json / sort_key / rank 가 같이 바뀔 수 있어 (KeywordFreqService 빈도 영향)
+     *       엄밀히는 row 전체 hash 비교가 옳음. 보수적 단순화 — set 만 비교. -- 아직 보류
+     *       hit ratio 측정 후 실제 카드 표시에 차이가 있는지 운영 검증 필요.
+     */
+    private boolean isFeedUnchanged(long viewerId, List<DailyFeedRow> newRows) {
+        Set<Long> newSet = newRows.stream().map(DailyFeedRow::targetId).collect(Collectors.toSet());
+        Set<Long> oldSet = dailyFeedRepo.findTargetIdsByViewerId(viewerId);
+        return !oldSet.isEmpty() && oldSet.equals(newSet);
     }
 
     /**
