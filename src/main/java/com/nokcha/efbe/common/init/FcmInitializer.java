@@ -22,6 +22,9 @@ public class FcmInitializer {
     @Value("${fcm.firebase.config.path}")
     private String firebaseConfigPath;
 
+    @Value("${firebase.project-id}")
+    private String firebaseProjectId;
+
     @PostConstruct
     public void initialize() {
         if (isDefaultAppInitialized()) return;
@@ -34,6 +37,7 @@ public class FcmInitializer {
         try (InputStream inputStream = firebaseConfig.getInputStream()) {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(inputStream))
+                    .setProjectId(firebaseProjectId)
                     .build();
 
             FirebaseApp.initializeApp(options);

@@ -79,7 +79,7 @@ public class ChatController {
         return new RspTemplate<>(HttpStatus.OK, "채팅방을 나갔습니다.");
     }
 
-    @Operation(summary = "채팅 메시지 신고 후 나가기", description = "채팅방을 CHAT 대상으로 신고하고, Firebase 메시지 ID/본문 스냅샷을 증거로 저장한 뒤 기존 나가기 로직과 동일하게 방을 나갑니다.")
+    @Operation(summary = "채팅 메시지 신고 후 나가기", description = "채팅방을 CHAT 대상으로 신고하고, 요청의 Firebase 메시지 ID로 Firestore 원본 메시지를 읽어 증거로 저장한 뒤 기존 나가기 로직과 동일하게 방을 나갑니다.")
     @PostMapping("/{roomId}/report/leave")
     public RspTemplate<ReportRspDto> reportAndLeaveRoom(@PathVariable Long roomId, @Valid @RequestBody ChatReportLeaveReqDto reqDto) {
         Long userId = securityUtil.getCurrentUserId();

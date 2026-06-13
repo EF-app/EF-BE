@@ -101,6 +101,8 @@ public enum ErrorCode {
     NOT_FOUND_CHAT_MESSAGE(404, "메시지를 찾을 수 없습니다."),
     CHAT_ROOM_INACTIVE(400, "비활성화된 채팅방입니다."),
     CHAT_NOT_PARTICIPANT(403, "채팅방 참여자가 아닙니다."),
+    FIREBASE_CHAT_ROOM_CREATE_FAILED(500, "Firebase 채팅방 생성에 실패했습니다."),
+    FIREBASE_CHAT_MESSAGE_READ_FAILED(500, "Firebase 채팅 메시지 조회에 실패했습니다."),
 
     // 밸런스 게임
     NOT_FOUND_GAME(404, "밸런스 게임을 찾을 수 없습니다."),

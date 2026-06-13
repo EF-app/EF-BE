@@ -404,6 +404,7 @@ public class UserAuthService {
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .refreshToken(jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
+                .fcmToken(user.getFcmToken())
                 .suspension(suspension)
                 .build();
     }

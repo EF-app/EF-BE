@@ -2,6 +2,8 @@ package com.nokcha.efbe.domain.chat.dto.response;
 
 import com.nokcha.efbe.domain.chat.entity.ChatRoom;
 import com.nokcha.efbe.domain.chat.entity.ChatRoomType;
+import com.nokcha.efbe.domain.chat.entity.ChatParticipant;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -49,13 +51,41 @@ public class ChatRoomRspDto {
     @Schema(description = "활성 채팅방 여부", example = "true")
     private Boolean isActive;
 
+    @Schema(description = "삭제된 채팅방 여부. 양쪽 참여자가 모두 나가면 true", example = "false")
+    private Boolean isDelete;
+
     @Schema(description = "익명 채팅방 여부", example = "false")
     private Boolean isAnonymous;
+
+    @Schema(description = "요청자 기준 채팅방 메모", example = "대화 잘 맞는 사람", nullable = true)
+    private String memo;
+
+    @Schema(description = "상대 유저 ID", example = "14", nullable = true)
+    private Long userId;
+
+    @Schema(description = "상대 유저 닉네임 스냅샷", example = "녹차라떼", nullable = true)
+    private String userNicknameSnapshot;
+
+    @Schema(description = "상대 유저 상태", example = "ACTIVE", nullable = true)
+    private UserStatus userStatus;
 
     @Schema(description = "채팅방 생성 시각", example = "2026-05-25T16:00:00")
     private LocalDateTime createTime;
 
     public static ChatRoomRspDto from(ChatRoom r) {
+        return baseBuilder(r).build();
+    }
+
+    public static ChatRoomRspDto from(ChatRoom r, ChatParticipant myParticipant, ChatParticipant targetParticipant) {
+        return baseBuilder(r)
+                .memo(myParticipant == null ? null : myParticipant.getMemo())
+                .userId(resolveUserId(targetParticipant))
+                .userNicknameSnapshot(targetParticipant == null ? null : targetParticipant.getDisplayName())
+                .userStatus(resolveUserStatus(targetParticipant))
+                .build();
+    }
+
+    private static ChatRoomRspDtoBuilder baseBuilder(ChatRoom r) {
         return ChatRoomRspDto.builder()
                 .id(r.getId())
                 .uuid(r.getUuid())
@@ -69,8 +99,22 @@ public class ChatRoomRspDto {
                 .pairUserAId(r.getPairUserAId())
                 .pairUserBId(r.getPairUserBId())
                 .isActive(Boolean.TRUE.equals(r.getIsActive()))
+                .isDelete(Boolean.TRUE.equals(r.getIsDelete()))
                 .isAnonymous(Boolean.TRUE.equals(r.getIsAnonymous()))
-                .createTime(r.getCreateTime())
-                .build();
+                .createTime(r.getCreateTime());
+    }
+
+    private static Long resolveUserId(ChatParticipant participant) {
+        if (participant == null || participant.getUser() == null) {
+            return null;
+        }
+        return participant.getUser().getId();
+    }
+
+    private static UserStatus resolveUserStatus(ChatParticipant participant) {
+        if (participant == null || participant.getUser() == null) {
+            return null;
+        }
+        return participant.getUser().getStatus();
     }
 }

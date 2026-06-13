@@ -1,13 +1,12 @@
 package com.nokcha.efbe.domain.chat.dto.request;
 
-import com.nokcha.efbe.domain.chat.entity.ChatReportMessageType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -17,7 +16,7 @@ public class ChatReportLeaveReqDto {
 
     @Valid
     @Size(max = 20)
-    @Schema(description = "신고 증거 메시지 목록. Firebase 메시지 document id와 가능하면 본문 스냅샷을 함께 전달합니다.")
+    @Schema(description = "신고 증거 메시지 목록. Firebase 메시지 document id만 전달하면 서버가 Firestore 원본 메시지를 읽어 증거로 저장합니다.")
     private List<MessageEvidence> messages;
 
     @Getter
@@ -25,33 +24,9 @@ public class ChatReportLeaveReqDto {
     @Schema(description = "채팅 신고 증거 메시지")
     public static class MessageEvidence {
 
+        @NotBlank(message = "Firebase 메시지 document id는 필수입니다.")
         @Schema(description = "Firebase 메시지 document id", example = "9Lpm7VjM3Qe2")
         @Size(max = 200)
         private String firebaseMessageId;
-
-        @Schema(description = "신고 메시지 타입. null이면 이미지 필드 존재 여부에 따라 서버가 추론합니다.", example = "IMAGE", nullable = true)
-        private ChatReportMessageType messageType;
-
-        @Schema(description = "메시지 발신자 유저 ID", example = "12", nullable = true)
-        private Long senderUserId;
-
-        @Schema(description = "신고 시점 메시지 본문 스냅샷", example = "욕설 메시지", nullable = true)
-        @Size(max = 2000)
-        private String contentSnapshot;
-
-        @Schema(description = "Firebase Storage path. 이미지 메시지 신고 시 권장", example = "chat/rooms/21/messages/9Lpm7VjM3Qe2/image.jpg", nullable = true)
-        @Size(max = 500)
-        private String imageStoragePath;
-
-        @Schema(description = "신고 시점 이미지 다운로드 URL 스냅샷", nullable = true)
-        @Size(max = 1000)
-        private String imageUrlSnapshot;
-
-        @Schema(description = "이미지 MIME 타입", example = "image/jpeg", nullable = true)
-        @Size(max = 100)
-        private String mimeType;
-
-        @Schema(description = "Firebase 메시지 전송 시각", example = "2026-06-03T22:10:00", nullable = true)
-        private LocalDateTime sentAt;
     }
 }

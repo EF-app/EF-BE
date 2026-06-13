@@ -8,6 +8,7 @@ import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.chat.dto.request.ChatMemoReqDto;
 import com.nokcha.efbe.domain.chat.dto.request.ChatReportLeaveReqDto;
 import com.nokcha.efbe.domain.chat.dto.request.ChatRoomCreateReqDto;
+import com.nokcha.efbe.domain.chat.dto.firebase.ChatFirebaseMessageSnapshot;
 import com.nokcha.efbe.domain.chat.dto.response.ChatMemoRspDto;
 import com.nokcha.efbe.domain.chat.dto.response.ChatProfileOpenRspDto;
 import com.nokcha.efbe.domain.chat.dto.response.ChatRoomRspDto;
@@ -78,6 +79,7 @@ public class ChatService {
     private final CodePersonalRepository codePersonalRepository;
     private final AreaRepository areaRepository;
     private final CursorCodec cursorCodec;
+    private final ChatFirebaseService chatFirebaseService;
 
     // 내 채팅방 목록
     @Transactional(readOnly = true)
@@ -92,7 +94,10 @@ public class ChatService {
 
         boolean hasMore = rows.size() > pageSize;
         List<ChatRoom> page = hasMore ? rows.subList(0, pageSize) : rows;
-        List<ChatRoomRspDto> items = page.stream().map(ChatRoomRspDto::from).toList();
+        Map<Long, List<ChatParticipant>> participantsByRoom = loadParticipantsByRoom(page);
+        List<ChatRoomRspDto> items = page.stream()
+                .map(room -> toRoomRspDto(room, userId, participantsByRoom.getOrDefault(room.getId(), List.of())))
+                .toList();
         if (!hasMore) return CursorPageResponse.last(items);
 
         ChatRoom tail = page.getLast();
@@ -148,7 +153,7 @@ public class ChatService {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_CHAT_ROOM));
 
-        if (!Boolean.TRUE.equals(room.getIsActive())) {
+        if (Boolean.TRUE.equals(room.getIsDelete())) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_INACTIVE);
         }
 
@@ -158,12 +163,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.CHAT_ROOM_INACTIVE);
         }
 
-        participant.leave(LocalDateTime.now());
-
-        // 두 명 다 나가는 경우 채팅방 비활성화
-        if (!chatParticipantRepository.existsByChatRoom_IdAndLeftAtIsNull(roomId)) {
-            room.deactivate();
-        }
+        leaveParticipant(room, participant);
     }
 
     // 채팅 신고 후 나가기
@@ -179,10 +179,7 @@ public class ChatService {
         Report report = reportService.createReportEntity(userId, ReportTargetType.CHAT, roomId, null, null);
         saveChatReportEvidences(report, room, reqDto.getMessages());
 
-        participant.leave(LocalDateTime.now());
-        if (!chatParticipantRepository.existsByChatRoom_IdAndLeftAtIsNull(roomId)) {
-            room.deactivate();
-        }
+        leaveParticipant(room, participant);
 
         return ReportRspDto.from(report);
     }
@@ -266,9 +263,10 @@ public class ChatService {
     private ChatRoomRspDto createPostChatRoom(PostIt post, User partner, Pair pair, PostReplyReqDto req) {
         LocalDateTime now = LocalDateTime.now();
         String content = req.getContent().trim();
+        String firebaseId = chatFirebaseService.generateRoomDocumentId();
         ChatRoom chatRoom = chatRoomRepository.save(ChatRoom.builder()
                 .uuid(UUID.randomUUID().toString())
-                .firebaseId("chat_" + UUID.randomUUID())
+                .firebaseId(firebaseId)
                 .roomType(ChatRoomType.POST)
                 .post(post)
                 .postContentSnapshot(post.getContent())
@@ -281,7 +279,8 @@ public class ChatService {
 
         saveParticipants(chatRoom, post.getUser(), partner);
         post.increaseReplyCount();
-        return ChatRoomRspDto.from(chatRoom);
+        chatFirebaseService.createRoomDocument(chatRoom, participantIds(post.getUser(), partner));
+        return mapRoomForUser(chatRoom, partner.getId());
     }
 
     private void saveChatReportEvidences(Report report, ChatRoom room, List<ChatReportLeaveReqDto.MessageEvidence> messages) {
@@ -289,22 +288,25 @@ public class ChatService {
 
         List<ChatReportEvidence> evidences = messages.stream()
                 .filter(Objects::nonNull)
-                .filter(this::hasEvidenceValue)
                 .map(message -> {
-                    validateMessageSender(room, message.getSenderUserId());
-                    ChatReportMessageType messageType = resolveReportMessageType(message);
-                    validateReportEvidence(message, messageType);
+                    String firebaseMessageId = requireFirebaseMessageId(message);
+                    ChatFirebaseMessageSnapshot snapshot = chatFirebaseService.readMessage(
+                            room,
+                            firebaseMessageId
+                    );
+                    validateMessageSender(room, snapshot.senderUserId());
+                    validateReportEvidence(snapshot);
                     return ChatReportEvidence.builder()
                             .report(report)
                             .chatRoom(room)
-                            .firebaseMessageId(trimToNull(message.getFirebaseMessageId()))
-                            .messageType(messageType)
-                            .senderUserId(message.getSenderUserId())
-                            .contentSnapshot(trimToNull(message.getContentSnapshot()))
-                            .imageStoragePath(trimToNull(message.getImageStoragePath()))
-                            .imageUrlSnapshot(trimToNull(message.getImageUrlSnapshot()))
-                            .mimeType(trimToNull(message.getMimeType()))
-                            .sentAt(message.getSentAt())
+                            .firebaseMessageId(snapshot.firebaseMessageId())
+                            .messageType(snapshot.messageType())
+                            .senderUserId(snapshot.senderUserId())
+                            .contentSnapshot(snapshot.contentSnapshot())
+                            .imageStoragePath(snapshot.imageStoragePath())
+                            .imageUrlSnapshot(snapshot.imageUrlSnapshot())
+                            .mimeType(snapshot.mimeType())
+                            .sentAt(snapshot.sentAt())
                             .build();
                 })
                 .toList();
@@ -312,35 +314,20 @@ public class ChatService {
         if (!evidences.isEmpty()) chatReportEvidenceRepository.saveAll(evidences);
     }
 
-    private boolean hasEvidenceValue(ChatReportLeaveReqDto.MessageEvidence message) {
-        return trimToNull(message.getFirebaseMessageId()) != null
-                || trimToNull(message.getContentSnapshot()) != null
-                || trimToNull(message.getImageStoragePath()) != null
-                || trimToNull(message.getImageUrlSnapshot()) != null
-                || trimToNull(message.getMimeType()) != null
-                || message.getSenderUserId() != null
-                || message.getSentAt() != null;
-    }
-
-    private ChatReportMessageType resolveReportMessageType(ChatReportLeaveReqDto.MessageEvidence message) {
-        if (message.getMessageType() != null) {
-            return message.getMessageType();
-        }
-        if (hasImageEvidenceValue(message)) {
-            return ChatReportMessageType.IMAGE;
-        }
-        return ChatReportMessageType.TEXT;
-    }
-
-    private void validateReportEvidence(ChatReportLeaveReqDto.MessageEvidence message, ChatReportMessageType messageType) {
-        if (messageType == ChatReportMessageType.IMAGE && !hasImageEvidenceValue(message)) {
+    private String requireFirebaseMessageId(ChatReportLeaveReqDto.MessageEvidence message) {
+        String firebaseMessageId = trimToNull(message.getFirebaseMessageId());
+        if (firebaseMessageId == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
+        return firebaseMessageId;
     }
 
-    private boolean hasImageEvidenceValue(ChatReportLeaveReqDto.MessageEvidence message) {
-        return trimToNull(message.getImageStoragePath()) != null
-                || trimToNull(message.getImageUrlSnapshot()) != null;
+    private void validateReportEvidence(ChatFirebaseMessageSnapshot snapshot) {
+        if (snapshot.messageType() == ChatReportMessageType.IMAGE
+                && trimToNull(snapshot.imageStoragePath()) == null
+                && trimToNull(snapshot.imageUrlSnapshot()) == null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
     }
 
     private void validateMessageSender(ChatRoom room, Long senderUserId) {
@@ -367,12 +354,12 @@ public class ChatService {
         ChatRoom reusableRoom = findReusableMatchChatRoom(pair);
         if (reusableRoom != null) {
             rejoinParticipants(reusableRoom, currentUser, targetUser);
-            return ChatRoomRspDto.from(reusableRoom);
+            return mapRoomForUser(reusableRoom, currentUser.getId());
         }
 
         ChatRoom room = chatRoomRepository.save(ChatRoom.builder()
                 .uuid(generateUuid())
-                .firebaseId(resolveFirebaseId(reqDto))
+                .firebaseId(chatFirebaseService.generateRoomDocumentId())
                 .roomType(ChatRoomType.MATCH)
                 .matchResultId(reqDto.getMatchResultId())
                 .pairUserAId(pair.userAId())
@@ -380,7 +367,8 @@ public class ChatService {
                 .build());
 
         saveParticipants(room, currentUser, targetUser);
-        return ChatRoomRspDto.from(room);
+        chatFirebaseService.createRoomDocument(room, participantIds(currentUser, targetUser));
+        return mapRoomForUser(room, currentUser.getId());
     }
 
     private ChatRoomRspDto createPowerMessageRoom(User currentUser, ChatRoomCreateReqDto reqDto) {
@@ -395,12 +383,12 @@ public class ChatService {
         ChatRoom reusableRoom = findReusableMatchChatRoom(pair);
         if (reusableRoom != null) {
             rejoinParticipants(reusableRoom, currentUser, targetUser);
-            return ChatRoomRspDto.from(reusableRoom);
+            return mapRoomForUser(reusableRoom, currentUser.getId());
         }
 
         ChatRoom room = chatRoomRepository.save(ChatRoom.builder()
                 .uuid(generateUuid())
-                .firebaseId(resolveFirebaseId(reqDto))
+                .firebaseId(chatFirebaseService.generateRoomDocumentId())
                 .roomType(ChatRoomType.POWER_MESSAGE)
                 .powerMessage(reqDto.getPowerMessage().trim())
                 .powerPinnedUntil(LocalDateTime.now().plusDays(3))
@@ -411,11 +399,54 @@ public class ChatService {
                 .build());
 
         saveParticipants(room, currentUser, targetUser);
-        return ChatRoomRspDto.from(room);
+        chatFirebaseService.createRoomDocument(room, participantIds(currentUser, targetUser));
+        return mapRoomForUser(room, currentUser.getId());
+    }
+
+    private Map<Long, List<ChatParticipant>> loadParticipantsByRoom(List<ChatRoom> rooms) {
+        if (rooms == null || rooms.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> roomIds = rooms.stream()
+                .map(ChatRoom::getId)
+                .toList();
+        return chatParticipantRepository.findWithUserByChatRoom_IdIn(roomIds).stream()
+                .collect(Collectors.groupingBy(participant -> participant.getChatRoom().getId()));
+    }
+
+    private ChatRoomRspDto mapRoomForUser(ChatRoom room, Long viewerUserId) {
+        return toRoomRspDto(room, viewerUserId, chatParticipantRepository.findWithUserByChatRoom_Id(room.getId()));
+    }
+
+    private ChatRoomRspDto toRoomRspDto(ChatRoom room, Long viewerUserId, List<ChatParticipant> participants) {
+        ChatParticipant myParticipant = null;
+        ChatParticipant targetParticipant = null;
+
+        for (ChatParticipant participant : participants) {
+            if (participant.getUser() == null) {
+                continue;
+            }
+            if (participant.getUser().getId().equals(viewerUserId)) {
+                myParticipant = participant;
+            } else if (targetParticipant == null) {
+                targetParticipant = participant;
+            }
+        }
+
+        return ChatRoomRspDto.from(room, myParticipant, targetParticipant);
+    }
+
+    private void leaveParticipant(ChatRoom room, ChatParticipant participant) {
+        participant.leave(LocalDateTime.now());
+        room.deactivate();
+
+        if (!chatParticipantRepository.existsByChatRoom_IdAndLeftAtIsNull(room.getId())) {
+            room.delete();
+        }
     }
 
     private ChatRoom findReusableMatchChatRoom(Pair pair) {
-        return chatRoomRepository.findFirstByRoomTypeInAndPairUserAIdAndPairUserBIdAndIsActiveTrueOrderByCreateTimeDescIdDesc(
+        return chatRoomRepository.findFirstByRoomTypeInAndPairUserAIdAndPairUserBIdAndIsActiveTrueAndIsDeleteFalseOrderByCreateTimeDescIdDesc(
                         MATCH_CHAT_ROOM_TYPES, pair.userAId(), pair.userBId())
                 .filter(room -> room.getCreateTime() != null)
                 .filter(room -> !room.getCreateTime().isBefore(LocalDateTime.now().minusDays(MATCH_ROOM_REUSE_DAYS)))
@@ -453,6 +484,10 @@ public class ChatService {
                 .build();
     }
 
+    private List<Long> participantIds(User firstUser, User secondUser) {
+        return List.of(firstUser.getId(), secondUser.getId());
+    }
+
     private User getActiveUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
@@ -466,13 +501,6 @@ public class ChatService {
         if (currentUserId.equals(targetUserId)) {
             throw new BusinessException(ErrorCode.SELF_ACTION_FORBIDDEN);
         }
-    }
-
-    private String resolveFirebaseId(ChatRoomCreateReqDto reqDto) {
-        if (reqDto.getFirebaseId() != null && !reqDto.getFirebaseId().isBlank()) {
-            return reqDto.getFirebaseId().trim();
-        }
-        return "chat_" + generateUuid();
     }
 
     private String generateUuid() {
@@ -498,7 +526,7 @@ public class ChatService {
     private ChatRoom getActiveRoom(Long roomId) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_CHAT_ROOM));
-        if (!Boolean.TRUE.equals(room.getIsActive())) {
+        if (Boolean.TRUE.equals(room.getIsDelete())) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_INACTIVE);
         }
         return room;

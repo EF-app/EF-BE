@@ -15,7 +15,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     // 내 채팅방 목록
     @Query("select r from ChatRoom r " +
-            "where r.isActive = true " +
+            "where r.isDelete = false " +
             "and exists (select p.id from ChatParticipant p " +
             "            where p.chatRoom = r and p.user.id = :userId and p.leftAt is null) " +
             "order by coalesce(r.lastMessageAt, r.createTime) desc, r.id desc")
@@ -23,7 +23,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     // 내 채팅방 목록 - 커서 이후 페이지
     @Query("select r from ChatRoom r " +
-            "where r.isActive = true " +
+            "where r.isDelete = false " +
             "and exists (select p.id from ChatParticipant p " +
             "            where p.chatRoom = r and p.user.id = :userId and p.leftAt is null) " +
             "and (coalesce(r.lastMessageAt, r.createTime) < :cursorSortAt " +
@@ -31,7 +31,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "order by coalesce(r.lastMessageAt, r.createTime) desc, r.id desc")
     List<ChatRoom> findMyRoomsAfterCursor(@Param("userId") Long userId, @Param("cursorSortAt") LocalDateTime cursorSortAt, @Param("cursorId") Long cursorId, Pageable pageable);
 
-    Optional<ChatRoom> findFirstByRoomTypeInAndPairUserAIdAndPairUserBIdAndIsActiveTrueOrderByCreateTimeDescIdDesc(
+    Optional<ChatRoom> findFirstByRoomTypeInAndPairUserAIdAndPairUserBIdAndIsActiveTrueAndIsDeleteFalseOrderByCreateTimeDescIdDesc(
             List<ChatRoomType> roomTypes,
             Long pairUserAId,
             Long pairUserBId

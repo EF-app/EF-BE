@@ -79,6 +79,9 @@ public class ChatRoom extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = Boolean.TRUE;
 
+    @Column(name = "is_delete", nullable = false)
+    private Boolean isDelete = Boolean.FALSE;
+
     @Column(name = "is_anonymous", nullable = false)
     private Boolean isAnonymous = Boolean.FALSE;
 
@@ -89,7 +92,7 @@ public class ChatRoom extends BaseEntity {
     private LocalDateTime lastMessageAt;
 
     @Builder
-    private ChatRoom(String uuid, String firebaseId, ChatRoomType roomType, PostIt post, String postContentSnapshot, String powerMessage, LocalDateTime powerPinnedUntil, Long matchResultId, Long pairUserAId, Long pairUserBId, Boolean isActive, Boolean isAnonymous, String lastMessage, LocalDateTime lastMessageAt) {
+    private ChatRoom(String uuid, String firebaseId, ChatRoomType roomType, PostIt post, String postContentSnapshot, String powerMessage, LocalDateTime powerPinnedUntil, Long matchResultId, Long pairUserAId, Long pairUserBId, Boolean isActive, Boolean isDelete, Boolean isAnonymous, String lastMessage, LocalDateTime lastMessageAt) {
         this.uuid = uuid;
         this.firebaseId = firebaseId;
         this.roomType = roomType;
@@ -101,6 +104,7 @@ public class ChatRoom extends BaseEntity {
         this.pairUserAId = pairUserAId;
         this.pairUserBId = pairUserBId;
         this.isActive = isActive == null ? Boolean.TRUE : isActive;
+        this.isDelete = Boolean.TRUE.equals(isDelete);
         this.isAnonymous = Boolean.TRUE.equals(isAnonymous);
         this.lastMessage = lastMessage;
         this.lastMessageAt = lastMessageAt;
@@ -108,5 +112,9 @@ public class ChatRoom extends BaseEntity {
 
     public void deactivate() {
         this.isActive = Boolean.FALSE;
+    }
+
+    public void delete() {
+        this.isDelete = Boolean.TRUE;
     }
 }
