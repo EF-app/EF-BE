@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.user.controller;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.user.service.UserActivityRecorder;
@@ -29,14 +30,20 @@ public class UserActivityController {
 
     private final SecurityUtil securityUtil;
     private final UserActivityRecorder recorder;
+    private final Cache<Long, Boolean> userActivityThrottleCache;
 
     @Operation(summary = "유저 활동 heartbeat",
-            description = "FE 앱 포그라운드 동안 5분마다 호출. last_active_at = NOW() 강제 갱신. " +
-                    "Interceptor throttle 우회 — heartbeat 자체가 명시적 의도.")
+            description = "FE 앱 포그라운드 동안 5분마다 호출. last_active_at = NOW() 갱신. " +
+                    "Interceptor 와 같은 5분 throttle 적용 — FE 버그나 악의적 다중 호출 차단.")
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/heartbeat")
     public RspTemplate<Void> heartbeat() {
         Long userId = securityUtil.getCurrentUserId();
+        // 5분 안 이미 갱신된 user 는 skip — FE setInterval 버그(예: 5초 호출)나 악의적 폭주 차단.
+        if (userActivityThrottleCache.getIfPresent(userId) != null) {
+            return new RspTemplate<>(HttpStatus.OK, "활동 시각이 이미 최신입니다.");
+        }
+        userActivityThrottleCache.put(userId, Boolean.TRUE);
         recorder.touch(userId);
         return new RspTemplate<>(HttpStatus.OK, "활동 시각이 갱신되었습니다.");
     }

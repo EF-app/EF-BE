@@ -38,7 +38,8 @@ public class UserActivityConfig {
         ex.setMaxPoolSize(16);
         ex.setQueueCapacity(10_000);
         ex.setThreadNamePrefix("user-activity-");
-        ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // DiscardOldestPolicy 는 가장 오래된 task 를 폐기 — 갱신 누락은 다음 request / heartbeat 가 흡수.
+        ex.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
         ex.setWaitForTasksToCompleteOnShutdown(true);
         ex.setAwaitTerminationSeconds(10);
         ex.initialize();

@@ -28,7 +28,7 @@ public class UserActivityRecorder {
     private final EntityManager em;
 
     @Async("userActivityExecutor")
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 2)
     public void touch(long userId) {
         try {
             em.createNativeQuery("UPDATE users SET last_active_at = NOW() WHERE id = :id")
