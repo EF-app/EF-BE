@@ -32,6 +32,7 @@ import com.nokcha.efbe.domain.profile.entity.UserKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserPersonal;
 import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
 import com.nokcha.efbe.domain.profile.entity.UserProfile;
+import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
@@ -45,6 +46,7 @@ import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
+import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -78,6 +80,7 @@ public class ChatService {
     private final CodeKeywordRepository codeKeywordRepository;
     private final CodePersonalRepository codePersonalRepository;
     private final AreaRepository areaRepository;
+    private final ProfileImageRepository profileImageRepository;
     private final CursorCodec cursorCodec;
     private final ChatFirebaseService chatFirebaseService;
 
@@ -95,8 +98,9 @@ public class ChatService {
         boolean hasMore = rows.size() > pageSize;
         List<ChatRoom> page = hasMore ? rows.subList(0, pageSize) : rows;
         Map<Long, List<ChatParticipant>> participantsByRoom = loadParticipantsByRoom(page);
+        Map<Long, String> profileImageUrls = loadTargetProfileImageUrls(userId, participantsByRoom);
         List<ChatRoomRspDto> items = page.stream()
-                .map(room -> toRoomRspDto(room, userId, participantsByRoom.getOrDefault(room.getId(), List.of())))
+                .map(room -> toRoomRspDto(room, userId, participantsByRoom.getOrDefault(room.getId(), List.of()), profileImageUrls))
                 .toList();
         if (!hasMore) return CursorPageResponse.last(items);
 
@@ -422,10 +426,11 @@ public class ChatService {
     }
 
     private ChatRoomRspDto mapRoomForUser(ChatRoom room, Long viewerUserId) {
-        return toRoomRspDto(room, viewerUserId, chatParticipantRepository.findWithUserByChatRoom_Id(room.getId()));
+        List<ChatParticipant> participants = chatParticipantRepository.findWithUserByChatRoom_Id(room.getId());
+        return toRoomRspDto(room, viewerUserId, participants, loadTargetProfileImageUrls(viewerUserId, Map.of(room.getId(), participants)));
     }
 
-    private ChatRoomRspDto toRoomRspDto(ChatRoom room, Long viewerUserId, List<ChatParticipant> participants) {
+    private ChatRoomRspDto toRoomRspDto(ChatRoom room, Long viewerUserId, List<ChatParticipant> participants, Map<Long, String> profileImageUrls) {
         ChatParticipant myParticipant = null;
         ChatParticipant targetParticipant = null;
 
@@ -440,7 +445,33 @@ public class ChatService {
             }
         }
 
-        return ChatRoomRspDto.from(room, myParticipant, targetParticipant);
+        String profileImageUrl = Boolean.TRUE.equals(room.getIsAnonymous())
+                ? null
+                : profileImageUrls.get(resolveParticipantUserId(targetParticipant));
+        return ChatRoomRspDto.from(room, myParticipant, targetParticipant, profileImageUrl);
+    }
+
+    private Map<Long, String> loadTargetProfileImageUrls(Long viewerUserId, Map<Long, List<ChatParticipant>> participantsByRoom) {
+        Set<Long> targetUserIds = participantsByRoom.values().stream()
+                .flatMap(Collection::stream)
+                .map(participant -> resolveParticipantUserId(participant))
+                .filter(Objects::nonNull)
+                .filter(userId -> !userId.equals(viewerUserId))
+                .collect(Collectors.toSet());
+
+        if (targetUserIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return profileImageRepository.findByUserIdInAndSortOrder(targetUserIds, 1).stream()
+                .collect(Collectors.toMap(UserProfileImage::getUserId, UserProfileImage::getUrl, (first, second) -> first));
+    }
+
+    private Long resolveParticipantUserId(ChatParticipant participant) {
+        if (participant == null || participant.getUser() == null) {
+            return null;
+        }
+        return participant.getUser().getId();
     }
 
     private void leaveParticipant(ChatRoom room, ChatParticipant participant) {

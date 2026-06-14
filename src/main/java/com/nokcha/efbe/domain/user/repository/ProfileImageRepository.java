@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.user.repository;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,9 @@ public interface ProfileImageRepository extends JpaRepository<UserProfileImage, 
 
     // 회원 기준 프로필 이미지 조회 (어드민 유저 상세)
     List<UserProfileImage> findByUserIdOrderBySortOrderAsc(Long userId);
+
+    // 회원 목록 기준 대표 프로필 이미지 조회
+    List<UserProfileImage> findByUserIdInAndSortOrder(Collection<Long> userIds, Integer sortOrder);
 
     // 회원가입 세션 기준 프로필 이미지 삭제
     void deleteBySignUpSessionId(Long signUpSessionId);

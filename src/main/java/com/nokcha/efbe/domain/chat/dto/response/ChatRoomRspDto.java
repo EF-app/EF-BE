@@ -69,6 +69,9 @@ public class ChatRoomRspDto {
     @Schema(description = "상대 유저 상태", example = "ACTIVE", nullable = true)
     private UserStatus userStatus;
 
+    @Schema(description = "상대 유저 대표 프로필 사진 URL. 익명 채팅방이거나 사진이 없으면 null", example = "https://cdn.example.com/users/14/profile-1.jpg", nullable = true)
+    private String userProfileImageUrl;
+
     @Schema(description = "채팅방 생성 시각", example = "2026-05-25T16:00:00")
     private LocalDateTime createTime;
 
@@ -77,11 +80,16 @@ public class ChatRoomRspDto {
     }
 
     public static ChatRoomRspDto from(ChatRoom r, ChatParticipant myParticipant, ChatParticipant targetParticipant) {
+        return from(r, myParticipant, targetParticipant, null);
+    }
+
+    public static ChatRoomRspDto from(ChatRoom r, ChatParticipant myParticipant, ChatParticipant targetParticipant, String userProfileImageUrl) {
         return baseBuilder(r)
                 .memo(myParticipant == null ? null : myParticipant.getMemo())
                 .userId(resolveUserId(targetParticipant))
                 .userNicknameSnapshot(targetParticipant == null ? null : targetParticipant.getDisplayName())
                 .userStatus(resolveUserStatus(targetParticipant))
+                .userProfileImageUrl(userProfileImageUrl)
                 .build();
     }
 
