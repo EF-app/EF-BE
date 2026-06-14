@@ -33,8 +33,7 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_chat_room_pair", columnList = "pair_user_a_id, pair_user_b_id"),
                 @Index(name = "idx_chat_room_type_post", columnList = "room_type, post_id"),
-                @Index(name = "idx_chat_room_match", columnList = "match_result_id"),
-                @Index(name = "idx_chat_room_last_message_at", columnList = "last_message_at")
+                @Index(name = "idx_chat_room_match", columnList = "match_result_id")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoom extends BaseEntity {
@@ -85,14 +84,8 @@ public class ChatRoom extends BaseEntity {
     @Column(name = "is_anonymous", nullable = false)
     private Boolean isAnonymous = Boolean.FALSE;
 
-    @Column(name = "last_message", length = 100)
-    private String lastMessage;
-
-    @Column(name = "last_message_at")
-    private LocalDateTime lastMessageAt;
-
     @Builder
-    private ChatRoom(String uuid, String firebaseId, ChatRoomType roomType, PostIt post, String postContentSnapshot, String powerMessage, LocalDateTime powerPinnedUntil, Long matchResultId, Long pairUserAId, Long pairUserBId, Boolean isActive, Boolean isDelete, Boolean isAnonymous, String lastMessage, LocalDateTime lastMessageAt) {
+    private ChatRoom(String uuid, String firebaseId, ChatRoomType roomType, PostIt post, String postContentSnapshot, String powerMessage, LocalDateTime powerPinnedUntil, Long matchResultId, Long pairUserAId, Long pairUserBId, Boolean isActive, Boolean isDelete, Boolean isAnonymous) {
         this.uuid = uuid;
         this.firebaseId = firebaseId;
         this.roomType = roomType;
@@ -106,8 +99,6 @@ public class ChatRoom extends BaseEntity {
         this.isActive = isActive == null ? Boolean.TRUE : isActive;
         this.isDelete = Boolean.TRUE.equals(isDelete);
         this.isAnonymous = Boolean.TRUE.equals(isAnonymous);
-        this.lastMessage = lastMessage;
-        this.lastMessageAt = lastMessageAt;
     }
 
     public void deactivate() {

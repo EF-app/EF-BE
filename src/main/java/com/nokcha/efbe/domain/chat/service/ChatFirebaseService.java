@@ -53,8 +53,7 @@ public class ChatFirebaseService {
         data.put("postContentSnapshot", room.getPostContentSnapshot());
         data.put("powerMessage", room.getPowerMessage());
         data.put("powerPinnedUntil", room.getPowerPinnedUntil() == null ? null : room.getPowerPinnedUntil().toString());
-        data.put("lastMessage", room.getLastMessage());
-        data.put("lastMessageAt", room.getLastMessageAt() == null ? null : room.getLastMessageAt().toString());
+        data.put("lastRead", new LinkedHashMap<>());
         data.put("createdAt", FieldValue.serverTimestamp());
         data.put("updatedAt", FieldValue.serverTimestamp());
 
@@ -63,6 +62,26 @@ public class ChatFirebaseService {
                     .collection(chatRoomCollection)
                     .document(room.getFirebaseId());
             document.set(data).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.FIREBASE_CHAT_ROOM_CREATE_FAILED, e);
+        } catch (ExecutionException e) {
+            throw new BusinessException(ErrorCode.FIREBASE_CHAT_ROOM_CREATE_FAILED, e);
+        }
+    }
+
+    public void updateRoomStatus(ChatRoom room) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("isActive", Boolean.TRUE.equals(room.getIsActive()));
+        data.put("isDelete", Boolean.TRUE.equals(room.getIsDelete()));
+        data.put("updatedAt", FieldValue.serverTimestamp());
+
+        try {
+            firestore()
+                    .collection(chatRoomCollection)
+                    .document(room.getFirebaseId())
+                    .update(data)
+                    .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BusinessException(ErrorCode.FIREBASE_CHAT_ROOM_CREATE_FAILED, e);

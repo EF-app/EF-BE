@@ -101,7 +101,7 @@ public class ChatService {
         if (!hasMore) return CursorPageResponse.last(items);
 
         ChatRoom tail = page.getLast();
-        String nextCursor = cursorCodec.encode(new ChatRoomCursor(resolveRoomSortAt(tail), tail.getId()));
+        String nextCursor = cursorCodec.encode(new ChatRoomCursor(tail.getCreateTime(), tail.getId()));
         return CursorPageResponse.of(items, nextCursor);
     }
 
@@ -184,6 +184,19 @@ public class ChatService {
         return ReportRspDto.from(report);
     }
 
+    // 특정 유저 쌍의 비익명 채팅방 비활성화
+    @Transactional
+    public void deactivateNonAnonymousRoomsByPair(Long firstUserId, Long secondUserId) {
+        Long pairUserAId = Math.min(firstUserId, secondUserId);
+        Long pairUserBId = Math.max(firstUserId, secondUserId);
+        List<ChatRoom> rooms = chatRoomRepository.findNonAnonymousRoomsByPair(pairUserAId, pairUserBId);
+
+        for (ChatRoom room : rooms) {
+            room.deactivate();
+            chatFirebaseService.updateRoomStatus(room);
+        }
+    }
+
     // 채팅방 메모 수정
     @Transactional
     public ChatMemoRspDto updateMemo(Long roomId, Long userId, ChatMemoReqDto reqDto) {
@@ -261,8 +274,6 @@ public class ChatService {
     }
 
     private ChatRoomRspDto createPostChatRoom(PostIt post, User partner, Pair pair, PostReplyReqDto req) {
-        LocalDateTime now = LocalDateTime.now();
-        String content = req.getContent().trim();
         String firebaseId = chatFirebaseService.generateRoomDocumentId();
         ChatRoom chatRoom = chatRoomRepository.save(ChatRoom.builder()
                 .uuid(UUID.randomUUID().toString())
@@ -273,8 +284,6 @@ public class ChatService {
                 .pairUserAId(pair.userAId())
                 .pairUserBId(pair.userBId())
                 .isAnonymous(post.getIsAnonymous())
-                .lastMessage(content)
-                .lastMessageAt(now)
                 .build());
 
         saveParticipants(chatRoom, post.getUser(), partner);
@@ -394,8 +403,6 @@ public class ChatService {
                 .powerPinnedUntil(LocalDateTime.now().plusDays(3))
                 .pairUserAId(pair.userAId())
                 .pairUserBId(pair.userBId())
-                .lastMessage(reqDto.getPowerMessage().trim())
-                .lastMessageAt(LocalDateTime.now())
                 .build());
 
         saveParticipants(room, currentUser, targetUser);
@@ -443,6 +450,8 @@ public class ChatService {
         if (!chatParticipantRepository.existsByChatRoom_IdAndLeftAtIsNull(room.getId())) {
             room.delete();
         }
+
+        chatFirebaseService.updateRoomStatus(room);
     }
 
     private ChatRoom findReusableMatchChatRoom(Pair pair) {
@@ -511,10 +520,6 @@ public class ChatService {
         if (size == null || size <= 0) return DEFAULT_ROOM_SIZE;
         if (size > MAX_ROOM_SIZE) throw new BusinessException(ErrorCode.INVALID_PAGE_SIZE);
         return size;
-    }
-
-    private LocalDateTime resolveRoomSortAt(ChatRoom room) {
-        return room.getLastMessageAt() != null ? room.getLastMessageAt() : room.getCreateTime();
     }
 
     private void validateCursor(ChatRoomCursor cursor) {

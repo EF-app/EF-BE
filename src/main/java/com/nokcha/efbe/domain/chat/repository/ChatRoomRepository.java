@@ -18,7 +18,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "where r.isDelete = false " +
             "and exists (select p.id from ChatParticipant p " +
             "            where p.chatRoom = r and p.user.id = :userId and p.leftAt is null) " +
-            "order by coalesce(r.lastMessageAt, r.createTime) desc, r.id desc")
+            "order by r.createTime desc, r.id desc")
     List<ChatRoom> findMyRooms(@Param("userId") Long userId, Pageable pageable);
 
     // 내 채팅방 목록 - 커서 이후 페이지
@@ -26,9 +26,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "where r.isDelete = false " +
             "and exists (select p.id from ChatParticipant p " +
             "            where p.chatRoom = r and p.user.id = :userId and p.leftAt is null) " +
-            "and (coalesce(r.lastMessageAt, r.createTime) < :cursorSortAt " +
-            "or (coalesce(r.lastMessageAt, r.createTime) = :cursorSortAt and r.id < :cursorId)) " +
-            "order by coalesce(r.lastMessageAt, r.createTime) desc, r.id desc")
+            "and (r.createTime < :cursorSortAt " +
+            "or (r.createTime = :cursorSortAt and r.id < :cursorId)) " +
+            "order by r.createTime desc, r.id desc")
     List<ChatRoom> findMyRoomsAfterCursor(@Param("userId") Long userId, @Param("cursorSortAt") LocalDateTime cursorSortAt, @Param("cursorId") Long cursorId, Pageable pageable);
 
     Optional<ChatRoom> findFirstByRoomTypeInAndPairUserAIdAndPairUserBIdAndIsActiveTrueAndIsDeleteFalseOrderByCreateTimeDescIdDesc(
@@ -36,4 +36,11 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             Long pairUserAId,
             Long pairUserBId
     );
+
+    @Query("select r from ChatRoom r " +
+            "where r.pairUserAId = :pairUserAId " +
+            "and r.pairUserBId = :pairUserBId " +
+            "and r.isAnonymous = false " +
+            "and r.isDelete = false")
+    List<ChatRoom> findNonAnonymousRoomsByPair(@Param("pairUserAId") Long pairUserAId, @Param("pairUserBId") Long pairUserBId);
 }

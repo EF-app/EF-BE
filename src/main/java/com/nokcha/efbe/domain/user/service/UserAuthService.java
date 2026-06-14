@@ -1,5 +1,7 @@
 package com.nokcha.efbe.domain.user.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -26,6 +28,7 @@ import com.nokcha.efbe.domain.user.dto.request.SignUpCredentialsReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpNicknameReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpPurposeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.TermsAgreementReqDto;
+import com.nokcha.efbe.domain.user.dto.response.FirebaseTokenRspDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
@@ -405,7 +408,21 @@ public class UserAuthService {
                 .refreshToken(jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
                 .fcmToken(user.getFcmToken())
+                .firebaseToken(createFirebaseToken(user.getId()))
                 .suspension(suspension)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public FirebaseTokenRspDto refreshFirebaseToken(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
+        if (user.isWithdrawnOrWithdrawing()) {
+            throw new BusinessException(ErrorCode.WITHDRAWN_USER);
+        }
+
+        return FirebaseTokenRspDto.builder()
+                .firebaseToken(createFirebaseToken(user.getId()))
                 .build();
     }
 
@@ -456,6 +473,14 @@ public class UserAuthService {
             userLoginLogService.logFailure(userId, reqDto.getLoginId(), request, reqDto.getDeviceId(), reqDto.getPlatform(), failureReason, reqDto.isScodeStep());
         } catch (Exception e) {
             log.warn("로그인 실패 로그 저장 실패: loginId={}, reason={}", reqDto.getLoginId(), failureReason, e);
+        }
+    }
+
+    private String createFirebaseToken(Long userId) {
+        try {
+            return FirebaseAuth.getInstance().createCustomToken(String.valueOf(userId));
+        } catch (FirebaseAuthException e) {
+            throw new BusinessException(ErrorCode.FIREBASE_TOKEN_CREATE_FAILED, e);
         }
     }
 
