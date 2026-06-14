@@ -46,6 +46,9 @@ dependencies {
     // ObjectMapper
     implementation("com.fasterxml.jackson.core:jackson-databind:2.21.0")
 
+    // Caffeine — 유저활동 throttle 캐시
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // Querydsl (Jakarta) — 동적 검색·커서 페이지·집계 전용
     implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
     annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
