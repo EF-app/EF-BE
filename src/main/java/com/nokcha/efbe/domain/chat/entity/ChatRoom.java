@@ -105,6 +105,10 @@ public class ChatRoom extends BaseEntity {
         this.isActive = Boolean.FALSE;
     }
 
+    public void activate() {
+        this.isActive = Boolean.TRUE;
+    }
+
     public void delete() {
         this.isDelete = Boolean.TRUE;
     }

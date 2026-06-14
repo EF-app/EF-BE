@@ -64,6 +64,7 @@ public class BlockService {
         Block block = blockRepository.findByBlocker_IdAndBlocked_Id(blockerId, blockedUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_BLOCK));
         blockRepository.delete(block);
+        chatService.activateNonAnonymousRoomsByPair(blockerId, blockedUserId);  // 채팅방 있는 경우 다시 활성화
         log.info("[Block] unblock blocker={} blocked={}", blockerId, blockedUserId);
     }
 

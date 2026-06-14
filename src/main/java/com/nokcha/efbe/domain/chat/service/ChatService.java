@@ -201,6 +201,19 @@ public class ChatService {
         }
     }
 
+    // 특정 유저 쌍의 비익명 채팅방 활성화
+    @Transactional
+    public void activateNonAnonymousRoomsByPair(Long firstUserId, Long secondUserId) {
+        Long pairUserAId = Math.min(firstUserId, secondUserId);
+        Long pairUserBId = Math.max(firstUserId, secondUserId);
+        List<ChatRoom> rooms = chatRoomRepository.findNonAnonymousRoomsByPair(pairUserAId, pairUserBId);
+
+        for (ChatRoom room : rooms) {
+            room.activate();
+            chatFirebaseService.updateRoomStatus(room);
+        }
+    }
+
     // 채팅방 메모 수정
     @Transactional
     public ChatMemoRspDto updateMemo(Long roomId, Long userId, ChatMemoReqDto reqDto) {
