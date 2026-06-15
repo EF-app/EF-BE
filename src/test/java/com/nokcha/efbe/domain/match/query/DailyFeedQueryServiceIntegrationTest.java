@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.match.repository;
+package com.nokcha.efbe.domain.match.query;
 
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
@@ -34,10 +34,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    - rank 오름차순 보존
  */
 @IntegrationTest
-class DailyFeedRepositoryIntegrationTest {
+class DailyFeedQueryServiceIntegrationTest {
 
     @Autowired EntityManager em;
-    @Autowired DailyFeedRepository feedRepo;
+    @Autowired DailyFeedQueryService dailyFeedQuery;
     @Autowired AreaRepository areaRepository;
 
     private MatchTestSeed seed;
@@ -78,8 +78,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(3, withdrawing.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size(), "ACTIVE 만 응답: " + result);
             assertEquals(active.getId(), result.get(0).targetId());
@@ -99,8 +99,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, rejected.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertEquals(approved.getId(), result.get(0).targetId());
@@ -126,8 +126,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, blocked.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertFalse(result.stream().anyMatch(r -> r.targetId() == blocked.getId()));
@@ -148,8 +148,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, blocker.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertFalse(result.stream().anyMatch(r -> r.targetId() == blocker.getId()));
@@ -176,8 +176,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, liked.getId(),  "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertFalse(result.stream().anyMatch(r -> r.targetId() == liked.getId()),
@@ -204,8 +204,8 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, passExpired.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertEquals(passExpired.getId(), result.get(0).targetId(),
@@ -235,20 +235,20 @@ class DailyFeedRepositoryIntegrationTest {
                     row(2, u2.getId(), "SCORE")
             ));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(3, result.size());
-            assertEquals(1, result.get(0).rank());
-            assertEquals(2, result.get(1).rank());
-            assertEquals(3, result.get(2).rank());
+            assertEquals(1, result.get(0).matchRank());
+            assertEquals(2, result.get(1).matchRank());
+            assertEquals(3, result.get(2).matchRank());
         }
 
         @Test
         @DisplayName("오늘 피드 없음 → 빈 리스트")
         void emptyWhenNoFeed() {
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
             assertTrue(result.isEmpty());
         }
     }
@@ -269,11 +269,11 @@ class DailyFeedRepositoryIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
-            DailyFeedRepository.FeedView v = result.get(0);
+            DailyFeedQueryService.FeedView v = result.get(0);
             assertEquals("닉_disp", v.nickname());
             assertEquals(29, v.age());
             assertEquals("서울특별시", v.country());
@@ -292,8 +292,8 @@ class DailyFeedRepositoryIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             assertNull(result.get(0).mainPhotoUrl());
@@ -313,8 +313,8 @@ class DailyFeedRepositoryIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             Double d = result.get(0).distanceKm();
@@ -335,8 +335,8 @@ class DailyFeedRepositoryIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedRepository.FeedView> result =
-                    feedRepo.findCurrentFeed(viewer.getId());
+            List<DailyFeedQueryService.FeedView> result =
+                    dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
             Double d = result.get(0).distanceKm();
@@ -351,12 +351,12 @@ class DailyFeedRepositoryIntegrationTest {
     /* ─── 헬퍼 ─── */
 
     private void saveFeed(long viewerId, List<DailyFeedRow> rows) {
-        feedRepo.replaceDailyFeed(viewerId, today, rows);
+        dailyFeedQuery.replaceDailyFeed(viewerId, today, rows);
         em.flush();
         em.clear();
     }
 
-    private static DailyFeedRow row(int rank, long targetId, String slotType) {
-        return new DailyFeedRow(rank, targetId, 0.5, slotType, "[]");
+    private static DailyFeedRow row(int matchRank, long targetId, String slotType) {
+        return new DailyFeedRow(matchRank, targetId, 0.5, slotType, "[]");
     }
 }

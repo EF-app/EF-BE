@@ -125,7 +125,7 @@ class RecentNewbieBatchIntegrationTest {
         batch.run();
 
         Number rank = (Number) em.createNativeQuery(
-                "SELECT `rank` FROM match_daily_feed WHERE viewer_id = :v AND target_id = :t")
+                "SELECT match_rank FROM match_daily_feed WHERE viewer_id = :v AND target_id = :t")
                 .setParameter("v", viewer.getId())
                 .setParameter("t", newcomer.getId())
                 .getSingleResult();
@@ -146,7 +146,7 @@ class RecentNewbieBatchIntegrationTest {
         // rank=5 이 이미 채워진 상태
         em.createNativeQuery("""
                 INSERT INTO match_daily_feed
-                       (feed_date, viewer_id, `rank`, target_id, sort_key, slot_type, tags_json)
+                       (feed_date, viewer_id, match_rank, target_id, sort_key, slot_type, tags_json)
                 VALUES (CURDATE(), :v, 5, :t, 0.5, 'SCORE', '[]')
                 """)
                 .setParameter("v", viewer.getId())
@@ -157,7 +157,7 @@ class RecentNewbieBatchIntegrationTest {
         batch.run();
 
         Number rank = (Number) em.createNativeQuery(
-                "SELECT `rank` FROM match_daily_feed WHERE viewer_id = :v AND target_id = :t")
+                "SELECT match_rank FROM match_daily_feed WHERE viewer_id = :v AND target_id = :t")
                 .setParameter("v", viewer.getId())
                 .setParameter("t", newcomer.getId())
                 .getSingleResult();
@@ -179,7 +179,7 @@ class RecentNewbieBatchIntegrationTest {
         for (int r : new int[]{5, 10, 15, 20, 25}) {
             em.createNativeQuery("""
                     INSERT INTO match_daily_feed
-                           (feed_date, viewer_id, `rank`, target_id, sort_key, slot_type, tags_json)
+                           (feed_date, viewer_id, match_rank, target_id, sort_key, slot_type, tags_json)
                     VALUES (CURDATE(), :v, :r, :t, 0.5, 'SCORE', '[]')
                     """)
                     .setParameter("v", viewer.getId())

@@ -12,8 +12,8 @@ public record AdminMatchConfigItemRspDto(
         @Schema(description = "값 (스칼라 또는 JSON 문자열)", example = "0.40") String configValue,
         @Schema(description = "INT / DOUBLE / JSON", example = "DOUBLE") String valueType,
         @Schema(description = "설명") String description,
-        @Schema(description = "마지막 수정 시각") LocalDateTime updatedAt,
-        @Schema(description = "마지막 수정 관리자 식별자") String updatedBy
+        @Schema(description = "마지막 수정 시각") LocalDateTime updateTime,
+        @Schema(description = "마지막 수정 사용자 id (0 = 시스템)") Long updateUser
 ) {
     public static AdminMatchConfigItemRspDto from(CodeMatchConfig e) {
         return new AdminMatchConfigItemRspDto(
@@ -21,8 +21,8 @@ public record AdminMatchConfigItemRspDto(
                 e.getConfigValue(),
                 e.getValueType(),
                 e.getDescription(),
-                e.getUpdatedAt(),
-                e.getUpdatedBy()
+                e.getUpdateTime(),
+                e.getUpdateUser()
         );
     }
 }

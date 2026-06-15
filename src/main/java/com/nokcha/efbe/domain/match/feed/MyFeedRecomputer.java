@@ -8,7 +8,7 @@ import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.pool.CandidateSelector;
-import com.nokcha.efbe.domain.match.repository.DailyFeedRepository;
+import com.nokcha.efbe.domain.match.query.DailyFeedQueryService;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
 import com.nokcha.efbe.infra.scheduler.match.BatchPhaseMetrics;
@@ -58,7 +58,7 @@ public class MyFeedRecomputer {
     private final CandidateSelector candidateSelector;
     private final MatchCalculator calculator;
     private final FeedSelector feedSelector;
-    private final DailyFeedRepository dailyFeedRepo;
+    private final DailyFeedQueryService dailyFeedQuery;
     private final ColdStartFeed coldStartFeed;
     private final SortKeyCalculator sortKeyCalc;
     private final TagDisplayFormatter tagFormatter;
@@ -122,7 +122,7 @@ public class MyFeedRecomputer {
         if (metrics != null) metrics.backfillNs.add(System.nanoTime() - t3);
 
         long t4 = System.nanoTime();
-        dailyFeedRepo.replaceDailyFeed(me.id(), today, rows);
+        dailyFeedQuery.replaceDailyFeed(me.id(), today, rows);
         if (metrics != null) metrics.replaceNs.add(System.nanoTime() - t4);
     }
 
@@ -135,7 +135,7 @@ public class MyFeedRecomputer {
                                                   List<DailyFeedRow> existingRows) {
         Set<Integer> reserved = FeedSelector.computeReservedRanks(cfg);
         Set<Integer> usedRanks = existingRows.stream()
-                .map(DailyFeedRow::rank).collect(Collectors.toSet());
+                .map(DailyFeedRow::matchRank).collect(Collectors.toSet());
         List<Integer> emptyRanks = IntStream.rangeClosed(1, cfg.getDailyShow())
                 .filter(r -> !usedRanks.contains(r) && !reserved.contains(r))
                 .boxed().toList();

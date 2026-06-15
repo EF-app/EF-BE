@@ -66,10 +66,11 @@ public class AdminMatchConfigService {
         }
         validateWeightSum(simulated);
 
-        // 4) 검증 통과 → JPA dirty checking 으로 update.
+        // 4) 검증 통과 → 값이 실제로 달라진 row 만 update. 동일값 재저장은 dirty-check skip + audit 발화 안 함 → 호출 자체를 건너뜀.
         for (AdminMatchConfigUpdateReqDto.Entry entry : req.entries()) {
             CodeMatchConfig row = current.get(entry.configKey());
-            row.applyUpdate(entry.configValue(), adminIdentifier);
+            if (java.util.Objects.equals(row.getConfigValue(), entry.configValue())) continue;
+            row.applyUpdate(entry.configValue());
         }
 
         log.info("[AdminMatchConfig] 갱신 — admin={}, count={}, keys={}",

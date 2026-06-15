@@ -1,6 +1,6 @@
 package com.nokcha.efbe.domain.match.tag;
 
-import com.nokcha.efbe.domain.match.model.ImportantPoint;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.match.model.MatchUtil;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.Tag;
@@ -35,7 +35,7 @@ import java.util.Set;
 public class TagDisplayFormatter {
 
     public String renderJson(UserContext me, PairScore ps) {
-        Set<ImportantPoint> ip = me.importantPoints();
+        Set<IdealPointType> ip = me.importantPoints();
         Map<TagType, Tag> idx = indexFirstByType(ps.tags());
         List<Map<String, Object>> out = new ArrayList<>();
 
@@ -118,7 +118,7 @@ public class TagDisplayFormatter {
         return out;
     }
 
-    private Map<String, Object> baseTag(TagType type, Tag tag, Set<ImportantPoint> ip) {
+    private Map<String, Object> baseTag(TagType type, Tag tag, Set<IdealPointType> ip) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("type", type.name());
         if (tag.hasPercent()) m.put("percent", tag.percent());
@@ -135,13 +135,13 @@ public class TagDisplayFormatter {
     }
 
     /** 중요 포인트 별 ⭐ 표시 */
-    private boolean isStarred(TagType type, Set<ImportantPoint> ip) {
+    private boolean isStarred(TagType type, Set<IdealPointType> ip) {
         if (ip == null || ip.isEmpty()) return false;
         return switch (type) {
-            case KEYWORD, CATEGORY_MATE, CUSTOM_KW -> ip.contains(ImportantPoint.KEYWORD);
-            case IDEAL, I_LIKE, LIKES_ME           -> ip.contains(ImportantPoint.IDEAL);
-            case LIFESTYLE                         -> ip.contains(ImportantPoint.LIFESTYLE);
-            case NEARBY                            -> ip.contains(ImportantPoint.LOCATION);
+            case KEYWORD, CATEGORY_MATE, CUSTOM_KW -> ip.contains(IdealPointType.KEYWORD);
+            case IDEAL, I_LIKE, LIKES_ME           -> ip.contains(IdealPointType.IDEAL_TYPE);
+            case LIFESTYLE                         -> ip.contains(IdealPointType.LIFE_STYLE);
+            case NEARBY                            -> ip.contains(IdealPointType.AREA);
             default                                -> false;
         };
     }

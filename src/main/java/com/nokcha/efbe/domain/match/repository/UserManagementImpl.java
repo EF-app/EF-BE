@@ -10,8 +10,7 @@ import com.nokcha.efbe.domain.match.model.Grooming;
 import com.nokcha.efbe.domain.match.model.HairLength;
 import com.nokcha.efbe.domain.match.model.HeightBand;
 import com.nokcha.efbe.domain.match.model.Ideal;
-import com.nokcha.efbe.domain.match.model.ImportantPoint;
-import com.nokcha.efbe.domain.match.model.MatchType;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Smoking;
 import com.nokcha.efbe.domain.match.model.Tendency;
@@ -427,8 +426,11 @@ public class UserManagementImpl implements UserManagement {
         LocalDate signupAt = u.getCreateTime() == null
                 ? LocalDate.now() : u.getCreateTime().toLocalDate();
 
-        /* MatchType */
-        MatchType matchType = MatchEnumMapper.toMatchType(profile.getPurpose());
+        /* Purpose 직접 사용 — 매칭 도메인 enum 분리 폐기 */
+        com.nokcha.efbe.domain.profile.entity.Purpose purpose =
+                profile.getPurpose() == null
+                        ? com.nokcha.efbe.domain.profile.entity.Purpose.MIXED
+                        : profile.getPurpose();
 
         /* 키워드 + 카테고리 그룹 */
         Set<String> keywordNames = new HashSet<>();
@@ -460,9 +462,10 @@ public class UserManagementImpl implements UserManagement {
         Smoking smoking = firstSelfEnum(personals, codePersonalMap,
                 PersonalLabelMapper.BIG_SMOKING, PersonalLabelMapper::toSmoking, Smoking.NEVER);
 
-        /* ImportantPoint — UserProfile.idealPointTypes */
-        Set<ImportantPoint> importantPoints = MatchEnumMapper
-                .toImportantPoints(profile.getIdealPointTypes());
+        /* IdealPointType 직접 사용 — UserProfile.idealPointTypes */
+        Set<IdealPointType> importantPoints = profile.getIdealPointTypes() == null
+                ? Set.of()
+                : Set.copyOf(profile.getIdealPointTypes());
 
         /* country / lat / lon */
         double lat = area.getLatitude() == null ? 0.0 : area.getLatitude().doubleValue();
@@ -474,7 +477,7 @@ public class UserManagementImpl implements UserManagement {
                 signupAt,
                 area.getCountry(),
                 lat, lon,
-                matchType,
+                purpose,
                 Set.copyOf(keywordNames),
                 customKeywords,
                 keywordsByCategory,

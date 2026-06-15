@@ -97,10 +97,10 @@ public class AdminMatchController {
             @RequestParam(required = false) Long targetId,
             @RequestParam(required = false) LocalDate feedDate,
             @RequestParam(required = false) SlotType slotType,
-            @RequestParam(required = false) Short rank,
+            @RequestParam(required = false) Short matchRank,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
         return new RspTemplate<>(HttpStatus.OK, "일일 피드를 조회했습니다.",
-                adminDailyFeedService.search(viewerIdFrom, viewerIdTo, targetId, feedDate, slotType, rank, page, size));
+                adminDailyFeedService.search(viewerIdFrom, viewerIdTo, targetId, feedDate, slotType, matchRank, page, size));
     }
 }

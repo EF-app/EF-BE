@@ -3,14 +3,14 @@ package com.nokcha.efbe.domain.match.calculator;
 import com.nokcha.efbe.domain.match.config.MatchingConfig;
 import com.nokcha.efbe.domain.match.model.HairLength;
 import com.nokcha.efbe.domain.match.model.Ideal;
-import com.nokcha.efbe.domain.match.model.MatchType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Tag;
 import com.nokcha.efbe.domain.match.model.TagType;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.fixture.UserContextBuilder;
-import com.nokcha.efbe.domain.match.repository.KeywordFreqService;
+import com.nokcha.efbe.domain.match.service.KeywordFreqService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +46,7 @@ class MatchCalculatorTagTest {
                 "LP판",  2,
                 "필름카메라", 5);
         @Override public int countOf(String keyword) { return table.getOrDefault(keyword, 0); }
+        @Override public void refresh() { /* stub — 캐시 갱신 불필요 */ }
     };
 
     private MatchCalculator newCalculator() {
@@ -131,10 +132,10 @@ class MatchCalculatorTagTest {
                 com.nokcha.efbe.domain.match.model.HeightBand.H_166_170, null, Set.of(), null);
 
         UserContext me = UserContextBuilder.builder()
-                .matchType(MatchType.FRIEND)
+                .purpose(Purpose.FRIEND)
                 .ideal(idealAll).self(selfAll).build();
         UserContext other = UserContextBuilder.builder()
-                .matchType(MatchType.LOVER)
+                .purpose(Purpose.LOVE)
                 .ideal(idealAll).self(selfAll).build();
 
         PairScore ps = newCalculator().score(me, other, cfg);

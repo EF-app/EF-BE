@@ -1,14 +1,14 @@
 package com.nokcha.efbe.domain.match.calculator;
 
 import com.nokcha.efbe.domain.match.config.MatchingConfig;
-import com.nokcha.efbe.domain.match.model.MatchType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.MatchUtil;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.StyleScore;
 import com.nokcha.efbe.domain.match.model.Tag;
 import com.nokcha.efbe.domain.match.model.TagType;
 import com.nokcha.efbe.domain.match.model.UserContext;
-import com.nokcha.efbe.domain.match.repository.KeywordFreqService;
+import com.nokcha.efbe.domain.match.service.KeywordFreqService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -42,8 +42,8 @@ public class MatchCalculator {
         double location  = scoreCalc.location(me, other, cfg);
 
         // FRIEND 가드 — 이상형 계열 태그 전부 제외
-        boolean skipIdeal = me.matchType() == MatchType.FRIEND
-                         || other.matchType() == MatchType.FRIEND;
+        boolean skipIdeal = me.purpose() == Purpose.FRIEND
+                         || other.purpose() == Purpose.FRIEND;
 
         Set<String> commonKeywords = MatchUtil.intersect(me.keywords(), other.keywords());
         Set<String> commonCustom   = MatchUtil.intersect(me.customKeywords(), other.customKeywords());

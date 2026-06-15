@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.admin.match.service;
 
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedPageRspDto;
-import com.nokcha.efbe.domain.admin.match.repository.AdminDailyFeedQueryRepository;
+import com.nokcha.efbe.domain.admin.match.query.AdminDailyFeedQueryService;
 import com.nokcha.efbe.domain.match.entity.MatchDailyFeed.SlotType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,13 +15,13 @@ import java.time.LocalDate;
 @Transactional(readOnly = true)
 public class AdminDailyFeedService {
 
-    private final AdminDailyFeedQueryRepository queryRepo;
+    private final AdminDailyFeedQueryService adminDailyFeedQuery;
 
     public AdminDailyFeedPageRspDto search(
             Long viewerIdFrom, Long viewerIdTo, Long targetId,
-            LocalDate feedDate, SlotType slotType, Short rank,
+            LocalDate feedDate, SlotType slotType, Short matchRank,
             int page, int size
     ) {
-        return queryRepo.search(viewerIdFrom, viewerIdTo, targetId, feedDate, slotType, rank, page, size);
+        return adminDailyFeedQuery.search(viewerIdFrom, viewerIdTo, targetId, feedDate, slotType, matchRank, page, size);
     }
 }

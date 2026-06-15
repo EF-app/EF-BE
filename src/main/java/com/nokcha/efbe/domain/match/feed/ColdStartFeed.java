@@ -5,7 +5,7 @@ import com.nokcha.efbe.domain.match.config.MatchingConfig;
 import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.UserContext;
-import com.nokcha.efbe.domain.match.repository.DailyFeedRepository;
+import com.nokcha.efbe.domain.match.query.DailyFeedQueryService;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class ColdStartFeed {
     private final UserManagement userMgmt;
     private final MatchCalculator calculator;
     private final FeedSelector feedSelector;
-    private final DailyFeedRepository dailyFeedRepo;
+    private final DailyFeedQueryService dailyFeedQuery;
 
     @Transactional
     public void build(UserContext me, MatchingConfig cfg) {
@@ -54,7 +54,7 @@ public class ColdStartFeed {
         for (UserContext other : mixed) scored.add(calculator.score(me, other, cfg));
 
         List<DailyFeedRow> rows = feedSelector.select(me, scored, cfg);
-        dailyFeedRepo.replaceDailyFeed(me.id(), LocalDate.now(), rows);
+        dailyFeedQuery.replaceDailyFeed(me.id(), LocalDate.now(), rows);
 
         log.info("[ColdStartFeed] 임시 피드 생성 — userId={}, rows={}", me.id(), rows.size());
     }

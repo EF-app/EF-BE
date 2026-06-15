@@ -173,8 +173,8 @@ public class RecentNewbieBatch {
         // Step A — viewer N 명의 reserved 5자리 점유 상태 SELECT (IN 절 1회)
         @SuppressWarnings("unchecked")
         List<Object[]> occupiedRows = em.createNativeQuery(
-                "SELECT viewer_id, `rank` FROM match_daily_feed " +
-                " WHERE feed_date = CURDATE() AND viewer_id IN (:vs) AND `rank` IN (:rs)")
+                "SELECT viewer_id, match_rank FROM match_daily_feed " +
+                " WHERE feed_date = CURDATE() AND viewer_id IN (:vs) AND match_rank IN (:rs)")
                 .setParameter("vs", viewerIds)
                 .setParameter("rs", reservedRanks)
                 .getResultList();
@@ -186,7 +186,7 @@ public class RecentNewbieBatch {
         }
 
         // Step B — viewer 별 첫 빈 rank 결정. 카드 점수/태그 미리 계산.
-        record InsertRow(long viewerId, int rank, double sortKey, String tagsJson) {}
+        record InsertRow(long viewerId, int matchRank, double sortKey, String tagsJson) {}
         List<InsertRow> toInsert = new ArrayList<>(viewerIds.size());
         for (Long viewerId : viewerIds) {
             UserContext viewerCtx = viewerCtxByid.get(viewerId);
@@ -210,7 +210,7 @@ public class RecentNewbieBatch {
         //  동시성 race (SELECT 후 INSERT 사이 다른 fanOut 이 같은 자리 INSERT) 는 IGNORE 로 자동 흡수.
         StringBuilder sql = new StringBuilder(
                 "INSERT IGNORE INTO match_daily_feed " +
-                "(feed_date, viewer_id, `rank`, target_id, sort_key, slot_type, tags_json, create_time) VALUES ");
+                "(feed_date, viewer_id, match_rank, target_id, sort_key, slot_type, tags_json, create_time) VALUES ");
         for (int i = 0; i < toInsert.size(); i++) {
             if (i > 0) sql.append(", ");
             sql.append("(CURDATE(), ?, ?, ?, ?, 'FRESH_NEWBIE', ?, NOW())");
@@ -219,7 +219,7 @@ public class RecentNewbieBatch {
         int p = 1;
         for (InsertRow r : toInsert) {
             insertQ.setParameter(p++, r.viewerId());
-            insertQ.setParameter(p++, r.rank());
+            insertQ.setParameter(p++, r.matchRank());
             insertQ.setParameter(p++, newcomerId);
             insertQ.setParameter(p++, r.sortKey());
             insertQ.setParameter(p++, r.tagsJson());

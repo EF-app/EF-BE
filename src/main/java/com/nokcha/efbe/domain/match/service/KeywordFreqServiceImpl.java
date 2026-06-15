@@ -1,6 +1,5 @@
-package com.nokcha.efbe.domain.match.repository;
+package com.nokcha.efbe.domain.match.service;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,14 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 통합 지점 3 실구현 — 키워드 전역 보유자 수 캐시.
- *  - 부팅 직후 {@link #initOnBoot()} → {@link #refresh()} 1회 자동 호출 (캐시 미초기화 방지)
+ *  - 부팅 직후 1회 자동 갱신은 {@link KeywordFreqInitializer} 가 ApplicationReadyEvent 로 트리거
+ *    (별도 빈에서 외부 호출 → AOP proxy 통과 → @Transactional 정상 적용. strict 트랜잭션 모드 안전)
  *  - 배치 시작 시 {@link #refresh()} 1회 호출 → 캐시 갱신
  *  - {@link #countOf(String)} 은 캐시 lookup, 미스 시 0 (가장 희귀)
- *  - Caffeine TTL 도입 없이 단순 ConcurrentHashMap — 배치 1회/일 + 부팅 1회로 충분
+ *  - volatile Map reference swap — read 는 1회 volatile read, refresh 는 새 Map 으로 atomic 교체.
  *
  *  키 = small_category (예: "락"). 값 = user_keyword + user_custom_keyword 보유자 수 합.
  */
@@ -28,21 +27,8 @@ public class KeywordFreqServiceImpl implements KeywordFreqService {
 
     private final EntityManager em;
 
-    private final Map<String, Integer> cache = new ConcurrentHashMap<>();
-
-    /**
-     * 부팅 직후 1회 자동 호출 — JVM 재시작 후 ~ 다음 04:00 배치 사이 캐시 빈 상태 방지.
-     *  실패해도 부팅을 막지 않음 (warn 로그 + 빈 캐시로 시작, 04:00 배치가 채움).
-     */
-    @PostConstruct
-    public void initOnBoot() {
-        try {
-            refresh();
-        } catch (Exception e) {
-            log.warn("[KeywordFreqService] 부팅 시 캐시 초기화 실패 — 04:00 배치까지 빈 상태. err={}",
-                    e.getMessage(), e);
-        }
-    }
+    /** atomic reference swap 으로 refresh 중 race window 차단. read 는 volatile read 한 번. */
+    private volatile Map<String, Integer> cache = Map.of();
 
     @Override
     public int countOf(String keyword) {
@@ -50,7 +36,7 @@ public class KeywordFreqServiceImpl implements KeywordFreqService {
         return cache.getOrDefault(keyword, 0);
     }
 
-    /** 배치 시작 시 호출. 한 번에 전체 키워드 빈도 적재. */
+    @Override
     @Transactional(readOnly = true)
     public void refresh() {
         Map<String, Integer> next = new HashMap<>();
@@ -82,8 +68,8 @@ public class KeywordFreqServiceImpl implements KeywordFreqService {
             next.merge(label, count, Integer::sum);
         }
 
-        cache.clear();
-        cache.putAll(next);
+        // ConcurrentHashMap clear+putAll 의 race window 회피 — 새 map 으로 atomic reference swap.
+        this.cache = Map.copyOf(next);
         log.info("[KeywordFreqService] 캐시 갱신 — {} 개 키워드", cache.size());
     }
 }

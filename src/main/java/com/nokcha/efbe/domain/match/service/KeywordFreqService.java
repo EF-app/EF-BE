@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.match.repository;
+package com.nokcha.efbe.domain.match.service;
 
 /**
  * 통합 지점 3 — 키워드 전역 보유자 수 (희귀도 = 보유자 수).
@@ -11,4 +11,7 @@ package com.nokcha.efbe.domain.match.repository;
  */
 public interface KeywordFreqService {
     int countOf(String keyword);
+
+    /** 배치 시작 시 호출 — 전체 키워드 빈도 적재. */
+    void refresh();
 }

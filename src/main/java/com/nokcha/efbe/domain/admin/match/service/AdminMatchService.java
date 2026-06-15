@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchFullBatchRspDto
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchRecoverBatchRspDto;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchUserBatchRspDto;
 import com.nokcha.efbe.domain.match.feed.MyFeedRecomputer;
-import com.nokcha.efbe.domain.match.repository.DailyFeedRepository;
+import com.nokcha.efbe.domain.match.query.DailyFeedQueryService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
@@ -24,7 +24,7 @@ public class AdminMatchService {
 
     private final UserRepository userRepository;
     private final MyFeedRecomputer myFeedRecomputer;
-    private final DailyFeedRepository dailyFeedRepository;
+    private final DailyFeedQueryService dailyFeedQuery;
     private final NightlyMatchBatch nightlyMatchBatch;
 
     /**
@@ -44,7 +44,7 @@ public class AdminMatchService {
 
         myFeedRecomputer.recompute(userId);
 
-        int cardCount = dailyFeedRepository.countByViewerId(userId);
+        int cardCount = dailyFeedQuery.countByViewerId(userId);
         long durationMs = System.currentTimeMillis() - start;
 
         log.info("[AdminMatch] user batch — userId={}, cardCount={}, durationMs={}",

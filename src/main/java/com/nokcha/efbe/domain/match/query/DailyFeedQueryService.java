@@ -1,10 +1,10 @@
-package com.nokcha.efbe.domain.match.repository;
+package com.nokcha.efbe.domain.match.query;
 
 import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.entity.MatchDailyFeed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
@@ -27,9 +27,9 @@ import java.util.List;
  *      (본 카드는 다음 호출에서 자동으로 응답에서 빠짐 → 미니 배치의 신규자가 자연스럽게 등장)
  */
 @Slf4j
-@Repository
+@Service
 @RequiredArgsConstructor
-public class DailyFeedRepository {
+public class DailyFeedQueryService {
 
     private final EntityManager em;
 
@@ -43,7 +43,7 @@ public class DailyFeedRepository {
     public List<FeedView> findCurrentFeed(long viewerId) {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
-                SELECT f.`rank`, f.target_id, f.slot_type, f.tags_json,
+                SELECT f.match_rank, f.target_id, f.slot_type, f.tags_json,
                        u.nickname, u.age,
                        up.mbti, up.job, up.bio_message,
                        ca.country, ca.city,
@@ -81,7 +81,7 @@ public class DailyFeedRepository {
                               OR (ma.action_type = 'PASS' AND ma.expires_at >= NOW())
                           )
                    )
-                 ORDER BY f.`rank`
+                 ORDER BY f.match_rank
                 """)
                 .setParameter("v", viewerId)
                 .getResultList();
@@ -119,7 +119,7 @@ public class DailyFeedRepository {
 
     /** 피드 한 행의 표시용 view (read-time 결과 + 카드 표시 데이터 + 거리 km). */
     public record FeedView(
-            int rank,
+            int matchRank,
             long targetId,
             String slotType,
             String tagsJson,
@@ -154,7 +154,7 @@ public class DailyFeedRepository {
             entities.add(MatchDailyFeed.builder()
                     .feedDate(date)
                     .viewerId(viewerId)
-                    .rank((short) r.rank())
+                    .matchRank((short) r.matchRank())
                     .targetId(r.targetId())
                     .sortKey(BigDecimal.valueOf(r.sortKey()).setScale(4, RoundingMode.HALF_UP))
                     .slotType(MatchDailyFeed.SlotType.valueOf(r.slotType()))

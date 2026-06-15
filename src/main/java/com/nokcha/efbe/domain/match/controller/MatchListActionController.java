@@ -3,11 +3,12 @@ package com.nokcha.efbe.domain.match.controller;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.match.dto.request.MutualToggleReqDto;
+import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.domain.match.dto.response.MatchFeedActionResultRspDto;
 import com.nokcha.efbe.domain.match.dto.response.MatchLikesCountRspDto;
-import com.nokcha.efbe.domain.match.dto.response.MutualMatchListRspDto;
-import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeListRspDto;
-import com.nokcha.efbe.domain.match.dto.response.SentLikeListRspDto;
+import com.nokcha.efbe.domain.match.dto.response.MutualMatchItemRspDto;
+import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeItemRspDto;
+import com.nokcha.efbe.domain.match.dto.response.SentLikeItemRspDto;
 import com.nokcha.efbe.domain.match.service.MatchListActionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +54,7 @@ public class MatchListActionController {
                     "mutual 제외 (양쪽 LIKE row 가 다 있는 페어는 we-like 화면 소관). 정렬 ma.id DESC. " +
                     "isSuper = SUPER_LIKE AND create_time >= NOW - 3일.")
     @GetMapping("/i-like")
-    public RspTemplate<SentLikeListRspDto> getSent(
+    public RspTemplate<CursorPageResponse<SentLikeItemRspDto>> getSent(
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size) {
         Long meId = securityUtil.getCurrentUserId();
@@ -79,7 +80,7 @@ public class MatchListActionController {
                     "미응답만 표시 (NOT EXISTS my LIKE/PASS row — mutual 은 we-like, 처리 완료는 자동 사라짐). " +
                     "정렬 ma.id DESC. isSuper = SUPER_LIKE AND create_time >= NOW - 3일.")
     @GetMapping("/u-like")
-    public RspTemplate<ReceivedLikeListRspDto> getReceived(
+    public RspTemplate<CursorPageResponse<ReceivedLikeItemRspDto>> getReceived(
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size) {
         Long meId = securityUtil.getCurrentUserId();
@@ -114,15 +115,14 @@ public class MatchListActionController {
 
     @Operation(summary = "서로 좋아요 목록 (we-like, cursor)",
             description = "서로 좋아요 화면. match_results 기반 (양쪽 LIKE/SUPER_LIKE), 7일 cutoff, " +
-                    "isFresh=NOW-3h, isSuper=양쪽 중 SUPER_LIKE 하나라도. sort=matched|score.")
+                    "isFresh=NOW-3h, isSuper=양쪽 중 SUPER_LIKE 하나라도. 정렬은 match_results.create_time DESC 고정 — cursor 무한 스크롤.")
     @GetMapping("/we-like")
-    public RspTemplate<MutualMatchListRspDto> getMutual(
+    public RspTemplate<CursorPageResponse<MutualMatchItemRspDto>> getMutual(
             @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "matched") String sort) {
+            @RequestParam(defaultValue = "20") int size) {
         Long meId = securityUtil.getCurrentUserId();
         return new RspTemplate<>(HttpStatus.OK, "서로 좋아요 목록 조회 성공",
-                matchListActionService.getMutual(meId, cursor, size, sort));
+                matchListActionService.getMutual(meId, cursor, size));
     }
 
     @Operation(summary = "서로 좋아요 카드 하트 토글",

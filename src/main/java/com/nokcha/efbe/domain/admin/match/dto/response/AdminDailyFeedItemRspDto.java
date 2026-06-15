@@ -12,7 +12,7 @@ public record AdminDailyFeedItemRspDto(
         @Schema(description = "피드 날짜")              LocalDate feedDate,
         @Schema(description = "뷰어 user.id")           Long viewerId,
         @Schema(description = "뷰어 닉네임")             String viewerNickname,
-        @Schema(description = "rank (1~50)")           Short rank,
+        @Schema(description = "matchRank (1~50)")      Short matchRank,
         @Schema(description = "타겟 user.id")           Long targetId,
         @Schema(description = "타겟 닉네임")             String targetNickname,
         @Schema(description = "SCORE/NEWBIE/RANDOM/CUSTOM_KW/FRESH_NEWBIE") String slotType,

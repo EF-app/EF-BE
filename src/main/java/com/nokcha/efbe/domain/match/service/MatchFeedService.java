@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.dto.response.FeedCardRspDto;
 import com.nokcha.efbe.domain.match.feed.ColdStartFeed;
 import com.nokcha.efbe.domain.match.feed.FeedRecomputeThrottle;
-import com.nokcha.efbe.domain.match.repository.DailyFeedRepository;
+import com.nokcha.efbe.domain.match.query.DailyFeedQueryService;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,18 +27,18 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class MatchFeedService {
 
-    private final DailyFeedRepository feedRepo;
+    private final DailyFeedQueryService dailyFeedQuery;
     private final UserManagement userMgmt;
     private final ColdStartFeed coldStartFeed;
     private final MatchingConfigLoader configLoader;
     private final FeedRecomputeThrottle throttle;
 
     public List<FeedCardRspDto> getCurrentFeed(long viewerId) {
-        List<DailyFeedRepository.FeedView> rows = feedRepo.findCurrentFeed(viewerId);
+        List<DailyFeedQueryService.FeedView> rows = dailyFeedQuery.findCurrentFeed(viewerId);
 
         // 빈 응답 + raw row 자체도 0 이면 lazy ColdStartFeed 시도
         if (rows.isEmpty()) {
-            int rawCount = feedRepo.countByViewerId(viewerId);
+            int rawCount = dailyFeedQuery.countByViewerId(viewerId);
             if (rawCount == 0 && throttle.tryAcquire(viewerId)) {
                 rows = tryLazyColdStart(viewerId);
             }
@@ -46,7 +46,7 @@ public class MatchFeedService {
 
         return rows.stream()
                 .map(v -> new FeedCardRspDto(
-                        v.rank(),
+                        v.matchRank(),
                         v.targetId(),
                         v.slotType(),
                         v.tagsJson(),
@@ -61,7 +61,7 @@ public class MatchFeedService {
                 .toList();
     }
 
-    private List<DailyFeedRepository.FeedView> tryLazyColdStart(long viewerId) {
+    private List<DailyFeedQueryService.FeedView> tryLazyColdStart(long viewerId) {
         try {
             UserContext me = userMgmt.loadContext(viewerId);
             if (me == null) {
@@ -70,7 +70,7 @@ public class MatchFeedService {
             }
             coldStartFeed.build(me, configLoader.load());
             log.info("[MatchFeedService] lazy ColdStartFeed 실행 — viewerId={}", viewerId);
-            return feedRepo.findCurrentFeed(viewerId);
+            return dailyFeedQuery.findCurrentFeed(viewerId);
         } catch (Exception e) {
             log.warn("[MatchFeedService] lazy ColdStartFeed 실패 — viewerId={}, err={}", viewerId, e.getMessage(), e);
             return List.of();

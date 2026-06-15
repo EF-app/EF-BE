@@ -16,6 +16,7 @@ import com.nokcha.efbe.domain.profile.edit.dto.request.UpdateMyStyleReqDto;
 import com.nokcha.efbe.domain.profile.edit.dto.request.UpdatePurposeReqDto;
 import com.nokcha.efbe.domain.profile.edit.dto.response.ProfileFullRspDto;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.profile.entity.UserCustomKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserKeyword;
 import com.nokcha.efbe.domain.profile.entity.UserPersonal;
@@ -266,9 +267,9 @@ public class ProfileEditService {
 
         // idealPointTypes 동시 갱신
         UserProfile profile = loadOrInitProfile();
-        List<com.nokcha.efbe.domain.profile.entity.IdealPointType> before =
+        List<IdealPointType> before =
                 profile.getIdealPointTypes() == null ? List.of() : profile.getIdealPointTypes();
-        List<com.nokcha.efbe.domain.profile.entity.IdealPointType> next =
+        List<IdealPointType> next =
                 req.getIdealPointTypes() == null ? List.of() : req.getIdealPointTypes();
         profile.updateIdealPointTypes(next);
 

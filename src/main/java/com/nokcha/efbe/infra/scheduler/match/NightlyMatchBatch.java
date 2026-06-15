@@ -5,7 +5,7 @@ import com.nokcha.efbe.domain.match.config.MatchingConfigLoader;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.feed.ColdStartFeed;
 import com.nokcha.efbe.domain.match.feed.MyFeedRecomputer;
-import com.nokcha.efbe.domain.match.repository.KeywordFreqServiceImpl;
+import com.nokcha.efbe.domain.match.service.KeywordFreqService;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NightlyMatchBatch {
 
     private final MatchingConfigLoader configLoader;
-    private final KeywordFreqServiceImpl keywordFreqService;
+    private final KeywordFreqService keywordFreqService;
     private final UserManagement userMgmt;
     private final MyFeedRecomputer recomputer;
     private final ColdStartFeed coldStartFeed;
@@ -55,7 +55,7 @@ public class NightlyMatchBatch {
     private static final int PROGRESS_LOG_EVERY = 1000;
 
     public NightlyMatchBatch(MatchingConfigLoader configLoader,
-                             KeywordFreqServiceImpl keywordFreqService,
+                             KeywordFreqService keywordFreqService,
                              UserManagement userMgmt,
                              MyFeedRecomputer recomputer,
                              ColdStartFeed coldStartFeed,

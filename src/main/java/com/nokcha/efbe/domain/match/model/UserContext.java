@@ -1,5 +1,8 @@
 package com.nokcha.efbe.domain.match.model;
 
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
+
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +23,7 @@ public record UserContext(
         String regionCountry,
         double lat,
         double lon,
-        MatchType matchType,
+        Purpose purpose,
 
         /** 전체 키워드 (9개 카테고리 통합) */
         Set<String> keywords,
@@ -36,5 +39,5 @@ public record UserContext(
         Smoking smoking,
 
         /** 이상형 중요 포인트 — sortKey 가중치 차등 가산 + ⭐ 강조용 */
-        Set<ImportantPoint> importantPoints
+        Set<IdealPointType> importantPoints
 ) {}

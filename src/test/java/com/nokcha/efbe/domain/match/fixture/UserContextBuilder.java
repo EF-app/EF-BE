@@ -7,8 +7,8 @@ import com.nokcha.efbe.domain.match.model.Grooming;
 import com.nokcha.efbe.domain.match.model.HairLength;
 import com.nokcha.efbe.domain.match.model.HeightBand;
 import com.nokcha.efbe.domain.match.model.Ideal;
-import com.nokcha.efbe.domain.match.model.ImportantPoint;
-import com.nokcha.efbe.domain.match.model.MatchType;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Smoking;
 import com.nokcha.efbe.domain.match.model.Tendency;
@@ -31,7 +31,7 @@ public final class UserContextBuilder {
     private String regionCountry = "한국";
     private double lat = 37.5;
     private double lon = 127.0;
-    private MatchType matchType = MatchType.BOTH;
+    private Purpose purpose = Purpose.MIXED;
     private Set<String> keywords = Set.of();
     private Set<String> customKeywords = Set.of();
     private Map<String, Set<String>> keywordsByCategory = Map.of();
@@ -39,7 +39,7 @@ public final class UserContextBuilder {
     private Self self = blankSelf();
     private Drinking drinking = Drinking.NEVER;
     private Smoking smoking = Smoking.NEVER;
-    private Set<ImportantPoint> importantPoints = Set.of();
+    private Set<IdealPointType> importantPoints = Set.of();
 
     public static UserContextBuilder builder() { return new UserContextBuilder(); }
 
@@ -48,7 +48,7 @@ public final class UserContextBuilder {
     public UserContextBuilder signupAt(LocalDate v)                       { this.signupAt = v; return this; }
     public UserContextBuilder regionCountry(String v)                     { this.regionCountry = v; return this; }
     public UserContextBuilder coord(double la, double lo)                 { this.lat = la; this.lon = lo; return this; }
-    public UserContextBuilder matchType(MatchType v)                      { this.matchType = v; return this; }
+    public UserContextBuilder purpose(Purpose v)                          { this.purpose = v; return this; }
     public UserContextBuilder keywords(Set<String> v)                     { this.keywords = v; return this; }
     public UserContextBuilder customKeywords(Set<String> v)               { this.customKeywords = v; return this; }
     public UserContextBuilder keywordsByCategory(Map<String, Set<String>> v) { this.keywordsByCategory = v; return this; }
@@ -56,11 +56,11 @@ public final class UserContextBuilder {
     public UserContextBuilder self(Self v)                                { this.self = v; return this; }
     public UserContextBuilder drinking(Drinking v)                        { this.drinking = v; return this; }
     public UserContextBuilder smoking(Smoking v)                          { this.smoking = v; return this; }
-    public UserContextBuilder importantPoints(Set<ImportantPoint> v)      { this.importantPoints = v; return this; }
+    public UserContextBuilder importantPoints(Set<IdealPointType> v)      { this.importantPoints = v; return this; }
 
     public UserContext build() {
         return new UserContext(
-                id, age, signupAt, regionCountry, lat, lon, matchType,
+                id, age, signupAt, regionCountry, lat, lon, purpose,
                 keywords, customKeywords, keywordsByCategory,
                 ideal, self, drinking, smoking, importantPoints
         );

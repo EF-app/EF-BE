@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.admin.match.repository;
+package com.nokcha.efbe.domain.admin.match.query;
 
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedItemRspDto;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedPageRspDto;
@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.match.entity.MatchDailyFeed.SlotType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,15 +19,15 @@ import java.util.List;
  *  - 동적 필터: viewerIdFrom~viewerIdTo (range, 단일이면 from=to) / targetId / feedDate / slotType / rank
  *  - LIMIT/OFFSET 은 setMaxResults / setFirstResult 사용
  */
-@Repository
+@Service
 @RequiredArgsConstructor
-public class AdminDailyFeedQueryRepository {
+public class AdminDailyFeedQueryService {
 
     private final EntityManager em;
 
     public AdminDailyFeedPageRspDto search(
             Long viewerIdFrom, Long viewerIdTo, Long targetId,
-            LocalDate feedDate, SlotType slotType, Short rank,
+            LocalDate feedDate, SlotType slotType, Short matchRank,
             int page, int size
     ) {
         StringBuilder where = new StringBuilder(" WHERE 1=1 ");
@@ -46,19 +46,19 @@ public class AdminDailyFeedQueryRepository {
         if (targetId != null) where.append(" AND f.target_id = :targetId ");
         if (feedDate != null) where.append(" AND f.feed_date = :feedDate ");
         if (slotType != null) where.append(" AND f.slot_type = :slotType ");
-        if (rank != null)     where.append(" AND f.`rank` = :rankVal ");
+        if (matchRank != null) where.append(" AND f.match_rank = :rankVal ");
 
         int limit = size + 1;
         long offset = (long) page * size;
         String dataSql = """
                 SELECT f.feed_date, f.viewer_id, vu.nickname AS viewer_nickname,
-                       f.`rank`, f.target_id, tu.nickname AS target_nickname,
+                       f.match_rank, f.target_id, tu.nickname AS target_nickname,
                        f.slot_type, f.sort_key, f.tags_json, f.create_time
                   FROM match_daily_feed f
                   JOIN users vu ON vu.id = f.viewer_id
                   JOIN users tu ON tu.id = f.target_id
                 """ + where + """
-                 ORDER BY f.feed_date DESC, f.viewer_id ASC, f.`rank` ASC
+                 ORDER BY f.feed_date DESC, f.viewer_id ASC, f.match_rank ASC
                 """ + " LIMIT " + limit + " OFFSET " + offset;
 
         Query dataQ = em.createNativeQuery(dataSql);
@@ -77,7 +77,7 @@ public class AdminDailyFeedQueryRepository {
         if (targetId != null) dataQ.setParameter("targetId", targetId);
         if (feedDate != null) dataQ.setParameter("feedDate", feedDate);
         if (slotType != null) dataQ.setParameter("slotType", slotType.name());
-        if (rank != null)     dataQ.setParameter("rankVal", rank);
+        if (matchRank != null) dataQ.setParameter("rankVal", matchRank);
 
         @SuppressWarnings("unchecked")
         List<Object[]> rows = dataQ.getResultList();

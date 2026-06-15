@@ -1,20 +1,17 @@
-package com.nokcha.efbe.domain.match.repository;
+package com.nokcha.efbe.domain.match.query;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.domain.match.dto.response.MatchLikeUserDto;
 import com.nokcha.efbe.domain.match.dto.response.MutualMatchItemRspDto;
-import com.nokcha.efbe.domain.match.dto.response.MutualMatchListRspDto;
-import com.nokcha.efbe.domain.match.dto.response.PageMetaDto;
 import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeItemRspDto;
-import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeListRspDto;
 import com.nokcha.efbe.domain.match.dto.response.SentLikeItemRspDto;
-import com.nokcha.efbe.domain.match.dto.response.SentLikeListRspDto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -32,9 +29,9 @@ import java.util.Map;
  *      · 양방향 차단 없음                       — read-time 오버레이
  */
 @Slf4j
-@Repository
+@Service
 @RequiredArgsConstructor
-public class MatchListQueryRepository {
+public class MatchListQueryService {
 
     private static final ObjectMapper OM = new ObjectMapper();
     private static final int ONLINE_THRESHOLD_MINUTES = 10;
@@ -66,6 +63,7 @@ public class MatchListQueryRepository {
                         WHERE ma2.actor_id = ma.target_id
                           AND ma2.target_id = ma.actor_id
                           AND ma2.action_type IN ('LIKE','SUPER_LIKE')
+                          AND ma2.create_time >= NOW() - INTERVAL 7 DAY
                    )
                 """)
                 .setParameter("me", meId)
@@ -143,7 +141,7 @@ public class MatchListQueryRepository {
      *  미응답 only — 내가 ❤ 누른 페어 (mutual 성사 → 서로좋아요 화면 소관) 와 내가 ✕ 누른 페어 사라짐
      *  정렬: ma.id DESC. isSuper: SUPER_LIKE AND create_time >= NOW - 3일.
      */
-    public ReceivedLikeListRspDto searchReceived(long meId, Long cursorId, int size) {
+    public CursorPageResponse<ReceivedLikeItemRspDto> searchReceived(long meId, Long cursorId, int size) {
         StringBuilder where = new StringBuilder("""
                  WHERE ma.target_id = :me
                    AND ma.action_type IN ('LIKE','SUPER_LIKE')
@@ -233,7 +231,7 @@ public class MatchListQueryRepository {
         }
 
         String nextCursor = hasMore && lastId != null ? String.valueOf(lastId) : null;
-        return new ReceivedLikeListRspDto(items, new PageMetaDto(nextCursor, hasMore));
+        return new CursorPageResponse<>(items, nextCursor, hasMore);
     }
 
     /**
@@ -242,7 +240,7 @@ public class MatchListQueryRepository {
      *  - 정렬: ma.id DESC (= 시간 순), cursor 는 마지막 id
      *  - isSuper: SUPER_LIKE AND create_time >= NOW - 3일
      */
-    public SentLikeListRspDto searchSent(long meId, Long cursorId, int size) {
+    public CursorPageResponse<SentLikeItemRspDto> searchSent(long meId, Long cursorId, int size) {
         StringBuilder where = new StringBuilder("""
                  WHERE ma.actor_id = :me
                    AND ma.action_type IN ('LIKE','SUPER_LIKE')
@@ -256,8 +254,9 @@ public class MatchListQueryRepository {
                         WHERE ma2.actor_id = ma.target_id
                           AND ma2.target_id = ma.actor_id
                           AND ma2.action_type IN ('LIKE','SUPER_LIKE')
+                          AND ma2.create_time >= NOW() - INTERVAL %d DAY
                    )
-                """.formatted(LIST_CUTOFF_DAYS));
+                """.formatted(LIST_CUTOFF_DAYS, LIST_CUTOFF_DAYS));
         if (cursorId != null) where.append(" AND ma.id < :cursorId ");
 
         // me 좌표 + target 좌표로 거리 계산. 둘 중 하나라도 null 이면 distance_km = null.
@@ -329,22 +328,17 @@ public class MatchListQueryRepository {
         }
 
         String nextCursor = hasMore && lastId != null ? String.valueOf(lastId) : null;
-        return new SentLikeListRspDto(items, new PageMetaDto(nextCursor, hasMore));
+        return new CursorPageResponse<>(items, nextCursor, hasMore);
     }
 
     /**
-     * 서로 좋아요 목록 (cursor 기반).
+     * 서로 좋아요 목록 (cursor 기반 무한 스크롤).
      *  - match_results 기반 — mutual 페어 1 row 보존
      *  - is_super 컬럼 직접 사용 (self-join 불필요)
      *  - mutual cancel (양쪽 중 한쪽 PASS) 인 경우는 match_actions 조건으로 제외
-     *  - sort: "matched" → match_results.create_time DESC, "score" → KEYWORD percent (메모리)
+     *  - 정렬: match_results.create_time DESC (mr.id DESC tie-break) — 최근 매칭 성사 순
      */
-    public MutualMatchListRspDto searchMutual(long meId, Long cursorId, int size, String sort) {
-        boolean sortByScore = "score".equalsIgnoreCase(sort);
-        String orderBy = sortByScore
-                ? "ORDER BY mr.id DESC"
-                : "ORDER BY mr.create_time DESC, mr.id DESC";
-
+    public CursorPageResponse<MutualMatchItemRspDto> searchMutual(long meId, Long cursorId, int size) {
         StringBuilder where = new StringBuilder("""
                  WHERE (mr.user_a_id = :me OR mr.user_b_id = :me)
                    AND u.status = 'ACTIVE'
@@ -352,15 +346,18 @@ public class MatchListQueryRepository {
                    AND u.id NOT IN (SELECT b.blocked_id FROM block b WHERE b.blocker_id = :me)
                    AND u.id NOT IN (SELECT b.blocker_id FROM block b WHERE b.blocked_id = :me)
                    -- mutual cancel 된 페어 제외 — 양쪽 LIKE/SUPER_LIKE row 가 둘 다 있어야 mutual 유효
+                   -- 7일 cutoff — countMutual 과 동기. mutual 도 sent/received 와 동일하게 7일 지나면 화면에서 사라짐 (match_results row 자체는 DB 영구 보존).
                    AND EXISTS (
                        SELECT 1 FROM match_actions ma1
                         WHERE ma1.actor_id = :me AND ma1.target_id = u.id
                           AND ma1.action_type IN ('LIKE','SUPER_LIKE')
+                          AND ma1.create_time >= NOW() - INTERVAL 7 DAY
                    )
                    AND EXISTS (
                        SELECT 1 FROM match_actions ma2
                         WHERE ma2.actor_id = u.id AND ma2.target_id = :me
                           AND ma2.action_type IN ('LIKE','SUPER_LIKE')
+                          AND ma2.create_time >= NOW() - INTERVAL 7 DAY
                    )
                 """);
         if (cursorId != null) where.append(" AND mr.id < :cursorId ");
@@ -394,7 +391,7 @@ public class MatchListQueryRepository {
                   LEFT JOIN code_area ca    ON ca.id = u.area_id
                   JOIN users me_u           ON me_u.id = :me
                   LEFT JOIN code_area me_ca ON me_ca.id = me_u.area_id
-                """ + where + " " + orderBy + " LIMIT " + (size + 1);
+                """ + where + " ORDER BY mr.create_time DESC, mr.id DESC LIMIT " + (size + 1);
 
         Query q = em.createNativeQuery(sql).setParameter("me", meId);
         if (cursorId != null) q.setParameter("cursorId", cursorId);
@@ -444,20 +441,14 @@ public class MatchListQueryRepository {
                     matchedAt.toString(),
                     isFresh,
                     isSuper,
-                    true,                                                      // mutual SQL 통과 = isLiked
                     chatRoomId == null ? null : String.valueOf(chatRoomId),
                     user
             ));
             lastMatchId = matchId;
         }
 
-        // score 정렬 시 메모리에서 KEYWORD percent (matchScore) DESC 재정렬.
-        if (sortByScore) {
-            items.sort((a, b) -> Integer.compare(b.user().matchScore(), a.user().matchScore()));
-        }
-
         String nextCursor = hasMore && lastMatchId != null ? String.valueOf(lastMatchId) : null;
-        return new MutualMatchListRspDto(items, new PageMetaDto(nextCursor, hasMore));
+        return new CursorPageResponse<>(items, nextCursor, hasMore);
     }
 
     /* ─── 내부 헬퍼 ─── */

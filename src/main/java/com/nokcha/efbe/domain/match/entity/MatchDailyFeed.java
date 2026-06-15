@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.match.entity;
 
+import com.nokcha.efbe.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,16 +18,14 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * match_daily_feed 엔티티 — 뷰어당/날짜당 50 row.
  *  - 자정 리셋: 배치가 그날 row 를 교체.
- *  - PK: (feed_date, viewer_id, rank)
- *  - `rank` 는 MySQL 8 예약어 — DDL 에서 backtick. JPA 컬럼명 매핑은 그대로.
+ *  - PK: (feed_date, viewer_id, match_rank)
  *
- *  slot_type: SCORE / NEWBIE / RANDOM / CUSTOM_KW (ENUM)
+ *  create/update 시각·사용자는 {@link BaseEntity} 의 audit 4 필드로 자동 관리.
+ *  slot_type: SCORE / NEWBIE / RANDOM / CUSTOM_KW / FRESH_NEWBIE (ENUM)
  */
 @Getter
 @Entity
@@ -42,7 +41,7 @@ import java.util.Objects;
 )
 @IdClass(MatchDailyFeed.PK.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MatchDailyFeed {
+public class MatchDailyFeed extends BaseEntity {
 
     @Id
     @Column(name = "feed_date", nullable = false)
@@ -53,8 +52,8 @@ public class MatchDailyFeed {
     private Long viewerId;
 
     @Id
-    @Column(name = "`rank`", nullable = false)
-    private Short rank;
+    @Column(name = "match_rank", nullable = false)
+    private Short matchRank;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
@@ -69,37 +68,34 @@ public class MatchDailyFeed {
     @Column(name = "tags_json", nullable = false, columnDefinition = "JSON")
     private String tagsJson;
 
-    @Column(name = "create_time", nullable = false,
-            columnDefinition = "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createTime;
-
     @Builder
-    private MatchDailyFeed(LocalDate feedDate, Long viewerId, Short rank, Long targetId,
+    private MatchDailyFeed(LocalDate feedDate, Long viewerId, Short matchRank, Long targetId,
                            BigDecimal sortKey, SlotType slotType, String tagsJson) {
         this.feedDate = feedDate;
         this.viewerId = viewerId;
-        this.rank = rank;
+        this.matchRank = matchRank;
         this.targetId = targetId;
         this.sortKey = sortKey;
         this.slotType = slotType;
         this.tagsJson = tagsJson;
-        this.createTime = LocalDateTime.now();
     }
 
     public enum SlotType { SCORE, NEWBIE, RANDOM, CUSTOM_KW, FRESH_NEWBIE }
 
     /** 복합 PK. */
+    @Getter
     @NoArgsConstructor
     @EqualsAndHashCode
     public static class PK implements Serializable {
+        private static final long serialVersionUID = 1L;
         private LocalDate feedDate;
         private Long viewerId;
-        private Short rank;
+        private Short matchRank;
 
-        public PK(LocalDate feedDate, Long viewerId, Short rank) {
+        public PK(LocalDate feedDate, Long viewerId, Short matchRank) {
             this.feedDate = feedDate;
             this.viewerId = viewerId;
-            this.rank = rank;
+            this.matchRank = matchRank;
         }
     }
 }

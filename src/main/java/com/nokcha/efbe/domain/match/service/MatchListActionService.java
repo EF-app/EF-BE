@@ -7,14 +7,15 @@ import com.nokcha.efbe.domain.match.config.MatchingConfigLoader;
 import com.nokcha.efbe.domain.match.dto.request.MutualToggleReqDto;
 import com.nokcha.efbe.domain.match.dto.response.MatchFeedActionResultRspDto;
 import com.nokcha.efbe.domain.match.dto.response.MatchLikesCountRspDto;
-import com.nokcha.efbe.domain.match.dto.response.MutualMatchListRspDto;
-import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeListRspDto;
-import com.nokcha.efbe.domain.match.dto.response.SentLikeListRspDto;
+import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.domain.match.dto.response.MutualMatchItemRspDto;
+import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeItemRspDto;
+import com.nokcha.efbe.domain.match.dto.response.SentLikeItemRspDto;
 import com.nokcha.efbe.domain.match.entity.MatchAction;
 import com.nokcha.efbe.domain.match.model.MatchActionType;
 import com.nokcha.efbe.domain.match.model.MatchTriggerType;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
-import com.nokcha.efbe.domain.match.repository.MatchListQueryRepository;
+import com.nokcha.efbe.domain.match.query.MatchListQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ import java.time.LocalDateTime;
  *    - getCount        : sent/received/mutual 3개 카운트 (read-only)
  *    - getReceived     : 받은 좋아요 cursor list
  *    - getSent         : 보낸 좋아요 cursor list
- *    - getMutual       : 서로 좋아요 cursor list (sort matched|score)
+ *    - getMutual       : 서로 좋아요 cursor list (match_results.create_time DESC 고정)
  *
  *    - acceptReceivedLike  : 받은 좋아요 ❤ — 내 LIKE row INSERT (mutual 자동 성사)
  *    - dismissReceivedLike : 받은 좋아요 ✕ — 내 PASS row INSERT
@@ -47,7 +48,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class MatchListActionService {
 
-    private final MatchListQueryRepository queryRepo;
+    private final MatchListQueryService matchListQuery;
     private final MatchActionRepository actionRepo;
     private final MatchingConfigLoader configLoader;
     // dismissReceivedLike 가 매칭피드 PASS 와 동일 패턴 (recordAction(PASS) 호출). toggleMutual RESTORE 시 tagsJson 재계산.
@@ -60,33 +61,33 @@ public class MatchListActionService {
     @Transactional(readOnly = true)
     public MatchLikesCountRspDto getCount(long meId) {
         return new MatchLikesCountRspDto(
-                queryRepo.countSent(meId),
-                queryRepo.countReceived(meId),
-                queryRepo.countMutual(meId)
+                matchListQuery.countSent(meId),
+                matchListQuery.countReceived(meId),
+                matchListQuery.countMutual(meId)
         );
     }
 
     /* ─────────────────────────── List ─────────────────────────── */
 
     @Transactional(readOnly = true)
-    public ReceivedLikeListRspDto getReceived(long meId, String cursor, int size) {
+    public CursorPageResponse<ReceivedLikeItemRspDto> getReceived(long meId, String cursor, int size) {
         Long cursorId = parseCursor(cursor);
         int safeSize = Math.max(1, Math.min(size, 50));
-        return queryRepo.searchReceived(meId, cursorId, safeSize);
+        return matchListQuery.searchReceived(meId, cursorId, safeSize);
     }
 
     @Transactional(readOnly = true)
-    public SentLikeListRspDto getSent(long meId, String cursor, int size) {
+    public CursorPageResponse<SentLikeItemRspDto> getSent(long meId, String cursor, int size) {
         Long cursorId = parseCursor(cursor);
         int safeSize = Math.max(1, Math.min(size, 50));
-        return queryRepo.searchSent(meId, cursorId, safeSize);
+        return matchListQuery.searchSent(meId, cursorId, safeSize);
     }
 
     @Transactional(readOnly = true)
-    public MutualMatchListRspDto getMutual(long meId, String cursor, int size, String sort) {
+    public CursorPageResponse<MutualMatchItemRspDto> getMutual(long meId, String cursor, int size) {
         Long cursorId = parseCursor(cursor);
         int safeSize = Math.max(1, Math.min(size, 50));
-        return queryRepo.searchMutual(meId, cursorId, safeSize, sort);
+        return matchListQuery.searchMutual(meId, cursorId, safeSize);
     }
 
     private static Long parseCursor(String cursor) {

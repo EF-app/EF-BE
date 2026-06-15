@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.match.calculator;
 
 import com.nokcha.efbe.domain.match.config.MatchingConfig;
-import com.nokcha.efbe.domain.match.model.ImportantPoint;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import org.springframework.stereotype.Component;
 
@@ -27,12 +27,13 @@ public class SortKeyCalculator {
         double wLoc = cfg.getWeightLocation();
 
         // 중요 포인트 차등 가산 — 영역별로 다른 bump 값 적용
-        for (ImportantPoint ip : me.importantPoints()) {
+        for (IdealPointType ip : me.importantPoints()) {
             switch (ip) {
-                case KEYWORD   -> wK   += cfg.getBumpKeyword();
-                case IDEAL     -> wI   += cfg.getBumpIdeal();
-                case LIFESTYLE -> wL   += cfg.getBumpLifestyle();
-                case LOCATION  -> wLoc += cfg.getBumpLocation();
+                case KEYWORD    -> wK   += cfg.getBumpKeyword();
+                case IDEAL_TYPE -> wI   += cfg.getBumpIdeal();
+                case LIFE_STYLE -> wL   += cfg.getBumpLifestyle();
+                case AREA       -> wLoc += cfg.getBumpLocation();
+                default         -> throw new IllegalStateException("Unhandled IdealPointType: " + ip);
             }
         }
 

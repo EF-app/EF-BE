@@ -71,7 +71,7 @@ class FeedSelectorTest {
         List<DailyFeedRow> rows = selector.select(me, scored, cfg);
 
         assertEquals(10, rows.size());
-        for (int i = 0; i < rows.size(); i++) assertEquals(i + 1, rows.get(i).rank());
+        for (int i = 0; i < rows.size(); i++) assertEquals(i + 1, rows.get(i).matchRank());
         // sortKey 내림차순 → 상위 10명 (sortKey 0.19 ~ 0.10)
         assertTrue(rows.get(0).sortKey() > rows.get(rows.size() - 1).sortKey());
     }
