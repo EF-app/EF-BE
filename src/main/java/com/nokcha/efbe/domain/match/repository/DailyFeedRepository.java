@@ -108,7 +108,7 @@ public class DailyFeedRepository {
     }
 
     /**
-     *  본인이 다 액션해서 오버레이로 0건이 된 경우 vs 04:00 배치 자체가 안 돈 경우 구분 (§10.20 lazy fallback).
+     *  본인이 다 액션해서 오버레이로 0건이 된 경우 vs 04:00 배치 자체가 안 돈 경우 구분 (lazy fallback).
      */
     public int countByViewerId(long viewerId) {
         return ((Number) em.createNativeQuery(

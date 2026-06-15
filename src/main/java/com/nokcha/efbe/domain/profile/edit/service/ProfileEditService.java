@@ -272,7 +272,7 @@ public class ProfileEditService {
                 req.getIdealPointTypes() == null ? List.of() : req.getIdealPointTypes();
         profile.updateIdealPointTypes(next);
 
-        // §10.22 정책 — 이상형 중요포인트 변경은 즉시 재계산 안 함 (어뷰즈 통로 차단).
+        // 이상형 중요포인트 변경은 즉시 재계산 안 함 (어뷰즈 통로 차단).
         // 다음 04:00 배치 때 sortKey 가중치 반영. before/next 비교는 향후 다른 트리거 필요 시 활용.
     }
 

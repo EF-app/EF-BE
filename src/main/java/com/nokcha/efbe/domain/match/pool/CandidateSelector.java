@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 1단계 후보 생성 (명세서 §4.2): 자격 풀(하드필터) → 뉴비/기존 두 양동이 → 반경 확장 → 백필 → poolSize.
+ * 1단계 후보 생성 : 자격 풀(하드필터) → 뉴비/기존 두 양동이 → 반경 확장 → 백필 → poolSize.
  *  - 반경 필터는 메모리 Haversine. 트래픽 커지면 SQL 바운딩박스 + 좌표 인덱스로 이전.
  *  - "해외" 그룹은 반경 무한대 동일 그룹 안에서만 섞임 (그룹 일치는 UserManagement 의 SQL 단계에서).
  */

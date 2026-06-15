@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.match.model;
 
 /**
- * 이상형 양방향 점수 (명세서 §2.2).
+ * 이상형 양방향 점수
  *
  * @param bidir      (aToB + bToA) / 2 — #이상형 태그 표시값 (대칭)
  * @param aToB       A 이상형 ↔ B 실제 — #내가좋아하는 비대칭 판정

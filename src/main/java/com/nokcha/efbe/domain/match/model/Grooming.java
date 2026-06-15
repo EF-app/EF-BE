@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.match.model;
 
 /**
  * 꾸미는 스타일 — code_personal "꾸미는 스타일" 카테고리 매핑.
- *  명세서 §2.2 매칭: 일치 1.0 / 불일치 0.3 (단계 거리 미사용 — 이진 비교).
+ * 매칭: 일치 1.0 / 불일치 0.3 (단계 거리 미사용 — 이진 비교).
  */
 public enum Grooming {
     LIKE_GROOMING,  // 꾸미는 걸 좋아해요

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * §9.2 후보·슬롯 — UserManagementImpl 의 native SQL 4 메서드 통합 검증.
+ * 후보·슬롯 — UserManagementImpl 의 native SQL 4 메서드 통합 검증.
  *  대상:
  *    findEligible — 하드 필터 (status / profile_status / last_active / age / 국내·해외 그룹 / block / match_actions)
  *    findEligibleViewers — 활성+승인+최근접속만
@@ -54,10 +54,10 @@ class UserManagementImplIntegrationTest {
         cfg = new MatchingConfig();   // 기본값: age_max_diff=8, last_active_days=31, pass_cooldown_days=30
     }
 
-    /* ─────────── §9.2.1 하드 필터 ─────────── */
+    /* ─────────── 하드 필터 ─────────── */
 
     @Nested
-    @DisplayName("§9.2.1 findEligible — 하드 필터")
+    @DisplayName("findEligible — 하드 필터")
     class HardFilter {
 
         @Test
@@ -127,10 +127,10 @@ class UserManagementImplIntegrationTest {
         }
     }
 
-    /* ─────────── §9.2.2 국내·해외 그룹 분리 ─────────── */
+    /* ─────────── 국내·해외 그룹 분리 ─────────── */
 
     @Nested
-    @DisplayName("§9.2.2 국내·해외 그룹 분리")
+    @DisplayName("국내·해외 그룹 분리")
     class CountryGroup {
 
         @Test
@@ -182,10 +182,10 @@ class UserManagementImplIntegrationTest {
         }
     }
 
-    /* ─────────── §9.2.3 차단 양방향 + match_actions 통합 필터 ─────────── */
+    /* ─────────── 차단 양방향 + match_actions 통합 필터 ─────────── */
 
     @Nested
-    @DisplayName("§9.2.3 차단·match_actions 통합 필터")
+    @DisplayName("차단·match_actions 통합 필터")
     class BlockAndActionFilter {
 
         @Test
@@ -261,7 +261,7 @@ class UserManagementImplIntegrationTest {
         }
     }
 
-    /* ─────────── §9.2 findEligibleViewers ─────────── */
+    /* ─────────── findEligibleViewers ─────────── */
 
     @Nested
     @DisplayName("findEligibleViewers — 활성+승인+최근접속만")

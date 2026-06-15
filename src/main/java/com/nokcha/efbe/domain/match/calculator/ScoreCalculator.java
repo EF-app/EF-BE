@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * 4 영역 점수 산식 통합 (명세서 §2.1~§2.4).
+ * 4 영역 점수 산식 통합
  *  메서드 4개 = 키워드 / 이상형 / 라이프 / 지역.
  *
  *  ── 산식 개요 ────────────────────────────
@@ -27,10 +27,9 @@ import java.util.Set;
 @Component
 public class ScoreCalculator {
 
-    /* ─── §2.1 키워드 ─────────────────────────────────────────────────────────
+    /* ───  키워드 ─────────────────────────────────────────────────────────
      *  keywordScore = base + Jaccard(keywords ∪ customKeywords) × coef
      *  - 한쪽이라도 비어있으면 base 반환 (안 겹쳐도 극단 불이익 없음)
-     *  - 명세서 §5.1 예시: A 7개 × B 3개 (교집합 2) → 0.4 + 0.25×0.6 = 0.55
      */
     public double keyword(UserContext a, UserContext b, MatchingConfig cfg) {
         Set<String> allA = MatchUtil.union(a.keywords(), a.customKeywords());
@@ -39,7 +38,7 @@ public class ScoreCalculator {
         return cfg.getKeywordBase() + MatchUtil.jaccard(allA, allB) * cfg.getKeywordCoef();
     }
 
-    /* ─── §2.2 이상형 — 양방향 평가 ───────────────────────────────────────────
+    /* ─── 이상형 — 양방향 평가 ───────────────────────────────────────────
      *  6 필드 평가 → aToB / bToA / bidir 반환 (StyleScore record).
      *  - "상관없음" 필드는 평가 스킵, n 카운트 미포함
      *  - n == 0 → 0.5 중립
@@ -89,7 +88,7 @@ public class ScoreCalculator {
     }
 
     /**
-     * Tendency 매트릭스 — 명세서 부록 A.
+     * Tendency 매트릭스
      *  스펙트럼 4 (ON_GIP/GIP_PREF/TXT_PREF/ON_TXT) + 특수 1 (PLATONIC).
      */
     private double tendency(Tendency idealVal, Tendency selfVal) {
@@ -107,11 +106,7 @@ public class ScoreCalculator {
         return 1.0;  // d == 3 (양 끝단)
     }
 
-    /* ─── §2.3 라이프 — 음주·흡연 평균 ────────────────────────────────────────
-     *  명세서 §5.2 예시:
-     *    음주 RARE(1) ↔ MODERATE(2) → 0.6
-     *    흡연 NEVER(0) ↔ NEVER(0)   → 1.0
-     *    → (0.6 + 1.0) / 2 = 0.80
+    /* ─── 라이프 — 음주·흡연 평균 ────────────────────────────────────────
      */
     public double lifestyle(UserContext a, UserContext b) {
         double drink = MatchUtil.stepDistance(a.drinking().idx(), b.drinking().idx());
@@ -119,10 +114,7 @@ public class ScoreCalculator {
         return (drink + smoke) / 2.0;
     }
 
-    /* ─── §2.4 지역 — Haversine 5 단계 ────────────────────────────────────────
-     *  명세서 §5.3 예시:
-     *    마포 ↔ 인천 중구 ≈ 26.8km → 0.6
-     *    광주 동구 ↔ 대전 유성 ≈ 140.7km → 0.2
+    /* ─── 지역 — Haversine 5 단계 ────────────────────────────────────────
      */
     public double location(UserContext a, UserContext b, MatchingConfig cfg) {
         double km = GeoUtil.haversine(a.lat(), a.lon(), b.lat(), b.lon());

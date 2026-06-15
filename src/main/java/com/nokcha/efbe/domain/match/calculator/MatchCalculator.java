@@ -22,9 +22,8 @@ import java.util.Set;
 /**
  * 한 페어 (me ↔ other) → PairScore.
  *  4 영역 점수 + 태그 8 종 + sortKey 조립.
- *  명세서 §3 의 태그 판정 / §3.4 의 정반대의매력 / §3.5 의 FRIEND 가드 모두 반영.
  *
- *  카테고리 라벨 (§3.2):
+ *  카테고리 라벨:
  *    OUTDOOR  → #여가메이트
  *    SELF_DEV → #자기계발러
  *    SPORTS   → #운동메이트
@@ -42,7 +41,7 @@ public class MatchCalculator {
         double lifestyle = scoreCalc.lifestyle(me, other);
         double location  = scoreCalc.location(me, other, cfg);
 
-        // §3.5 FRIEND 가드 — 이상형 계열 태그 전부 제외
+        // FRIEND 가드 — 이상형 계열 태그 전부 제외
         boolean skipIdeal = me.matchType() == MatchType.FRIEND
                          || other.matchType() == MatchType.FRIEND;
 
@@ -126,7 +125,7 @@ public class MatchCalculator {
         );
     }
 
-    /** 공통 키워드 칩: 빈도 낮은(희귀한) 것부터 N개 — 명세서 §3.6. */
+    /** 공통 키워드 칩: 빈도 낮은(희귀한) 것부터 N개 */
     private List<String> chips(Set<String> common, MatchingConfig cfg) {
         return common.stream()
                 .sorted(Comparator.comparingInt(keywordFreq::countOf))
@@ -138,7 +137,7 @@ public class MatchCalculator {
         return ChronoUnit.DAYS.between(u.signupAt(), LocalDate.now()) < cfg.getNewbieWindowDays();
     }
 
-    /** 카테고리 코드 → 표시 라벨 (명세서 §3.2). */
+    /** 카테고리 코드 → 표시 라벨 */
     private String categoryLabel(String categoryCode) {
         return switch (categoryCode) {
             case "OUTDOOR"  -> "여가메이트";

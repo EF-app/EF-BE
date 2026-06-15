@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CodeItem extends BaseEntity {
 
-    // 서비스 레이어 훅에서 사용하는 표준 아이템 코드 (설계서 아이템 표 참고)
+    // 서비스 레이어 훅에서 사용하는 표준 아이템 코드
     public static final String CODE_SUPER_LIKE = "SUPER_LIKE";
     public static final String CODE_POWER_MESSAGE = "POWER_MESSAGE";
     public static final String CODE_PROFILE_BOOST = "PROFILE_BOOST";

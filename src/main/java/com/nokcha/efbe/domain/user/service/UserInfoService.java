@@ -111,7 +111,7 @@ public class UserInfoService {
         withdrawal.cancel(LocalDateTime.now(), null, null);
         user.changeStatus(UserStatus.ACTIVE);
 
-        // 매칭 피드 즉시 재계산 트리거 (§10.22)
+        // 매칭 피드 즉시 재계산 트리거
         eventPublisher.publishEvent(new UserReactivatedEvent(
                 userId, UserReactivatedEvent.Reason.WITHDRAW_CANCELLED));
     }

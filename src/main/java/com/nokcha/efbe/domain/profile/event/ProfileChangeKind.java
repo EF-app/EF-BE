@@ -7,7 +7,7 @@ package com.nokcha.efbe.domain.profile.event;
  *    - 그 외 변경 (점수만 영향 — keywords/personals/lifestyle/ideal 6필드) → 다음 04:00 배치 (eventual)
  *    - 표시 항목 (nickname/photo/bio/mbti) → 카드 렌더링이 실시간 join → 즉시 보임
  *
- *  ※ IDEAL_POINTS 는 §10.22 정책으로 즉시 재계산 대상에서 제외 (어뷰즈 통로 차단).
+ *  ※ IDEAL_POINTS 는 즉시 재계산 대상에서 제외 (어뷰즈 통로 차단).
  *     다음 04:00 배치 때 sortKey 가중치 반영.
  */
 public enum ProfileChangeKind {

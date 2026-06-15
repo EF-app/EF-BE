@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * §9.2 체크리스트 (슬롯):
+ * 체크리스트 (슬롯):
  *  - 개인키워드 보장 (CUSTOM_KW)
  *  - 점수 상위 (SCORE) — dailyShow - randomSlots
  *  - 뉴비 하한 (NEWBIE) — newbieFloor 까지 채움

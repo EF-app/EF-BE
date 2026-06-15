@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 3 단계 — sortKey 정렬 → 슬롯 50 명 선정 (명세서 §6.8).
+ * 3 단계 — sortKey 정렬 → 슬롯 50 명 선정.
  *
  *  순서 (관리자 설정값 기준):
  *    1) 개인키워드 보장  (CUSTOM_KW)

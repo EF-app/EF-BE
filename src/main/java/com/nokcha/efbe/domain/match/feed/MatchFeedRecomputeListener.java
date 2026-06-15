@@ -34,7 +34,7 @@ import java.time.LocalDate;
  *    - @Async       : 사용자 응답 thread 안 막음 (재계산 = 후보 풀 500 + 점수 → 수백 ms)
  *    - try/catch    : 실패 시 warn 로그만 — 다음 04:00 배치 / 05:00 보정에서 자연 회복
  *
- *  ── 어뷰즈 가드 (§10.22) — 프로필 변경만 적용 ──────────────────────────
+ *  ── 어뷰즈 가드 — 프로필 변경만 적용 ──────────────────────────
  *    - throttle 30초 atomic CAS (FeedRecomputeThrottle)
  *    - 오늘 본인 액션 수 ≥ recomputeActionThreshold(5) → 차단 (이미 카드 충분히 봤음)
  *    - 일일 재계산 횟수 ≥ recomputeMaxPerDay(1) → 차단 (user_daily_usage 카운트)

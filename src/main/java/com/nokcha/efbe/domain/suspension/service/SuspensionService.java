@@ -39,7 +39,7 @@ public class SuspensionService {
         UserStatus next = evaluateUserStatus(user.getId());
         if (prev != next) {
             user.changeStatus(next);
-            // 제재 해제 (TEMPORARY/PERMANENT → ACTIVE) — 매칭 피드 즉시 재계산 트리거 (§10.22)
+            // 제재 해제 (TEMPORARY/PERMANENT → ACTIVE) — 매칭 피드 즉시 재계산 트리거
             if ((prev == UserStatus.TEMPORARY || prev == UserStatus.PERMANENT)
                     && next == UserStatus.ACTIVE) {
                 eventPublisher.publishEvent(new UserReactivatedEvent(

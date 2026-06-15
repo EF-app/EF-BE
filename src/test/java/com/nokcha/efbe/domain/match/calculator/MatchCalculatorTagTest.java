@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * §9.1 체크리스트 (태그):
+ * 체크리스트 (태그):
  *  - 같은카테고리 OUTDOOR/SELF_DEV/SPORTS 만 발동
  *  - 개인키워드 공통 시 ✨ (CUSTOM_KW 태그)
  *  - 정반대의매력: 태그 0 + 교집합 0

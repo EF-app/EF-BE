@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * 매칭피드 (HI 탭) 카드 액션 도메인 서비스 (§4.2 패스 쿨다운 + match_actions 통합 필터).
+ * 매칭피드 (HI 탭) 카드 액션 도메인 서비스 (패스 쿨다운 + match_actions 통합 필터).
  *
  *  endpoint: POST/DELETE /v1/matches/{targetId}/actions (MatchFeedActionController)
  *  메서드:
@@ -88,7 +88,7 @@ public class MatchFeedActionService {
                 .tagsJson(tagsJson)
                 .build());
 
-        // 양방향 매칭 성사 검사 (§10.25-O) — 내 액션이 LIKE/SUPER_LIKE 이고 상대도 LIKE/SUPER_LIKE 면 mutual.
+        // 양방향 매칭 성사 검사 — 내 액션이 LIKE/SUPER_LIKE 이고 상대도 LIKE/SUPER_LIKE 면 mutual.
         // mutual 성사 시 match_results INSERT (idempotent — UNIQUE 페어 보장).
         boolean isMatched = false;
         boolean mutualIsSuper = false;

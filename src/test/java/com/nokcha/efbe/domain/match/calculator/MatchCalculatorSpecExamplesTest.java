@@ -18,11 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 명세서 §5 계산 예시 검증.
- *  - §5.1 키워드 0.55
- *  - §5.2 라이프 0.80
- *  - §5.3 지역 26.8km → 0.6, 140.7km → 0.2
- *  - §5.4 sortKey 0.66
+ * 계산 예시 검증.
+ *  - 키워드 0.55
+ *  - 라이프 0.80
+ *  - 지역 26.8km → 0.6, 140.7km → 0.2
+ *  - sortKey 0.66
  */
 class MatchCalculatorSpecExamplesTest {
 
@@ -32,12 +32,12 @@ class MatchCalculatorSpecExamplesTest {
     private final SortKeyCalculator sortKeyCalc   = new SortKeyCalculator();
 
     private MatchingConfig cfg() {
-        // 코드 기본값 = 명세서 기본값. 폴백 그대로 사용.
+        // 코드 기본값 = 폴백 그대로 사용.
         return new MatchingConfig();
     }
 
     @Nested
-    @DisplayName("§5.1 키워드 0.55")
+    @DisplayName("키워드 0.55")
     class KeywordExample {
 
         @Test
@@ -59,7 +59,7 @@ class MatchCalculatorSpecExamplesTest {
     }
 
     @Nested
-    @DisplayName("§5.2 라이프 0.80")
+    @DisplayName("라이프 0.80")
     class LifestyleExample {
 
         @Test
@@ -81,7 +81,7 @@ class MatchCalculatorSpecExamplesTest {
     }
 
     @Nested
-    @DisplayName("§5.3 지역 — Haversine 5단계")
+    @DisplayName("지역 — Haversine 5단계")
     class LocationExample {
 
         @Test
@@ -110,7 +110,7 @@ class MatchCalculatorSpecExamplesTest {
     }
 
     @Nested
-    @DisplayName("§5.4 sortKey 0.66")
+    @DisplayName("sortKey 0.66")
     class SortKeyExample {
 
         @Test

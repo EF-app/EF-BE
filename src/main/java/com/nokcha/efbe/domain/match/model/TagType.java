@@ -1,7 +1,7 @@
 package com.nokcha.efbe.domain.match.model;
 
 /**
- * 명세서 §3.1 의 8 종 태그 + 그룹핑 보조 enum.
+ * 8 종 태그 + 그룹핑 보조 enum.
  *
  *  우선순위 (표시 순서):
  *    P1: KEYWORD, CUSTOM_KW, IDEAL, I_LIKE/LIKES_ME(≥70%)

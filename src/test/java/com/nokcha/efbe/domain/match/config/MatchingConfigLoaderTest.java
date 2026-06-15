@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * §9.3 체크리스트:
+ * 체크리스트:
  *  - code_match_config 로드 → MatchingConfig 매핑
  *  - 키 누락 시 코드 기본값 폴백
  *  - JSON 값 (radius_steps_km / region_tiers / category_mate_cats) 파싱

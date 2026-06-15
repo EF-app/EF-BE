@@ -6,15 +6,10 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import org.springframework.stereotype.Component;
 
 /**
- * sortKey 산출 (명세서 §2.5).
+ * sortKey 산출.
  *  영역 점수 × 가중치 가중합.
  *  뷰어 me 의 중요 포인트가 가리키는 영역의 가중치에 영역별 차등 가산
  *  (bumpKeyword/Ideal/Lifestyle/Location) → 합 1 로 정규화 → 가중평균.
- *
- *  명세서 §5.4 예시 (중요포인트 없음):
- *    keyword 0.55, ideal 0.60, lifestyle 0.80, location 1.0
- *    → 0.55×0.40 + 0.60×0.35 + 0.80×0.10 + 1.0×0.15 = 0.66
- *
  *  뉴비 부스트는 sortKey 에 가산하지 않고 슬롯(FeedSelector)에서 별도 처리.
  */
 @Component

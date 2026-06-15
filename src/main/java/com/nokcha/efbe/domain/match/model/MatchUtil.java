@@ -53,7 +53,7 @@ public final class MatchUtil {
     }
 
     /**
-     * 단계형 거리 점수 (명세서 §2.2 stepDistance).
+     * 단계형 거리 점수 (stepDistance).
      *  d=0:1.0, d=1:0.6, d=2:0.3, d=3:0.1, d≥4:0.0
      */
     public static double stepDistance(int idxA, int idxB) {

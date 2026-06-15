@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.match.model;
 
 /**
  * 흡연 — code_personal "흡연" 카테고리 매핑.
- *  명세서 §2.3: NEVER 와 QUIT 은 같은 idx (0).
+ * NEVER 와 QUIT 은 같은 idx (0).
  */
 public enum Smoking {
     NEVER,      // 비흡연자

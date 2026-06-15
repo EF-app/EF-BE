@@ -26,12 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * §9.1 체크리스트 — 4 영역 점수 산식 검증.
+ * 체크리스트 — 4 영역 점수 산식 검증.
  *  통합 calculator 의 메서드별 테스트를 @Nested 로 영역 격리.
- *    - Keyword   : §2.1
- *    - Ideal     : §2.2 (6 필드 + 부록 A 매트릭스)
- *    - Lifestyle : §2.3
- *    - Location  : §2.4
  */
 class ScoreCalculatorTest {
 
@@ -40,9 +36,9 @@ class ScoreCalculatorTest {
     private final ScoreCalculator calc = new ScoreCalculator();
     private final MatchingConfig cfg = new MatchingConfig();
 
-    /* ─── §2.1 키워드 ─────────────────────────────────────────────── */
+    /* ─── 키워드 ─────────────────────────────────────────────── */
     @Nested
-    @DisplayName("§2.1 키워드")
+    @DisplayName("키워드")
     class Keyword {
 
         @Test
@@ -91,9 +87,9 @@ class ScoreCalculatorTest {
         }
     }
 
-    /* ─── §2.2 이상형 — 6 필드 양방향 ────────────────────────────── */
+    /* ─── 이상형 — 6 필드 양방향 ────────────────────────────── */
     @Nested
-    @DisplayName("§2.2 이상형 — 양방향 6필드")
+    @DisplayName("이상형 — 양방향 6필드")
     class IdealField {
 
         @Test
@@ -190,7 +186,7 @@ class ScoreCalculatorTest {
         }
 
         @Test
-        @DisplayName("부록 A Tendency 매트릭스 — d=3 (양 끝단) = 1.0")
+        @DisplayName("Tendency 매트릭스 — d=3 (양 끝단) = 1.0")
         void tendencyMatrixOppositeEnds() {
             Ideal ideal = new Ideal(null, null, null, Tendency.ON_GIP, Set.of(), null);
             Self self   = new Self(null, null, null,  Tendency.ON_TXT, Set.of(), null);
@@ -203,7 +199,7 @@ class ScoreCalculatorTest {
         }
 
         @Test
-        @DisplayName("부록 A Tendency 매트릭스 — PLATONIC ↔ 스펙트럼 = 0.1")
+        @DisplayName("Tendency 매트릭스 — PLATONIC ↔ 스펙트럼 = 0.1")
         void tendencyMatrixPlatonicVsSpectrum() {
             Ideal ideal = new Ideal(null, null, null, Tendency.PLATONIC, Set.of(), null);
             Self self   = new Self(null, null, null,  Tendency.ON_GIP,   Set.of(), null);
@@ -216,9 +212,9 @@ class ScoreCalculatorTest {
         }
     }
 
-    /* ─── §2.3 라이프 — 음주·흡연 평균 ────────────────────────────── */
+    /* ─── 라이프 — 음주·흡연 평균 ────────────────────────────── */
     @Nested
-    @DisplayName("§2.3 라이프 — 음주·흡연 평균")
+    @DisplayName("라이프 — 음주·흡연 평균")
     class Lifestyle {
 
         @Test
@@ -255,7 +251,7 @@ class ScoreCalculatorTest {
         }
 
         @Test
-        @DisplayName("음주 RARE↔MODERATE d=1 → 0.6, 흡연 동일 → 1.0 평균 0.80 (§5.2)")
+        @DisplayName("음주 RARE↔MODERATE d=1 → 0.6, 흡연 동일 → 1.0 평균 0.80")
         void specExample() {
             UserContext a = UserContextBuilder.builder()
                     .drinking(Drinking.RARE).smoking(Smoking.NEVER).build();
@@ -266,9 +262,9 @@ class ScoreCalculatorTest {
         }
     }
 
-    /* ─── §2.4 지역 — Haversine 5 단계 ────────────────────────────── */
+    /* ─── 지역 — Haversine 5 단계 ────────────────────────────── */
     @Nested
-    @DisplayName("§2.4 지역 — Haversine 5단계")
+    @DisplayName("지역 — Haversine 5단계")
     class Location {
 
         private final double LEPS = 0.0001;

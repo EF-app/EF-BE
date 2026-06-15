@@ -19,7 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * 임시 피드 — 명세서 §6.9 / §10.7 / §10.19.
+ * 임시 피드
  *  전날 인기(좋아요 多) + 최근 접속 두 풀을 교차로 섞어 dailyShow 까지 채움.
  *  점수 계산 + 슬롯 선정은 정상 흐름과 동일.
  *

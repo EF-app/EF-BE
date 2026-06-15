@@ -2,7 +2,7 @@ package com.nokcha.efbe.domain.match.model;
 
 /**
  * 음주 — code_personal "음주" 카테고리 매핑.
- *  명세서 §2.3: NEVER 와 QUIT 은 같은 idx (0). 나머지는 단계.
+ * NEVER 와 QUIT 은 같은 idx (0). 나머지는 단계.
  */
 public enum Drinking {
     NEVER,     // 아예 안 마심

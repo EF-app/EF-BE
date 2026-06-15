@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * PairScore.tags → 카드 표시용 tags_json 그룹핑 (명세서 §3.6 + 부록 B).
+ * PairScore.tags → 카드 표시용 tags_json 그룹핑
  *
  *  ── 그룹 규칙 ──────────────────────────────────────────────
  *    (1) 키워드 묶음  : KEYWORD + CATEGORY_MATE 다수
@@ -28,7 +28,7 @@ import java.util.Set;
  *    (4) 정반대       : TOTAL_OPPOSITE (단독)
  *    (5) 라이프·지역  : LIFESTYLE / NEARBY (P3, 뒤로)
  *
- *  ⭐ 중요 포인트 일치 시 star=true (§3.6).
+ *  ⭐ 중요 포인트 일치 시 star=true
  *  데일리 피드는 이미 me 관점 → 추가 반전 불필요.
  */
 @Component
@@ -134,7 +134,7 @@ public class TagDisplayFormatter {
         return map;
     }
 
-    /** 중요 포인트 별 ⭐ 표시 (§3.6). */
+    /** 중요 포인트 별 ⭐ 표시 */
     private boolean isStarred(TagType type, Set<ImportantPoint> ip) {
         if (ip == null || ip.isEmpty()) return false;
         return switch (type) {

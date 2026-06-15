@@ -22,7 +22,7 @@ public interface MatchActionRepository extends JpaRepository<MatchAction, Long> 
     void deleteByActorIdAndTargetId(@Param("actorId") Long actorId, @Param("targetId") Long targetId);
 
     /**
-     * 오늘 (CURDATE) 본인이 한 액션 수 — §10.22 어뷰즈 가드용.
+     * 오늘 (CURDATE) 본인이 한 액션 수 — 어뷰즈 가드용.
      *  ProfileChangeListener 가 "오늘 액션 ≥ N → 재계산 차단" 판단에 사용.
      *  MatchAction.createTime 은 BaseEntity 의 createTime (CreatedDate).
      */

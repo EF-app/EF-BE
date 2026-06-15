@@ -3,7 +3,6 @@ package com.nokcha.efbe.domain.match.model;
 import java.util.List;
 
 /**
- * 명세서 §3 의 표시 태그 1 개.
  *  - hasPercent=true 면 percent 노출 (#키워드 86% 등)
  *  - chips 는 KEYWORD / CATEGORY_MATE / CUSTOM_KW 의 키워드 칩 (빈도 낮은 것부터 N개)
  *  - label 은 CATEGORY_MATE 의 라벨 (#여가메이트 등) — 그 외 null

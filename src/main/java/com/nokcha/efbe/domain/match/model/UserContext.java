@@ -16,7 +16,7 @@ public record UserContext(
         long id,
         int age,
         LocalDate signupAt,
-        /** "한국" / "해외" 등 — 명세서 §4.2 의 국내/해외 그룹 분리 키 */
+        /** "한국" / "해외" 등 — 국내/해외 그룹 분리 키 */
         String regionCountry,
         double lat,
         double lon,

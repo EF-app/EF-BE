@@ -92,7 +92,7 @@ public class MatchingConfigLoader {
         c.setFreshNewbieReservedSlots(getInt(m, "fresh_newbie_reserved_slots", c.getFreshNewbieReservedSlots()));
         c.setFreshNewbieReservedStep (getInt(m, "fresh_newbie_reserved_step",  c.getFreshNewbieReservedStep()));
 
-        /* §10.22 ProfileChangeListener 어뷰즈 가드 */
+        /* ProfileChangeListener 어뷰즈 가드 */
         c.setRecomputeActionThreshold(getInt(m, "recompute_action_threshold", c.getRecomputeActionThreshold()));
         c.setRecomputeMaxPerDay      (getInt(m, "recompute_max_per_day",       c.getRecomputeMaxPerDay()));
 

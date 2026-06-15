@@ -10,11 +10,9 @@ import java.util.List;
  *  필드 기본값 = 코드 폴백 (DB 키 누락 시 사용).
  *
  *  ※ 임계값·가중치 하드코딩 금지 원칙: 모든 매칭 로직은 이 객체만 본다.
- *  ※ 명세서: EF_매칭로직_통합 명세서_v1_0.md §6.2 참고.
  *
- *  ── 명명 통일 (Phase 1) ──
+ *  ── 명명 통일 ──
  *    5 영역 = Keyword / Ideal / Lifestyle / Location.
- *    "interest" / "style" / "life" 명명 폐기.
  */
 @Getter
 @Setter
@@ -48,7 +46,7 @@ public class MatchingConfig {
     private double lifestyleTagThreshold = 0.60;
 
     /* ─── 6. 지역 ─── */
-    /** km 구간 → 점수. 명세서 §2.4 의 5단계. */
+    /** km 구간 → 점수. 5단계. */
     private double[][] regionTiers       = {{5, 1.0}, {20, 0.8}, {50, 0.6}, {100, 0.4}, {99999, 0.2}};
     private double locationTagThreshold  = 0.60;
 
@@ -59,7 +57,7 @@ public class MatchingConfig {
     private double weightLocation  = 0.15;
 
     /**
-     * 중요포인트 차등 가산 (명세서 §2.5).
+     * 중요포인트 차등 가산
      *  영역별 평균 도달치가 다르므로 동일 가산은 강조 의도를 묽힘.
      *  잘 안 오르는 영역(키워드·이상형)에 더 큰 가산.
      */
@@ -83,7 +81,7 @@ public class MatchingConfig {
     /* ─── 11. 표시 ─── */
     private int keywordChipCount = 3;   // 키워드 몇 개 나올지
 
-    /* ─── 12. ProfileChangeListener 어뷰즈 가드 (§10.22) ─── */
+    /* ─── 12. ProfileChangeListener 어뷰즈 가드 ─── */
     /** 본인이 오늘 한 액션 수가 이 값 이상이면 프로필 변경 시 재계산 차단. */
     private int recomputeActionThreshold = 5;
     /** 일일 프로필 변경 재계산 최대 횟수. 0 = 즉시 재계산 비활성. */

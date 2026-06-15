@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * §9 체크리스트 테스트용 UserContext 빌더.
+ * 체크리스트 테스트용 UserContext 빌더.
  *  record 라 자체 builder 가 없어 mutable 빌더를 fixture 로 둠.
  *  의도적으로 production 코드에 두지 않음 — 테스트 한정.
  */

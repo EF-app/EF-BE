@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 매일 04:00 KST 매칭 배치 + 05:00 KST 보정 배치 (명세서 §10.16 / §10.19).
+ * 매일 04:00 KST 매칭 배치 + 05:00 KST 보정 배치
  *
  *  04:00 정상 흐름:
  *    1) MatchingConfig 로드 (1회)
@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *    3) 활성 viewer 캐시 1회 로드
  *    4) 활성 뷰어 병렬 처리 (matchBatchExecutor):
  *         a. 후보 풀 500 (CandidateSelector)
- *         b. 페어별 점수 + 태그 (MatchCalculator) — 메모리만 계산 (§10.20 score_cache 야간 적재 제거)
- *         c. 슬롯 50 선정 (FeedSelector) → match_daily_feed 교체 (+ §10.21 emptyRanks 백필)
+ *         b. 페어별 점수 + 태그 (MatchCalculator) — 메모리만 계산 (score_cache 야간 적재 제거)
+ *         c. 슬롯 50 선정 (FeedSelector) → match_daily_feed 교체 (emptyRanks 백필)
  *    5) BatchPhaseMetrics 합산 로그
  *
  *  05:00 보정 흐름 (recoverFailedViewers):
@@ -96,7 +96,7 @@ public class NightlyMatchBatch {
 
         LocalDate today = LocalDate.now();
 
-        // [§10.25-A] 활성 viewer 전체 캐시 1회 — viewer 1명당 loadContexts(N) 의 N² 부하 회피.
+        //  활성 viewer 전체 캐시 1회 — viewer 1명당 loadContexts(N) 의 N² 부하 회피.
         //  배치 끝나면 자동 GC. 메모리: N × ~1KB ≈ N MB.
         long t2 = System.nanoTime();
         Map<Long, UserContext> activeCache = userMgmt.loadAllActiveContextsAsMap(cfg);
@@ -156,7 +156,7 @@ public class NightlyMatchBatch {
             log.info("[NightlyMatchBatch.recover] 보정 대상 없음 — 04:00 배치가 모두 성공");
             return new RecoverStats(0, 0, 0, 0, System.currentTimeMillis() - start);
         }
-        // [§10.25-A] 보정 대상이 클 경우에도 활성 viewer 전체 캐시 1회로 N² 회피.
+        // 보정 대상이 클 경우에도 활성 viewer 전체 캐시 1회로 N² 회피.
         Map<Long, UserContext> activeCache = userMgmt.loadAllActiveContextsAsMap(cfg);
         log.info("[NightlyMatchBatch.recover] 시작 — 보정 대상 {} 명, 활성 viewer 캐시 {} 명, 날짜 {}, threads={}",
                 failed.size(), activeCache.size(), today, matchBatchExecutor.getCorePoolSize());
@@ -206,7 +206,7 @@ public class NightlyMatchBatch {
     public record RecoverStats(int targetCount, int recoverCount, int coldStartCount, int failCount, long durationMs) {}
 
     /**
-     * §10.25 Step 3 — viewer 병렬 처리. 각 viewer 가 독립 thread + 독립 transaction.
+     * Step 3 — viewer 병렬 처리. 각 viewer 가 독립 thread + 독립 transaction.
      *  mid-progress 로그: PROGRESS_LOG_EVERY 마다 진행 보고.
      */
     private void runViewersParallel(Iterable<UserContext> viewers,

@@ -6,7 +6,7 @@ package com.nokcha.efbe.domain.match.dto.response;
  *
  *  ── 표시 데이터 ──
  *    nickname/age/location/mbti/job/bioMessage/mainPhotoUrl/distanceKm 은 실시간 join — 본인이 닉네임·사진·지역
- *    등을 바꾸면 즉시 반영 (배치 무관, 명세서 §8.3 참고).
+ *    등을 바꾸면 즉시 반영
  *  ── 매칭 데이터 ──
  *    rank/slotType/tagsJson 은 마지막 배치 결과 — 점수/태그 %는 어제 기준 (eventual consistency).
  *
