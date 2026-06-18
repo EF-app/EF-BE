@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.chat.repository;
 import com.nokcha.efbe.domain.chat.entity.ChatParticipant;
 import com.nokcha.efbe.domain.chat.entity.ChatRoomType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -39,4 +40,8 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     );
 
     boolean existsByChatRoom_IdAndLeftAtIsNull(Long chatRoomId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from ChatParticipant p where p.chatRoom.id in :chatRoomIds")
+    int deleteByChatRoomIds(@Param("chatRoomIds") Collection<Long> chatRoomIds);
 }

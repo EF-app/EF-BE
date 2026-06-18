@@ -38,6 +38,12 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     );
 
     @Query("select r from ChatRoom r " +
+            "where r.isDelete = true " +
+            "and r.updateTime <= :cutoff " +
+            "order by r.updateTime asc, r.id asc")
+    List<ChatRoom> findDeletedRoomsForPhysicalDelete(@Param("cutoff") LocalDateTime cutoff, Pageable pageable);
+
+    @Query("select r from ChatRoom r " +
             "where r.pairUserAId = :pairUserAId " +
             "and r.pairUserBId = :pairUserBId " +
             "and r.isAnonymous = false " +
