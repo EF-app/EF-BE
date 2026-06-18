@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.area.dto.response;
 
+import com.nokcha.efbe.domain.area.entity.CodeArea;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,4 +22,12 @@ public class AreaOptionRspDto {
 
     @Schema(description = "시/군/구", example = "강남구")
     private String city;
+
+    public static AreaOptionRspDto from(CodeArea area) {
+        return AreaOptionRspDto.builder()
+                .id(area.getId())
+                .country(area.getCountry())
+                .city(area.getCity())
+                .build();
+    }
 }
