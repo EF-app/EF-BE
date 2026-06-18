@@ -3,7 +3,7 @@ package com.nokcha.efbe.domain.user.controller;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.nokcha.efbe.common.response.RspTemplate;
 import com.nokcha.efbe.common.util.SecurityUtil;
-import com.nokcha.efbe.domain.user.service.UserActivityRecorder;
+import com.nokcha.efbe.domain.user.service.UserActivityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +29,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserActivityController {
 
     private final SecurityUtil securityUtil;
-    private final UserActivityRecorder recorder;
+    private final UserActivityService recorder;
     private final Cache<Long, Boolean> userActivityThrottleCache;
 
-    @Operation(summary = "유저 활동 heartbeat",
+    @Operation(summary = "유저 활동 시각 갱신",
             description = "FE 앱 포그라운드 동안 5분마다 호출. last_active_at = NOW() 갱신. " +
                     "Interceptor 와 같은 5분 throttle 적용 — FE 버그나 악의적 다중 호출 차단.")
     @PreAuthorize("hasRole('USER')")

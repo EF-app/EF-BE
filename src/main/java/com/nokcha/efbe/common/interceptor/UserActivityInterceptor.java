@@ -2,7 +2,7 @@ package com.nokcha.efbe.common.interceptor;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.nokcha.efbe.common.util.SecurityUtil;
-import com.nokcha.efbe.domain.user.service.UserActivityRecorder;
+import com.nokcha.efbe.domain.user.service.UserActivityService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,17 +32,14 @@ public class UserActivityInterceptor implements HandlerInterceptor {
 
     private final SecurityUtil securityUtil;
     private final Cache<Long, Boolean> userActivityThrottleCache;
-    private final UserActivityRecorder recorder;
+    private final UserActivityService userActivityService;
 
     @Override
-    public void postHandle(HttpServletRequest request,
-                           HttpServletResponse response,
-                           Object handler,
-                           ModelAndView modelAndView) {
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
         Long userId = securityUtil.getCurrentUserIdOrNull();
         if (userId == null) return;
         if (userActivityThrottleCache.getIfPresent(userId) != null) return;
         userActivityThrottleCache.put(userId, Boolean.TRUE);
-        recorder.touch(userId);
+        userActivityService.touch(userId);
     }
 }
