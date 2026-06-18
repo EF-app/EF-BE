@@ -1,6 +1,8 @@
 package com.nokcha.efbe.domain.user.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
+import com.nokcha.efbe.domain.area.dto.response.AreaOptionRspDto;
+import com.nokcha.efbe.domain.area.service.AreaService;
 import com.nokcha.efbe.domain.user.dto.response.SignUpOptionGroupRspDto;
 import com.nokcha.efbe.domain.user.service.UserSignUpOptionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +22,7 @@ import java.util.List;
 public class UserSignUpOptionController {
 
     private final UserSignUpOptionService userSignUpOptionService;
+    private final AreaService areaService;
 
     @Operation(summary = "관심사 전체 항목 조회", description = "관심사 화면 렌더링용 전체 항목을 대분류별로 조회합니다.")
     @GetMapping("/keywords")
@@ -43,5 +46,11 @@ public class UserSignUpOptionController {
     @GetMapping("/ideal")
     public RspTemplate<List<SignUpOptionGroupRspDto>> getIdealOptions() {
         return new RspTemplate<>(HttpStatus.OK, "이상형 설정 전체 항목 조회가 완료되었습니다.", userSignUpOptionService.getIdealOptions());
+    }
+
+    @Operation(summary = "지역(code_area) 전체 항목 조회", description = "거주 지역 화면 렌더링용 code_area 전체를 id/country/city 로 조회합니다.")
+    @GetMapping("/areas")
+    public RspTemplate<List<AreaOptionRspDto>> getAreaOptions() {
+        return new RspTemplate<>(HttpStatus.OK, "지역 전체 항목 조회가 완료되었습니다.", areaService.getAreaOptions());
     }
 }
