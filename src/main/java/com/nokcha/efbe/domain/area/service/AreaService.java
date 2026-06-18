@@ -1,7 +1,6 @@
 package com.nokcha.efbe.domain.area.service;
 
 import com.nokcha.efbe.domain.area.dto.response.AreaOptionRspDto;
-import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -19,15 +18,7 @@ public class AreaService {
     @Transactional(readOnly = true)
     public List<AreaOptionRspDto> getAreaOptions() {
         return areaRepository.findAll(Sort.by(Sort.Order.asc("id"))).stream()
-                .map(this::toDto)
+                .map(AreaOptionRspDto::from)
                 .toList();
-    }
-
-    private AreaOptionRspDto toDto(CodeArea area) {
-        return AreaOptionRspDto.builder()
-                .id(area.getId())
-                .country(area.getCountry())
-                .city(area.getCity())
-                .build();
     }
 }
