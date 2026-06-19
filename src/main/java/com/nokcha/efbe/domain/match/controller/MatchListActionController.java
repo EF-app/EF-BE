@@ -134,8 +134,8 @@ public class MatchListActionController {
             @PathVariable Long otherUserId,
             @Valid @RequestBody MutualToggleReqDto body) {
         Long meId = securityUtil.getCurrentUserId();
-        matchListActionService.toggleMutual(meId, otherUserId, body.action());
+        matchListActionService.toggleMutual(meId, otherUserId, body.getAction());
         return new RspTemplate<>(HttpStatus.OK,
-                body.action() == MutualToggleReqDto.Action.CANCEL ? "매칭을 끊었습니다." : "매칭을 복구했습니다.");
+                body.getAction() == MutualToggleReqDto.Action.CANCEL ? "매칭을 끊었습니다." : "매칭을 복구했습니다.");
     }
 }

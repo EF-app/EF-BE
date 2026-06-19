@@ -49,33 +49,33 @@ public class AdminMatchConfigService {
                 .collect(Collectors.toMap(CodeMatchConfig::getConfigKey, e -> e));
 
         // 키 존재 + 값 파싱 검증
-        for (AdminMatchConfigUpdateReqDto.Entry entry : req.entries()) {
-            CodeMatchConfig row = current.get(entry.configKey());
+        for (AdminMatchConfigUpdateReqDto.Entry entry : req.getEntries()) {
+            CodeMatchConfig row = current.get(entry.getConfigKey());
             if (row == null) {
                 throw new BusinessException(ErrorCode.INVALID_MATCH_CONFIG_KEY,
-                        "존재하지 않는 키: " + entry.configKey());
+                        "존재하지 않는 키: " + entry.getConfigKey());
             }
-            validateValue(entry.configKey(), entry.configValue(), row.getValueType());
+            validateValue(entry.getConfigKey(), entry.getConfigValue(), row.getValueType());
         }
 
         // 가중치 합 1.0 검증 — 변경 적용한 가상 결과로 계산
         Map<String, String> simulated = current.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getConfigValue()));
-        for (AdminMatchConfigUpdateReqDto.Entry entry : req.entries()) {
-            simulated.put(entry.configKey(), entry.configValue());
+        for (AdminMatchConfigUpdateReqDto.Entry entry : req.getEntries()) {
+            simulated.put(entry.getConfigKey(), entry.getConfigValue());
         }
         validateWeightSum(simulated);
 
         // 4) 검증 통과 → 값이 실제로 달라진 row 만 update. 동일값 재저장은 dirty-check skip + audit 발화 안 함 → 호출 자체를 건너뜀.
-        for (AdminMatchConfigUpdateReqDto.Entry entry : req.entries()) {
-            CodeMatchConfig row = current.get(entry.configKey());
-            if (java.util.Objects.equals(row.getConfigValue(), entry.configValue())) continue;
-            row.applyUpdate(entry.configValue());
+        for (AdminMatchConfigUpdateReqDto.Entry entry : req.getEntries()) {
+            CodeMatchConfig row = current.get(entry.getConfigKey());
+            if (java.util.Objects.equals(row.getConfigValue(), entry.getConfigValue())) continue;
+            row.applyUpdate(entry.getConfigValue());
         }
 
         log.info("[AdminMatchConfig] 갱신 — admin={}, count={}, keys={}",
-                adminIdentifier, req.entries().size(),
-                req.entries().stream().map(AdminMatchConfigUpdateReqDto.Entry::configKey).toList());
+                adminIdentifier, req.getEntries().size(),
+                req.getEntries().stream().map(AdminMatchConfigUpdateReqDto.Entry::getConfigKey).toList());
 
         return getAll();
     }
