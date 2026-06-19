@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.admin.report.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
+import com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort;
 import com.nokcha.efbe.domain.admin.report.dto.request.AdminReportProcessReqDto;
 import com.nokcha.efbe.domain.admin.report.dto.response.AdminReportDetailRspDto;
 import com.nokcha.efbe.domain.admin.report.dto.response.AdminReportGroupRspDto;
@@ -37,7 +38,7 @@ public class AdminReportController {
     public RspTemplate<Page<AdminReportGroupRspDto>> getReportsGrouped(
             @RequestParam(required = false) ReportStatus status,
             @RequestParam(name = "groupSort", required = false, defaultValue = "OLDEST")
-            com.nokcha.efbe.domain.admin.report.dto.ReportGroupSort groupSort,
+            ReportGroupSort groupSort,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return new RspTemplate<>(HttpStatus.OK, "신고 그룹 목록을 조회했습니다.",

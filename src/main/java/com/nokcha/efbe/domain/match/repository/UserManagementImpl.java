@@ -11,6 +11,7 @@ import com.nokcha.efbe.domain.match.model.HairLength;
 import com.nokcha.efbe.domain.match.model.HeightBand;
 import com.nokcha.efbe.domain.match.model.Ideal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Smoking;
 import com.nokcha.efbe.domain.match.model.Tendency;
@@ -427,9 +428,9 @@ public class UserManagementImpl implements UserManagement {
                 ? LocalDate.now() : u.getCreateTime().toLocalDate();
 
         /* Purpose 직접 사용 — 매칭 도메인 enum 분리 폐기 */
-        com.nokcha.efbe.domain.profile.entity.Purpose purpose =
+        Purpose purpose =
                 profile.getPurpose() == null
-                        ? com.nokcha.efbe.domain.profile.entity.Purpose.MIXED
+                        ? Purpose.MIXED
                         : profile.getPurpose();
 
         /* 키워드 + 카테고리 그룹 */

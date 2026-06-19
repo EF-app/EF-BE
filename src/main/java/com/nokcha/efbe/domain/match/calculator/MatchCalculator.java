@@ -6,7 +6,6 @@ import com.nokcha.efbe.domain.match.model.MatchUtil;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.StyleScore;
 import com.nokcha.efbe.domain.match.model.Tag;
-import com.nokcha.efbe.domain.match.model.TagType;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.service.KeywordFreqService;
 import lombok.RequiredArgsConstructor;

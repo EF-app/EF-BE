@@ -2,7 +2,6 @@ package com.nokcha.efbe.domain.profile.repository;
 
 import com.nokcha.efbe.domain.profile.entity.UserPersonal;
 import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
