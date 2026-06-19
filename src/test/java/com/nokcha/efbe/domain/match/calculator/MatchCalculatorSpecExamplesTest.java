@@ -6,6 +6,8 @@ import com.nokcha.efbe.domain.match.model.Ideal;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Smoking;
 import com.nokcha.efbe.domain.match.model.UserContext;
+import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.Purpose;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -129,7 +131,7 @@ class MatchCalculatorSpecExamplesTest {
         void withLocationImportant() {
             UserContext meDefault = baseUserBuilder().build();
             UserContext meLocImportant = baseUserBuilder()
-                    .withImportantPoints(Set.of(com.nokcha.efbe.domain.profile.entity.IdealPointType.AREA))
+                    .withImportantPoints(Set.of(IdealPointType.AREA))
                     .build();
             MatchingConfig cfg = cfg();
 
@@ -146,9 +148,9 @@ class MatchCalculatorSpecExamplesTest {
             MatchingConfig cfg = cfg();
             // 점수 분포가 동일할 때, IDEAL 중요 vs LIFESTYLE 중요 비교
             UserContext meIdeal     = baseUserBuilder().withImportantPoints(
-                    Set.of(com.nokcha.efbe.domain.profile.entity.IdealPointType.IDEAL_TYPE)).build();
+                    Set.of(IdealPointType.IDEAL_TYPE)).build();
             UserContext meLifestyle = baseUserBuilder().withImportantPoints(
-                    Set.of(com.nokcha.efbe.domain.profile.entity.IdealPointType.LIFE_STYLE)).build();
+                    Set.of(IdealPointType.LIFE_STYLE)).build();
 
             // ideal 점수 영역만 높이면 IDEAL 중요인 사람이 더 큰 sortKey 받아야
             double sIdeal     = sortKeyCalc.calc(meIdeal,     0.50, 0.90, 0.50, 0.50, cfg);
@@ -173,8 +175,8 @@ class MatchCalculatorSpecExamplesTest {
         private String regionCountry = "한국";
         private double lat = 37.5;
         private double lon = 127.0;
-        private com.nokcha.efbe.domain.profile.entity.Purpose purpose
-                = com.nokcha.efbe.domain.profile.entity.Purpose.MIXED;
+        private Purpose purpose
+                = Purpose.MIXED;
         private Set<String> keywords = Set.of();
         private Set<String> customKeywords = Set.of();
         private Map<String, Set<String>> keywordsByCategory = Map.of();
@@ -182,13 +184,13 @@ class MatchCalculatorSpecExamplesTest {
         private Self self = new Self(null, null, null, null, null, null);
         private Drinking drinking = Drinking.NEVER;
         private Smoking smoking = Smoking.NEVER;
-        private Set<com.nokcha.efbe.domain.profile.entity.IdealPointType> importantPoints = Set.of();
+        private Set<IdealPointType> importantPoints = Set.of();
 
         TestUser withKeywords(Set<String> v) { this.keywords = v; return this; }
         TestUser withDrinking(Drinking v) { this.drinking = v; return this; }
         TestUser withSmoking(Smoking v) { this.smoking = v; return this; }
         TestUser withCoord(double la, double lo) { this.lat = la; this.lon = lo; return this; }
-        TestUser withImportantPoints(Set<com.nokcha.efbe.domain.profile.entity.IdealPointType> v) {
+        TestUser withImportantPoints(Set<IdealPointType> v) {
             this.importantPoints = v; return this;
         }
 

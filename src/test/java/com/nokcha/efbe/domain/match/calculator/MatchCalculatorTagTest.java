@@ -1,8 +1,12 @@
 package com.nokcha.efbe.domain.match.calculator;
 
 import com.nokcha.efbe.domain.match.config.MatchingConfig;
+import com.nokcha.efbe.domain.match.model.BodyType;
+import com.nokcha.efbe.domain.match.model.Drinking;
 import com.nokcha.efbe.domain.match.model.HairLength;
+import com.nokcha.efbe.domain.match.model.HeightBand;
 import com.nokcha.efbe.domain.match.model.Ideal;
+import com.nokcha.efbe.domain.match.model.Smoking;
 import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.Self;
@@ -106,14 +110,14 @@ class MatchCalculatorTagTest {
         UserContext me = UserContextBuilder.builder()
                 .keywords(Set.of("락","K-POP","힙합"))
                 .coord(35.1465, 126.9230)  // 광주
-                .drinking(com.nokcha.efbe.domain.match.model.Drinking.NEVER)
-                .smoking(com.nokcha.efbe.domain.match.model.Smoking.NEVER)
+                .drinking(Drinking.NEVER)
+                .smoking(Smoking.NEVER)
                 .build();
         UserContext other = UserContextBuilder.builder()
                 .keywords(Set.of("재즈","클래식","트로트"))
                 .coord(36.3622, 127.3562)  // 대전
-                .drinking(com.nokcha.efbe.domain.match.model.Drinking.OFTEN)
-                .smoking(com.nokcha.efbe.domain.match.model.Smoking.REGULAR)
+                .drinking(Drinking.OFTEN)
+                .smoking(Smoking.REGULAR)
                 .build();
 
         PairScore ps = newCalculator().score(me, other, cfg);
@@ -126,10 +130,10 @@ class MatchCalculatorTagTest {
     @DisplayName("FRIEND 가드 — 한쪽이라도 FRIEND 면 IDEAL / I_LIKE / LIKES_ME 전부 제외")
     void friendGuardSkipsIdealTags() {
         // 양쪽 이상형 1.0 (양방향 임계값 0.45 통과 + 비대칭 0.65 통과)
-        Ideal idealAll = new Ideal(HairLength.SHORT, com.nokcha.efbe.domain.match.model.BodyType.SLIM,
-                com.nokcha.efbe.domain.match.model.HeightBand.H_166_170, null, Set.of(), null);
-        Self selfAll = new Self(HairLength.SHORT, com.nokcha.efbe.domain.match.model.BodyType.SLIM,
-                com.nokcha.efbe.domain.match.model.HeightBand.H_166_170, null, Set.of(), null);
+        Ideal idealAll = new Ideal(HairLength.SHORT, BodyType.SLIM,
+                HeightBand.H_166_170, null, Set.of(), null);
+        Self selfAll = new Self(HairLength.SHORT, BodyType.SLIM,
+                HeightBand.H_166_170, null, Set.of(), null);
 
         UserContext me = UserContextBuilder.builder()
                 .purpose(Purpose.FRIEND)

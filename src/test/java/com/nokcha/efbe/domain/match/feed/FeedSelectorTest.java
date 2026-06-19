@@ -1,9 +1,9 @@
 package com.nokcha.efbe.domain.match.feed;
 
+import com.nokcha.efbe.domain.match.calculator.SortKeyCalculator;
 import com.nokcha.efbe.domain.match.config.MatchingConfig;
 import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.model.PairScore;
-import com.nokcha.efbe.domain.match.model.Tag;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.fixture.UserContextBuilder;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
@@ -30,7 +30,7 @@ class FeedSelectorTest {
     /** 실제 formatter + SortKeyCalculator 사용 — sortKey 계산이 FeedSelector 안으로 이동. */
     private final FeedSelector selector = new FeedSelector(
             new TagDisplayFormatter(),
-            new com.nokcha.efbe.domain.match.calculator.SortKeyCalculator());
+            new SortKeyCalculator());
 
     private MatchingConfig cfgWith(int daily, int newbieFloor, int randomSlots) {
         MatchingConfig cfg = new MatchingConfig();

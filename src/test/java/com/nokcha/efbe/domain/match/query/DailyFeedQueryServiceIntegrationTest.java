@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.match.query;
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.match.model.DailyFeedRow;
+import com.nokcha.efbe.domain.match.model.MatchActionType;
 import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
 import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.profile.entity.UserProfile;
@@ -168,7 +169,7 @@ class DailyFeedQueryServiceIntegrationTest {
             User liked = seed.activeUser("l", 27, area.getId(), LocalDateTime.now());
             seed.approvedProfile(liked.getId(), Purpose.MIXED);
             seed.action(viewer.getId(), liked.getId(),
-                    com.nokcha.efbe.domain.match.model.MatchActionType.LIKE, null);
+                    MatchActionType.LIKE, null);
             seed.flush();
 
             saveFeed(viewer.getId(), List.of(
@@ -192,10 +193,10 @@ class DailyFeedQueryServiceIntegrationTest {
             User passExpired = seed.activeUser("pe", 27, area.getId(), LocalDateTime.now());
             seed.approvedProfile(passExpired.getId(), Purpose.MIXED);
             seed.action(viewer.getId(), passActive.getId(),
-                    com.nokcha.efbe.domain.match.model.MatchActionType.PASS,
+                    MatchActionType.PASS,
                     LocalDateTime.now().plusDays(10));
             seed.action(viewer.getId(), passExpired.getId(),
-                    com.nokcha.efbe.domain.match.model.MatchActionType.PASS,
+                    MatchActionType.PASS,
                     LocalDateTime.now().minusDays(1));
             seed.flush();
 

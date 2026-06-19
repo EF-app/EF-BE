@@ -1,5 +1,6 @@
 package com.nokcha.efbe.support;
 
+import com.nokcha.efbe.domain.block.entity.Block;
 import com.nokcha.efbe.domain.match.model.MatchActionType;
 import com.nokcha.efbe.domain.match.entity.MatchAction;
 import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
@@ -96,8 +97,8 @@ public class MatchTestSeed {
 
     /** 차단(block) 양방향 검증용 — 우리 Block 엔티티가 User 참조라 EntityManager 가 다 처리. */
     public void block(User blocker, User blocked) {
-        com.nokcha.efbe.domain.block.entity.Block b =
-                com.nokcha.efbe.domain.block.entity.Block.builder()
+        Block b =
+                Block.builder()
                         .blocker(blocker)
                         .blocked(blocked)
                         .build();
