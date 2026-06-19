@@ -15,7 +15,6 @@ import com.nokcha.efbe.domain.match.entity.MatchAction;
 import com.nokcha.efbe.domain.match.model.MatchActionType;
 import com.nokcha.efbe.domain.match.model.MatchTriggerType;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
-import com.nokcha.efbe.domain.match.query.MatchListQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

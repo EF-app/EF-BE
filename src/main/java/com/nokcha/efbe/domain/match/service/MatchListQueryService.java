@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.match.query;
+package com.nokcha.efbe.domain.match.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
