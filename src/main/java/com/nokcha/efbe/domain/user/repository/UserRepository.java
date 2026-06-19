@@ -5,9 +5,11 @@ import com.nokcha.efbe.domain.user.entity.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,4 +41,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from User u where u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWING " +
             "and u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWN")
     List<User> findAllNonWithdrawn();
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update User u set u.lastActiveAt = :lastActiveAt where u.id = :userId")
+    void updateLastActiveAt(@Param("userId") Long userId, @Param("lastActiveAt") LocalDateTime lastActiveAt);
 }
