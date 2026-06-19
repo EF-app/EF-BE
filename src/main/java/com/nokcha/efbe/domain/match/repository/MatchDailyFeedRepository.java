@@ -1,13 +1,13 @@
-package com.nokcha.efbe.domain.match.query;
+package com.nokcha.efbe.domain.match.repository;
 
-import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.entity.MatchDailyFeed;
+import com.nokcha.efbe.domain.match.model.DailyFeedRow;
+import com.nokcha.efbe.domain.match.repository.projection.FeedView;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.EntityManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 통합 지점 3 — match_daily_feed 저장 + read-time 오버레이 조회.
- *  - {@link #replaceDailyFeed}: viewer 의 모든 row 를 지우고 새로 저장 (배치/콜드스타트/단건 재계산)
+ * match_daily_feed 데이터 액세스 — read-time 오버레이 native query + DELETE+INSERT 교체.
  *  - {@link #findCurrentFeed}: 피드 조회 시 read-time 오버레이
+ *  - {@link #countByViewerId}: viewer 의 row 수 — lazy fallback 판단용
+ *  - {@link #replaceDailyFeed}: viewer 의 모든 row 를 지우고 새로 저장 (배치/콜드스타트/단건 재계산)
  *
  *  ── read-time 오버레이 ──
  *    - target status≠ACTIVE 또는 profile_status≠APPROVED → 제외 (정지/탈퇴/미승인)
@@ -27,9 +28,9 @@ import java.util.List;
  *      (본 카드는 다음 호출에서 자동으로 응답에서 빠짐 → 미니 배치의 신규자가 자연스럽게 등장)
  */
 @Slf4j
-@Service
+@Repository
 @RequiredArgsConstructor
-public class DailyFeedQueryService {
+public class MatchDailyFeedRepository {
 
     private final EntityManager em;
 
@@ -116,23 +117,6 @@ public class DailyFeedQueryService {
                 .setParameter("v", viewerId)
                 .getSingleResult()).intValue();
     }
-
-    /** 피드 한 행의 표시용 view (read-time 결과 + 카드 표시 데이터 + 거리 km). */
-    public record FeedView(
-            int matchRank,
-            long targetId,
-            String slotType,
-            String tagsJson,
-            String nickname,
-            Integer age,
-            String mbti,
-            String job,
-            String bioMessage,
-            String country,
-            String city,
-            String mainPhotoUrl,
-            Double distanceKm
-    ) {}
 
     /**
      * viewer 의 모든 row 를 교체 — DELETE (전체 날짜) + INSERT.

@@ -1,4 +1,6 @@
-package com.nokcha.efbe.domain.match.query;
+package com.nokcha.efbe.domain.match.repository;
+
+import com.nokcha.efbe.domain.match.repository.projection.FeedView;
 
 import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
@@ -35,10 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    - rank 오름차순 보존
  */
 @IntegrationTest
-class DailyFeedQueryServiceIntegrationTest {
+class MatchDailyFeedRepositoryIntegrationTest {
 
     @Autowired EntityManager em;
-    @Autowired DailyFeedQueryService dailyFeedQuery;
+    @Autowired MatchDailyFeedRepository dailyFeedQuery;
     @Autowired AreaRepository areaRepository;
 
     private MatchTestSeed seed;
@@ -79,7 +81,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(3, withdrawing.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size(), "ACTIVE 만 응답: " + result);
@@ -100,7 +102,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, rejected.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -127,7 +129,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, blocked.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -149,7 +151,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, blocker.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -177,7 +179,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, liked.getId(),  "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -205,7 +207,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, passExpired.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -236,7 +238,7 @@ class DailyFeedQueryServiceIntegrationTest {
                     row(2, u2.getId(), "SCORE")
             ));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(3, result.size());
@@ -248,7 +250,7 @@ class DailyFeedQueryServiceIntegrationTest {
         @Test
         @DisplayName("오늘 피드 없음 → 빈 리스트")
         void emptyWhenNoFeed() {
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
             assertTrue(result.isEmpty());
         }
@@ -270,11 +272,11 @@ class DailyFeedQueryServiceIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
-            DailyFeedQueryService.FeedView v = result.get(0);
+            FeedView v = result.get(0);
             assertEquals("닉_disp", v.nickname());
             assertEquals(29, v.age());
             assertEquals("서울특별시", v.country());
@@ -293,7 +295,7 @@ class DailyFeedQueryServiceIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -314,7 +316,7 @@ class DailyFeedQueryServiceIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());
@@ -336,7 +338,7 @@ class DailyFeedQueryServiceIntegrationTest {
 
             saveFeed(viewer.getId(), List.of(row(1, target.getId(), "SCORE")));
 
-            List<DailyFeedQueryService.FeedView> result =
+            List<FeedView> result =
                     dailyFeedQuery.findCurrentFeed(viewer.getId());
 
             assertEquals(1, result.size());

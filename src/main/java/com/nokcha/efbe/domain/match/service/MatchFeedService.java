@@ -6,8 +6,9 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.dto.response.FeedCardRspDto;
 import com.nokcha.efbe.domain.match.feed.ColdStartFeed;
 import com.nokcha.efbe.domain.match.feed.FeedRecomputeThrottle;
-import com.nokcha.efbe.domain.match.query.DailyFeedQueryService;
+import com.nokcha.efbe.domain.match.repository.MatchDailyFeedRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
+import com.nokcha.efbe.domain.match.repository.projection.FeedView;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,14 +28,14 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class MatchFeedService {
 
-    private final DailyFeedQueryService dailyFeedQuery;
+    private final MatchDailyFeedRepository dailyFeedQuery;
     private final UserManagement userMgmt;
     private final ColdStartFeed coldStartFeed;
     private final MatchingConfigLoader configLoader;
     private final FeedRecomputeThrottle throttle;
 
     public List<FeedCardRspDto> getCurrentFeed(long viewerId) {
-        List<DailyFeedQueryService.FeedView> rows = dailyFeedQuery.findCurrentFeed(viewerId);
+        List<FeedView> rows = dailyFeedQuery.findCurrentFeed(viewerId);
 
         // 빈 응답 + raw row 자체도 0 이면 lazy ColdStartFeed 시도
         if (rows.isEmpty()) {
@@ -61,7 +62,7 @@ public class MatchFeedService {
                 .toList();
     }
 
-    private List<DailyFeedQueryService.FeedView> tryLazyColdStart(long viewerId) {
+    private List<FeedView> tryLazyColdStart(long viewerId) {
         try {
             UserContext me = userMgmt.loadContext(viewerId);
             if (me == null) {
