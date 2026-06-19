@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.admin.match.query;
+package com.nokcha.efbe.domain.admin.match.repository;
 
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedItemRspDto;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedPageRspDto;
@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.match.entity.MatchDailyFeed.SlotType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,13 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 관리자 일일 피드 조회 — match_daily_feed + users JOIN.
+ * 관리자 일일 피드 조회 데이터 액세스 — match_daily_feed + users JOIN.
  *  - 동적 필터: viewerIdFrom~viewerIdTo (range, 단일이면 from=to) / targetId / feedDate / slotType / rank
  *  - LIMIT/OFFSET 은 setMaxResults / setFirstResult 사용
  */
-@Service
+@Repository
 @RequiredArgsConstructor
-public class AdminDailyFeedQueryService {
+public class AdminDailyFeedRepository {
 
     private final EntityManager em;
 
@@ -86,20 +86,25 @@ public class AdminDailyFeedQueryService {
 
         List<AdminDailyFeedItemRspDto> items = new ArrayList<>(rows.size());
         for (Object[] r : rows) {
-            items.add(new AdminDailyFeedItemRspDto(
-                    toLocalDate(r[0]),
-                    ((Number) r[1]).longValue(),
-                    (String) r[2],
-                    ((Number) r[3]).shortValue(),
-                    ((Number) r[4]).longValue(),
-                    (String) r[5],
-                    (String) r[6],
-                    (BigDecimal) r[7],
-                    (String) r[8],
-                    toLocalDateTime(r[9])
-            ));
+            items.add(AdminDailyFeedItemRspDto.builder()
+                    .feedDate(toLocalDate(r[0]))
+                    .viewerId(((Number) r[1]).longValue())
+                    .viewerNickname((String) r[2])
+                    .matchRank(((Number) r[3]).shortValue())
+                    .targetId(((Number) r[4]).longValue())
+                    .targetNickname((String) r[5])
+                    .slotType((String) r[6])
+                    .sortKey((BigDecimal) r[7])
+                    .tagsJson((String) r[8])
+                    .createdAt(toLocalDateTime(r[9]))
+                    .build());
         }
-        return new AdminDailyFeedPageRspDto(items, page, size, hasNext);
+        return AdminDailyFeedPageRspDto.builder()
+                .content(items)
+                .page(page)
+                .size(size)
+                .hasNext(hasNext)
+                .build();
     }
 
     private static LocalDate toLocalDate(Object v) {
