@@ -37,10 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    - rank 오름차순 보존
  */
 @IntegrationTest
-class MatchDailyFeedRepositoryIntegrationTest {
+class MatchDailyFeedQueryRepositoryIntegrationTest {
 
     @Autowired EntityManager em;
-    @Autowired MatchDailyFeedRepository dailyFeedQuery;
+    @Autowired MatchDailyFeedQueryRepository dailyFeedQuery;
     @Autowired AreaRepository areaRepository;
 
     private MatchTestSeed seed;

@@ -30,7 +30,7 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class MatchDailyFeedRepository {
+public class MatchDailyFeedQueryRepository {
 
     private final EntityManager em;
 

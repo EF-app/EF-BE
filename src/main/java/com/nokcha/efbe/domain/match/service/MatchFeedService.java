@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.dto.response.FeedCardRspDto;
 import com.nokcha.efbe.domain.match.feed.ColdStartFeed;
 import com.nokcha.efbe.domain.match.feed.FeedRecomputeThrottle;
-import com.nokcha.efbe.domain.match.repository.MatchDailyFeedRepository;
+import com.nokcha.efbe.domain.match.repository.MatchDailyFeedQueryRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.repository.projection.FeedView;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class MatchFeedService {
 
-    private final MatchDailyFeedRepository dailyFeedQuery;
+    private final MatchDailyFeedQueryRepository dailyFeedQuery;
     private final UserManagement userMgmt;
     private final ColdStartFeed coldStartFeed;
     private final MatchingConfigLoader configLoader;

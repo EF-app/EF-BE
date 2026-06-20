@@ -6,7 +6,7 @@ import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchFullBatchRspDto
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchRecoverBatchRspDto;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminMatchUserBatchRspDto;
 import com.nokcha.efbe.domain.match.feed.MyFeedRecomputer;
-import com.nokcha.efbe.domain.match.repository.MatchDailyFeedRepository;
+import com.nokcha.efbe.domain.match.repository.MatchDailyFeedQueryRepository;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
@@ -24,7 +24,7 @@ public class AdminMatchService {
 
     private final UserRepository userRepository;
     private final MyFeedRecomputer myFeedRecomputer;
-    private final MatchDailyFeedRepository dailyFeedQuery;
+    private final MatchDailyFeedQueryRepository dailyFeedQuery;
     private final NightlyMatchBatch nightlyMatchBatch;
 
     /**

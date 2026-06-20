@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Repository
 @RequiredArgsConstructor
-public class MatchListRepository {
+public class MatchListQueryRepository {
 
     private final EntityManager em;
 

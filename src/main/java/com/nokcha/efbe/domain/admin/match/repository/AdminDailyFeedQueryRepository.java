@@ -21,7 +21,7 @@ import java.util.List;
  */
 @Repository
 @RequiredArgsConstructor
-public class AdminDailyFeedRepository {
+public class AdminDailyFeedQueryRepository {
 
     private final EntityManager em;
 

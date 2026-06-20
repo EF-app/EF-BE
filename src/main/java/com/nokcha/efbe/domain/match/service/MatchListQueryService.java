@@ -7,7 +7,7 @@ import com.nokcha.efbe.domain.match.dto.response.MatchLikeUserDto;
 import com.nokcha.efbe.domain.match.dto.response.MutualMatchItemRspDto;
 import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeItemRspDto;
 import com.nokcha.efbe.domain.match.dto.response.SentLikeItemRspDto;
-import com.nokcha.efbe.domain.match.repository.MatchListRepository;
+import com.nokcha.efbe.domain.match.repository.MatchListQueryRepository;
 import com.nokcha.efbe.domain.match.repository.projection.LikeActionRow;
 import com.nokcha.efbe.domain.match.repository.projection.MutualMatchRow;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * 매칭 목록 (received / sent / mutual) — 정책 적용 + DTO 조립 + cursor.
- *  데이터 액세스는 {@link MatchListRepository} 위임. 이 클래스는:
+ *  데이터 액세스는 {@link MatchListQueryRepository} 위임. 이 클래스는:
  *   - 정책 상수 (7일 cutoff / 3h fresh / 10분 online / 3일 super pin)
  *   - JSON 파싱 (tags_json → chips 평탄화 + matchScore)
  *   - region 조립, isOnline / isSuper / isFresh 계산
@@ -39,7 +39,7 @@ public class MatchListQueryService {
     private static final int LIST_CUTOFF_DAYS = 7;
     private static final int MUTUAL_FRESH_HOURS = 3;   // 매칭 후 3h 안
 
-    private final MatchListRepository repo;
+    private final MatchListQueryRepository repo;
 
     /* ───────── COUNT ───────── */
 
