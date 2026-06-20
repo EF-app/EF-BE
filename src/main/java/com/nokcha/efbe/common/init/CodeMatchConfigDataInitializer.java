@@ -1,9 +1,9 @@
 package com.nokcha.efbe.common.init;
 
-import com.nokcha.efbe.domain.match.repository.MatchConfigRepository;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -11,37 +11,31 @@ import org.springframework.stereotype.Component;
 
 /**
  * code_match_config 시드 자동 적재.
- *  운영 시드 SQL ({@code sql/migration_match.sql}) 의 1번 섹션 (code_match_config) 만 재실행 시 안전하므로
- *  여기서는 전용 시드 파일 ({@code sql/code_match_config.sql}) 을 따로 두지 않고
- *  migration_match.sql 전체를 IF NOT EXISTS / INSERT 가드로 실행.
+ *  매 부팅 시 {@code sql/migration_match.sql} 전체 재실행.
+ *  - CREATE TABLE 은 {@code IF NOT EXISTS} 로 멱등
+ *  - INSERT 는 {@code INSERT IGNORE} 로 PK 충돌 무시 → 기존 row 보존, 빠진 row 자동 보충
  *
- *  ※ migration_match.sql 의 CREATE 문은 모두 IF NOT EXISTS 라 멱등. INSERT 는 row 0 일 때만 진입.
- *  ※ test 프로파일에서는 비활성화 — 테스트는 운영 시드와 무관하게 동작.
+ *  ※ 운영 중 admin 이 실수로 row 1개 삭제 후 재기동해도 해당 row 가 자동 복구됨
  */
+@Slf4j
 @Component
 @Profile("!test")
 @RequiredArgsConstructor
 public class CodeMatchConfigDataInitializer {
 
-    private final MatchConfigRepository matchConfigRepository;
     private final DataSource dataSource;
 
     @PostConstruct
     public void initialize() {
-        // 첫 부팅에는 테이블이 아직 없을 수 있어 count() 가 실패할 수 있음 → 0 으로 간주
-        long existing;
-        try {
-            existing = matchConfigRepository.count();
-        } catch (Exception e) {
-            existing = 0;
-        }
-        if (existing > 0) return;
-
         ClassPathResource resource = new ClassPathResource("sql/migration_match.sql");
-        if (!resource.exists()) return;
+        if (!resource.exists()) {
+            log.warn("[CodeMatchConfig] migration_match.sql 파일 없음 — 시드 적재 skip");
+            return;
+        }
 
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator(resource);
         populator.setContinueOnError(false);
         populator.execute(dataSource);
+        log.info("[CodeMatchConfig] 시드 SQL 실행 완료");
     }
 }
