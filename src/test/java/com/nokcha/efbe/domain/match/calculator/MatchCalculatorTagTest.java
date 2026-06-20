@@ -39,8 +39,8 @@ class MatchCalculatorTagTest {
 
     private final MatchingConfig cfg = new MatchingConfig();
 
-    /** 빈도 stub — 키워드별 임의 빈도 주입. 적게 등록된 게 더 희귀. EntityManager 미사용 (countOf/refresh override). */
-    private final KeywordFreqService freqStub = new KeywordFreqService(null) {
+    /** 빈도 stub — 키워드별 임의 빈도 주입. 적게 등록된 게 더 희귀. Repository 미사용 (countOf/refresh override). */
+    private final KeywordFreqService freqStub = new KeywordFreqService(null, null) {
         final Map<String, Integer> table = Map.of(
                 "락",   100,
                 "재즈",  3,

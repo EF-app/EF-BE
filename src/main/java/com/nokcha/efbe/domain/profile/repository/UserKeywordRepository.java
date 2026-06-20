@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.profile.repository;
 
+import com.nokcha.efbe.domain.match.repository.projection.KeywordFreqProjection;
 import com.nokcha.efbe.domain.profile.entity.UserKeyword;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -23,4 +24,13 @@ public interface UserKeywordRepository extends JpaRepository<UserKeyword, Long> 
     @Modifying
     @Query("delete from UserKeyword uk where uk.userId = :userId")
     void deleteByUserId(@Param("userId") Long userId);
+
+    // KeywordFreqService 캐시 — small_category 기준 보유자 수
+    @Query("""
+        SELECT new com.nokcha.efbe.domain.match.repository.projection.KeywordFreqProjection(
+            ck.smallCategory, COUNT(DISTINCT uk.userId))
+          FROM UserKeyword uk JOIN CodeKeyword ck ON ck.id = uk.keywordId
+         GROUP BY ck.smallCategory
+    """)
+    List<KeywordFreqProjection> countByCodeKeyword();
 }

@@ -1,13 +1,13 @@
 package com.nokcha.efbe.domain.match.service;
 
-import jakarta.persistence.EntityManager;
+import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
+import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,6 +20,8 @@ import java.util.Map;
  *  - {@link #countOf(String)} 은 캐시 lookup, 미스 시 0 (가장 희귀)
  *  - volatile Map reference swap — read 는 1회 volatile read, refresh 는 새 Map 으로 atomic 교체.
  *
+ *  이 클래스는 캐시 / 동시성 / 트랜잭션 책임.
+ *
  *  키 = small_category (예: "락"). 값 = user_keyword + user_custom_keyword 보유자 수 합.
  *  사용처: MatchCalculator 의 공통 키워드 칩 정렬 (빈도 낮은 것부터 N개).
  */
@@ -28,7 +30,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KeywordFreqService {
 
-    private final EntityManager em;
+    private final UserKeywordRepository userKeywordRepo;
+    private final UserCustomKeywordRepository userCustomKeywordRepo;
 
     /** atomic reference swap 으로 refresh 중 race window 차단. read 는 volatile read 한 번. */
     private volatile Map<String, Integer> cache = Map.of();
@@ -42,34 +45,12 @@ public class KeywordFreqService {
     @Transactional(readOnly = true)
     public void refresh() {
         Map<String, Integer> next = new HashMap<>();
-
-        /* code_keyword.small_category 기준 보유자 수 */
-        @SuppressWarnings("unchecked")
-        List<Object[]> ckRows = em.createNativeQuery("""
-                SELECT ck.small_category, COUNT(DISTINCT uk.user_id)
-                  FROM user_keyword uk
-                  JOIN code_keyword ck ON ck.id = uk.keyword_id
-                 GROUP BY ck.small_category
-                """).getResultList();
-        for (Object[] r : ckRows) {
-            String label = (String) r[0];
-            int count = ((Number) r[1]).intValue();
-            next.merge(label, count, Integer::sum);
+        for (var row : userKeywordRepo.countByCodeKeyword()) {
+            next.merge(row.label(), row.cnt().intValue(), Integer::sum);
         }
-
-        /* user_custom_keyword.keyword 기준 보유자 수 */
-        @SuppressWarnings("unchecked")
-        List<Object[]> uckRows = em.createNativeQuery("""
-                SELECT uck.keyword, COUNT(DISTINCT uck.user_id)
-                  FROM user_custom_keyword uck
-                 GROUP BY uck.keyword
-                """).getResultList();
-        for (Object[] r : uckRows) {
-            String label = (String) r[0];
-            int count = ((Number) r[1]).intValue();
-            next.merge(label, count, Integer::sum);
+        for (var row : userCustomKeywordRepo.countByKeyword()) {
+            next.merge(row.label(), row.cnt().intValue(), Integer::sum);
         }
-
         // ConcurrentHashMap clear+putAll 의 race window 회피 — 새 map 으로 atomic reference swap.
         this.cache = Map.copyOf(next);
         log.info("[KeywordFreqService] 캐시 갱신 — {} 개 키워드", cache.size());
