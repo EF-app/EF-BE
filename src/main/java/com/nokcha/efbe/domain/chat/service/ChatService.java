@@ -537,8 +537,8 @@ public class ChatService {
                 .build();
     }
 
-    private List<Long> participantIds(User firstUser, User secondUser) {
-        return List.of(firstUser.getId(), secondUser.getId());
+    private List<String> participantIds(User firstUser, User secondUser) {
+        return List.of(String.valueOf(firstUser.getId()), String.valueOf(secondUser.getId()));
     }
 
     private User getActiveUser(Long userId) {

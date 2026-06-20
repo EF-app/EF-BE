@@ -38,7 +38,7 @@ public class ChatFirebaseService {
                 .getId();
     }
 
-    public void createRoomDocument(ChatRoom room, List<Long> participantIds) {
+    public void createRoomDocument(ChatRoom room, List<String> participantIds) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("chatRoomId", room.getId());
         data.put("roomType", room.getRoomType().name());
