@@ -36,7 +36,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "match_actions",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_action_actor_targ et",
+                name = "uk_action_actor_target",
                 columnNames = {"actor_id", "target_id"}
         ),
         indexes = {
