@@ -5,6 +5,7 @@ import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.common.util.LocationUtil;
+import com.nokcha.efbe.domain.block.repository.BlockRepository;
 import com.nokcha.efbe.domain.chat.dto.request.ChatMemoReqDto;
 import com.nokcha.efbe.domain.chat.dto.request.ChatReportLeaveReqDto;
 import com.nokcha.efbe.domain.chat.dto.request.ChatRoomCreateReqDto;
@@ -70,6 +71,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatReportEvidenceRepository chatReportEvidenceRepository;
+    private final BlockRepository blockRepository;
     private final UserRepository userRepository;
     private final PostItRepository postItRepository;
     private final ReportService reportService;
@@ -209,8 +211,28 @@ public class ChatService {
         List<ChatRoom> rooms = chatRoomRepository.findNonAnonymousRoomsByPair(pairUserAId, pairUserBId);
 
         for (ChatRoom room : rooms) {
-            room.activate();
+            activateRoomIfAvailable(room);
+        }
+    }
+
+    // 특정 유저가 포함된 채팅방 비활성화
+    @Transactional
+    public void deactivateRoomsByUser(Long userId) {
+        List<ChatRoom> rooms = chatRoomRepository.findRoomsByUser(userId);
+
+        for (ChatRoom room : rooms) {
+            room.deactivate();
             chatFirebaseService.updateRoomStatus(room);
+        }
+    }
+
+    // 특정 유저가 포함된 채팅방 중 차단/제재가 없는 방만 활성화
+    @Transactional
+    public void activateAvailableRoomsByUser(Long userId) {
+        List<ChatRoom> rooms = chatRoomRepository.findRoomsByUser(userId);
+
+        for (ChatRoom room : rooms) {
+            activateRoomIfAvailable(room);
         }
     }
 
@@ -579,6 +601,27 @@ public class ChatService {
             throw new BusinessException(ErrorCode.CHAT_ROOM_INACTIVE);
         }
         return room;
+    }
+
+    private void activateRoomIfAvailable(ChatRoom room) {
+        if (Boolean.TRUE.equals(room.getIsDelete())) return;
+        if (hasBlockBetween(room.getPairUserAId(), room.getPairUserBId())) return;
+        if (!arePairUsersActive(room.getPairUserAId(), room.getPairUserBId())) return;
+
+        room.activate();
+        chatFirebaseService.updateRoomStatus(room);
+    }
+
+    private boolean hasBlockBetween(Long firstUserId, Long secondUserId) {
+        return blockRepository.existsByBlocker_IdAndBlocked_Id(firstUserId, secondUserId)
+                || blockRepository.existsByBlocker_IdAndBlocked_Id(secondUserId, firstUserId);
+    }
+
+    private boolean arePairUsersActive(Long firstUserId, Long secondUserId) {
+        List<User> users = userRepository.findAllById(List.of(firstUserId, secondUserId));
+        if (users.size() != 2) return false;
+
+        return users.stream().allMatch(user -> user.getStatus() == UserStatus.ACTIVE);
     }
 
     private void validateProfileOpenSupported(ChatRoom room) {

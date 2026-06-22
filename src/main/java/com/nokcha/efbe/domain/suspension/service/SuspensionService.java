@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.suspension.service;
 import com.nokcha.efbe.domain.suspension.entity.SuspensionType;
 import com.nokcha.efbe.domain.suspension.entity.UserSuspension;
 import com.nokcha.efbe.domain.suspension.repository.UserSuspensionRepository;
+import com.nokcha.efbe.domain.chat.service.ChatService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import lombok.RequiredArgsConstructor;
@@ -26,15 +27,18 @@ import java.util.Optional;
 public class SuspensionService {
 
     private final UserSuspensionRepository userSuspensionRepository;
+    private final ChatService chatService;
 
     // 활성 제재 기반으로 users.status 를 update. 부과/해제/배치/정합성 검증에서 호출
     public void evaluateAndUpdateStatus(User user) {
         if (user.getStatus() == UserStatus.WITHDRAWING || user.getStatus() == UserStatus.WITHDRAWN) {
             return;
         }
+        UserStatus previous = user.getStatus();
         UserStatus next = evaluateUserStatus(user.getId());
-        if (user.getStatus() != next) {
+        if (previous != next) {
             user.changeStatus(next);
+            syncChatRoomsByStatusChange(user.getId(), previous, next);
         }
     }
 
@@ -58,5 +62,22 @@ public class SuspensionService {
         return userSuspensionRepository
                 .findStrongestActiveByUserId(userId, LocalDateTime.now())
                 .filter(s -> s.getSuspensionType() != SuspensionType.WARNING);
+    }
+
+    private void syncChatRoomsByStatusChange(Long userId, UserStatus previous, UserStatus next) {
+        if (isBlockingStatus(previous) == isBlockingStatus(next)) {
+            return;
+        }
+
+        if (isBlockingStatus(next)) {
+            chatService.deactivateRoomsByUser(userId);
+            return;
+        }
+
+        chatService.activateAvailableRoomsByUser(userId);
+    }
+
+    private boolean isBlockingStatus(UserStatus status) {
+        return status == UserStatus.TEMPORARY || status == UserStatus.PERMANENT;
     }
 }

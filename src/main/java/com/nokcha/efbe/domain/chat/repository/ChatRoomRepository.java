@@ -49,4 +49,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             "and r.isAnonymous = false " +
             "and r.isDelete = false")
     List<ChatRoom> findNonAnonymousRoomsByPair(@Param("pairUserAId") Long pairUserAId, @Param("pairUserBId") Long pairUserBId);
+
+    @Query("select r from ChatRoom r " +
+            "where (r.pairUserAId = :userId or r.pairUserBId = :userId) " +
+            "and r.isDelete = false")
+    List<ChatRoom> findRoomsByUser(@Param("userId") Long userId);
 }
