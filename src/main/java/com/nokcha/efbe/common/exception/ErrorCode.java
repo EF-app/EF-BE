@@ -155,7 +155,19 @@ public enum ErrorCode {
 
     // 피드백 (버그신고/기능요청)
     INVALID_FEEDBACK_CATEGORY(400, "선택한 카테고리는 해당 피드백 유형에서 사용할 수 없습니다."),
-    NOT_FOUND_FEEDBACK(404, "존재하지 않는 피드백입니다.");
+    NOT_FOUND_FEEDBACK(404, "존재하지 않는 피드백입니다."),
+
+    // 매칭 액션
+    MATCH_ACTION_SELF(400, "자기 자신에게는 액션을 수행할 수 없습니다."),
+    MATCH_ACTION_TARGET_NOT_FOUND(404, "대상 유저를 찾을 수 없습니다."),
+    MATCH_ACTION_UNDO_NOT_ALLOWED(400, "되돌릴 수 없는 액션입니다 (PASS 만 가능)."),
+
+    // 매칭 운영 도구 (admin)
+    MATCH_RECOMPUTE_INACTIVE_USER(400, "ACTIVE 상태가 아닌 유저는 피드를 재계산할 수 없습니다."),
+
+    // 매칭 설정값 (admin)
+    INVALID_MATCH_CONFIG_KEY(400, "존재하지 않는 매칭 설정 키입니다."),
+    INVALID_MATCH_CONFIG_VALUE(400, "매칭 설정 값이 유효하지 않습니다.");
 
     private final int code;
     private final String message;

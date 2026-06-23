@@ -154,7 +154,7 @@ public class PostItService {
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
         }
-        // TODO(v1.2 별 차감): SUPER_LIKE / PRE_MESSAGE / PROFILE_BOOST / UNDO 등을 user_star_balance 에서 직접 차감하는 로직 추가 예정
+        // TODO(v1.2 별 차감): SUPER_LIKE / POWER_MESSAGE / PROFILE_BOOST / UNDO 등을 user_star_balance 에서 직접 차감하는 로직 추가 예정
         int minutes = itemCatalogRepository.findByItemCode(CodeItem.CODE_POST_PIN)
                 .map(item -> item.getEffectDurationMin() == null ? 0 : item.getEffectDurationMin())
                 .orElse(0);

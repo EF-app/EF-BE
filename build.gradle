@@ -87,4 +87,9 @@ clean {
 
 tasks.named('test') {
     useJUnitPlatform()
+    testLogging {
+        exceptionFormat = 'full'
+        showStandardStreams = false
+        events 'failed'
+    }
 }

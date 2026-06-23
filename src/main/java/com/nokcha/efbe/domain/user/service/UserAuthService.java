@@ -32,6 +32,7 @@ import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
 import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.entity.RevokedToken;
+import com.nokcha.efbe.domain.user.event.UserCreatedEvent;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
 import com.nokcha.efbe.domain.user.repository.UserActivityStatusRepository;
@@ -46,6 +47,7 @@ import com.nokcha.efbe.domain.user.repository.UserTermsRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +63,8 @@ import java.util.List;
 public class UserAuthService {
 
     private static final String USER_ROLE = "ROLE_USER";
+    /** 휴면 임계값 (일) — MatchingConfig.lastActiveDays 와 동일. 매칭 cfg 의존 회피용 상수. */
+    private static final int DORMANT_THRESHOLD_DAYS = 31;
 
     private final AdminAccountRepository adminAccountRepository;
     private final UserRepository userRepository;
@@ -84,6 +88,7 @@ public class UserAuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RevokedTokenRepository revokedTokenRepository;
     private final SuspensionService suspensionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 로그인 아이디 사용 가능 여부
     @Transactional(readOnly = true)
@@ -328,6 +333,9 @@ public class UserAuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE);
         userSignUpSessionRepository.delete(signUpSession);
 
+        // 가입 완료 commit 후 매칭 콜드스타트 트리거 (AFTER_COMMIT 리스너에서 수신)
+        eventPublisher.publishEvent(new UserCreatedEvent(user.getId()));
+
         return SignUpCompleteRspDto.builder()
                 .userId(user.getId())
                 .accessToken(accessToken)
@@ -365,8 +373,21 @@ public class UserAuthService {
             logFailure(user.getId(), reqDto, request, LoginFailureReason.SUSPENDED);
         }
 
-        user.updateLastActiveAt(LocalDateTime.now());
+        // 휴면 복귀 판단 — 갱신 직전 last_active_at 이 31일 초과면 매칭 피드 즉시 재계산 트리거
+        //   (MatchingConfig.lastActiveDays 와 동일 값 — user 도메인이 매칭 cfg 의존 회피)
+        LocalDateTime priorLastActive = user.getLastActiveAt();
+        LocalDateTime now = LocalDateTime.now();
+        boolean dormantRecovered = priorLastActive != null
+                && priorLastActive.isBefore(now.minusDays(DORMANT_THRESHOLD_DAYS));
+
+        user.updateLastActiveAt(now);
         logSuccess(user.getId(), reqDto, request);
+
+        if (dormantRecovered) {
+            eventPublisher.publishEvent(new com.nokcha.efbe.domain.user.event.UserReactivatedEvent(
+                    user.getId(),
+                    com.nokcha.efbe.domain.user.event.UserReactivatedEvent.Reason.DORMANT_RECOVERED));
+        }
 
         UserSuspensionRspDto suspension = suspensionService.findActiveBlockingSuspension(user.getId())
                 .map(UserSuspensionRspDto::from)
