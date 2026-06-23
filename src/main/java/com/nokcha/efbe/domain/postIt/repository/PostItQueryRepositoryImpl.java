@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.postIt.repository;
 
 import com.nokcha.efbe.domain.area.entity.QCodeArea;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
+import com.nokcha.efbe.domain.chat.entity.QChatParticipant;
 import com.nokcha.efbe.domain.chat.entity.QChatRoom;
 import com.nokcha.efbe.domain.postIt.entity.QPostIt;
 import com.nokcha.efbe.domain.postIt.entity.QPostLike;
@@ -132,6 +133,7 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
 
         // 본인이 자기 글에 좋아요 누른 적 있는지 — exists 서브쿼리
         QPostLike pl2 = new QPostLike("plMine");
+        QChatParticipant cpMine = new QChatParticipant("cpMine");
         Expression<Boolean> likedByMeExpr = JPAExpressions
                 .selectOne()
                 .from(pl2)
@@ -193,13 +195,27 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                 .exists();
 
         QChatRoom r2 = new QChatRoom("rMine");
+        QChatParticipant cpMine = new QChatParticipant("cpMine");
         Expression<Boolean> chattedByMeExpr = JPAExpressions
                 .selectOne()
                 .from(r2)
-                .where(r2.post.id.eq(p.id), r2.partner.id.eq(ConstantImpl.create(userId)))
+                .where(
+                        r2.post.id.eq(p.id),
+                        r2.pairUserAId.eq(userId).or(r2.pairUserBId.eq(userId)),
+                        JPAExpressions
+                                .selectOne()
+                                .from(cpMine)
+                                .where(
+                                        cpMine.chatRoom.eq(r2),
+                                        cpMine.user.id.eq(userId),
+                                        cpMine.leftAt.isNull()
+                                )
+                                .exists()
+                )
                 .exists();
 
         // "내가 반응한" 조건: 좋아요 또는 채팅(partner) 중 하나 이상 — 본인 작성 글 제외
+        QChatParticipant cpReacted = new QChatParticipant("cpReacted");
         BooleanExpression reactedByMe = JPAExpressions
                 .selectOne()
                 .from(pl2)
@@ -208,7 +224,19 @@ public class PostItQueryRepositoryImpl implements PostItQueryRepository {
                 .or(JPAExpressions
                         .selectOne()
                         .from(r2)
-                        .where(r2.post.id.eq(p.id), r2.partner.id.eq(ConstantImpl.create(userId)))
+                        .where(
+                                r2.post.id.eq(p.id),
+                                r2.pairUserAId.eq(userId).or(r2.pairUserBId.eq(userId)),
+                                JPAExpressions
+                                        .selectOne()
+                                        .from(cpReacted)
+                                        .where(
+                                                cpReacted.chatRoom.eq(r2),
+                                                cpReacted.user.id.eq(userId),
+                                                cpReacted.leftAt.isNull()
+                                        )
+                                        .exists()
+                        )
                         .exists());
 
         return query

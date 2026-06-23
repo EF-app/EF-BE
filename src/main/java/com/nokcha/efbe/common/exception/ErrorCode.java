@@ -7,7 +7,6 @@ public enum ErrorCode {
     // 권한
     INVALID_USER(401, "로그인 정보를 확인해주세요."),
     FORBIDDEN_ROLE(403, "관리자 권한이 필요합니다."),
-    // [merge-squash] develop 의존 누락분 보강 — develop 도메인(postIt chat/like, balGame) 사용
     FORBIDDEN(403, "권한이 없습니다."),
     DUPLICATE_LIKE(409, "이미 좋아요를 누른 게시글입니다."),
     MESSAGE_ALREADY_READ(400, "이미 읽음 처리된 메시지입니다."),
@@ -101,6 +100,9 @@ public enum ErrorCode {
     NOT_FOUND_CHAT_MESSAGE(404, "메시지를 찾을 수 없습니다."),
     CHAT_ROOM_INACTIVE(400, "비활성화된 채팅방입니다."),
     CHAT_NOT_PARTICIPANT(403, "채팅방 참여자가 아닙니다."),
+    FIREBASE_CHAT_ROOM_CREATE_FAILED(500, "Firebase 채팅방 생성에 실패했습니다."),
+    FIREBASE_CHAT_MESSAGE_READ_FAILED(500, "Firebase 채팅 메시지 조회에 실패했습니다."),
+    FIREBASE_TOKEN_CREATE_FAILED(500, "Firebase 인증 토큰 생성에 실패했습니다."),
 
     // 밸런스 게임
     NOT_FOUND_GAME(404, "밸런스 게임을 찾을 수 없습니다."),
@@ -126,6 +128,7 @@ public enum ErrorCode {
     NOT_FOUND_POST(404, "포스트잇을 찾을 수 없습니다."),
     POST_NOT_OWNER(403, "포스트 작성자만 수행할 수 있습니다."),
     POST_EXPIRED(400, "만료된 포스트입니다."),
+    DUPLICATE_POST_REPLY(409, "이미 답장한 포스트잇입니다."),
     POST_LIGHTNING_ANONYMOUS(400, "번개 포스트는 닉네임으로만 작성할 수 있습니다."),
 
     // 약관/정책

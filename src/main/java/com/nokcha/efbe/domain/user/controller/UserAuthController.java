@@ -1,8 +1,10 @@
 package com.nokcha.efbe.domain.user.controller;
 
 import com.nokcha.efbe.common.response.RspTemplate;
+import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.AvailabilityRspDto;
+import com.nokcha.efbe.domain.user.dto.response.FirebaseTokenRspDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProfileRspDto;
@@ -37,6 +39,7 @@ public class UserAuthController {
 
     private final UserAuthService userAuthService;
     private final UserSignUpProfileService userSignUpProfileService;
+    private final SecurityUtil securityUtil;
 
     // 약관 동의
     @Operation(summary = "약관 동의", description = "약관 동의 여부를 저장하고 다음 단계용 회원가입 토큰을 발급합니다.")
@@ -161,10 +164,18 @@ public class UserAuthController {
         return new RspTemplate<>(HttpStatus.OK, "액세스 토큰 재발급이 완료되었습니다.", userAuthService.refreshAccessToken(reqDto));
     }
 
+    @Operation(summary = "Firebase 커스텀 토큰 재발급", description = "현재 로그인 사용자의 Firebase Auth custom token을 재발급합니다. 프론트는 signInWithCustomToken에 사용합니다.")
+    @GetMapping("/auth/firebase-token")
+    public RspTemplate<FirebaseTokenRspDto> refreshFirebaseToken() {
+        Long userId = securityUtil.getCurrentUserId();
+        return new RspTemplate<>(HttpStatus.OK, "Firebase 토큰 재발급이 완료되었습니다.", userAuthService.refreshFirebaseToken(userId));
+    }
+
     // 로그아웃 — refresh + access 토큰을 서버 blacklist 에 등록.
     // 멱등성: 검증 실패해도 200 OK (클라이언트는 어쨌든 로컬 store 비우면 됨).
     @Operation(summary = "로그아웃",
             description = "현재 access 토큰(Authorization 헤더)과 refresh 토큰(body)을 서버 블랙리스트에 등록. " +
+                    "저장된 FCM 토큰도 삭제함. " +
                     "이후 해당 토큰들은 만료 전이라도 모든 인증 요청·재발급에서 거부됨. " +
                     "토큰 검증 실패해도 200 OK 반환 (멱등성 보장).")
     @PostMapping("/logout")

@@ -8,6 +8,7 @@ import com.nokcha.efbe.domain.block.dto.response.BlockRspDto;
 import com.nokcha.efbe.domain.block.dto.response.BlockedUserRspDto;
 import com.nokcha.efbe.domain.block.entity.Block;
 import com.nokcha.efbe.domain.block.repository.BlockRepository;
+import com.nokcha.efbe.domain.chat.service.ChatService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class BlockService {
     private final BlockRepository blockRepository;
     private final UserRepository userRepository;
     private final AreaRepository areaRepository;
+    private final ChatService chatService;
 
     // 차단 생성. 자기 자신 차단 불가, 이미 차단한 유저면 중복 거부.
     @Transactional
@@ -48,6 +50,7 @@ public class BlockService {
                     .blocker(blocker)
                     .blocked(blocked)
                     .build());
+            chatService.deactivateNonAnonymousRoomsByPair(blockerId, blockedId);    // 채팅방 있는 경우 비활성화
             log.info("[Block] blocker={} blocked={}", blockerId, blockedId);
             return BlockRspDto.from(block);
         } catch (DataIntegrityViolationException e) {
@@ -61,6 +64,7 @@ public class BlockService {
         Block block = blockRepository.findByBlocker_IdAndBlocked_Id(blockerId, blockedUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_BLOCK));
         blockRepository.delete(block);
+        chatService.activateNonAnonymousRoomsByPair(blockerId, blockedUserId);  // 채팅방 있는 경우 다시 활성화
         log.info("[Block] unblock blocker={} blocked={}", blockerId, blockedUserId);
     }
 

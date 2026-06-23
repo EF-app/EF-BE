@@ -17,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 사용자 신고 등록 서비스.
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ReportService {
@@ -29,15 +30,20 @@ public class ReportService {
 
     @Transactional
     public ReportRspDto createReport(Long reporterId, ReportCreateReqDto reqDto) {
+        Report saved = createReportEntity(reporterId, reqDto.getTargetType(), reqDto.getTargetId(),
+                reqDto.getReasonCodes(), reqDto.getDetail());
+        return ReportRspDto.from(saved);
+    }
+
+    public Report createReportEntity(Long reporterId, ReportTargetType targetType, Long targetId, List<String> reasonCodes, String detail) {
         // PROFILE 신고는 target_id 가 곧 신고 대상 user.id — 자기 자신 신고 차단.
-        if (reqDto.getTargetType() == ReportTargetType.PROFILE
-                && reqDto.getTargetId().equals(reporterId)) {
+        if (targetType == ReportTargetType.PROFILE && targetId.equals(reporterId)) {
             throw new BusinessException(ErrorCode.SELF_ACTION_FORBIDDEN);
         }
 
         // 같은 사람이 같은 대상에 중복 신고 차단
         if (reportRepository.existsByTargetTypeAndTargetIdAndReporter_Id(
-                reqDto.getTargetType(), reqDto.getTargetId(), reporterId)) {
+                targetType, targetId, reporterId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_REPORT);
         }
 
@@ -46,26 +52,26 @@ public class ReportService {
 
         // 다중 선택 사유 코드는 콤마 구분 단일 문자열로 직렬화해 저장 (예: "HATE,SPAM").
         // 255자 컷 안에 들어가도록 trim — enum 코드 길이 합 + 콤마 정도라 일반적으로 안전.
-        String joinedCodes = (reqDto.getReasonCodes() == null || reqDto.getReasonCodes().isEmpty())
+        String joinedCodes = (reasonCodes == null || reasonCodes.isEmpty())
                 ? null
-                : String.join(",", reqDto.getReasonCodes());
+                : String.join(",", reasonCodes);
         if (joinedCodes != null && joinedCodes.length() > 255) {
             joinedCodes = joinedCodes.substring(0, 255);
         }
 
         Report saved = reportRepository.save(Report.builder()
                 .reporter(reporter)
-                .targetType(reqDto.getTargetType())
-                .targetId(reqDto.getTargetId())
+                .targetType(targetType)
+                .targetId(targetId)
                 .reasonCodes(joinedCodes)
-                .detail(reqDto.getDetail())
+                .detail(detail)
                 .build());
 
         // 신고 누적 카운트  : 임계치(10) 도달 시 자동 hidden 마킹.
         // PROFILE/CHAT/CHAT_IMAGE 는 카운트 컬럼 없음 (현 단계 미지원).
-        incrementTargetReportCount(reqDto.getTargetType(), reqDto.getTargetId());
+        incrementTargetReportCount(targetType, targetId);
 
-        return ReportRspDto.from(saved);
+        return saved;
     }
 
     private void incrementTargetReportCount(ReportTargetType type, Long targetId) {

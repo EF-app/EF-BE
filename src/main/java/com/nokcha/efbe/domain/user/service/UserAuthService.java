@@ -1,5 +1,7 @@
 package com.nokcha.efbe.domain.user.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.nokcha.efbe.common.auth.jwt.JwtTokenProvider;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
@@ -26,6 +28,7 @@ import com.nokcha.efbe.domain.user.dto.request.SignUpCredentialsReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpNicknameReqDto;
 import com.nokcha.efbe.domain.user.dto.request.SignUpPurposeReqDto;
 import com.nokcha.efbe.domain.user.dto.request.TermsAgreementReqDto;
+import com.nokcha.efbe.domain.user.dto.response.FirebaseTokenRspDto;
 import com.nokcha.efbe.domain.user.dto.response.LoginRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpCompleteRspDto;
 import com.nokcha.efbe.domain.user.dto.response.SignUpProgressRspDto;
@@ -398,7 +401,22 @@ public class UserAuthService {
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .refreshToken(jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId(), USER_ROLE))
                 .loginId(user.getLoginId())
+                .fcmToken(user.getFcmToken())
+                .firebaseToken(createFirebaseToken(user.getId()))
                 .suspension(suspension)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public FirebaseTokenRspDto refreshFirebaseToken(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
+        if (user.isWithdrawnOrWithdrawing()) {
+            throw new BusinessException(ErrorCode.WITHDRAWN_USER);
+        }
+
+        return FirebaseTokenRspDto.builder()
+                .firebaseToken(createFirebaseToken(user.getId()))
                 .build();
     }
 
@@ -444,6 +462,14 @@ public class UserAuthService {
             userLoginLogService.logFailure(userId, reqDto.getLoginId(), request, reqDto.getDeviceId(), reqDto.getPlatform(), failureReason, reqDto.isScodeStep());
         } catch (Exception e) {
             log.warn("로그인 실패 로그 저장 실패: loginId={}, reason={}", reqDto.getLoginId(), failureReason, e);
+        }
+    }
+
+    private String createFirebaseToken(Long userId) {
+        try {
+            return FirebaseAuth.getInstance().createCustomToken(String.valueOf(userId));
+        } catch (FirebaseAuthException e) {
+            throw new BusinessException(ErrorCode.FIREBASE_TOKEN_CREATE_FAILED, e);
         }
     }
 
@@ -731,12 +757,26 @@ public class UserAuthService {
         return request.getRemoteAddr();
     }
 
-    // 로그아웃 — refresh + access 토큰 둘 다 jti 블랙리스트에 추가.
+    // 로그아웃 — FCM 토큰 삭제 후 refresh + access 토큰 둘 다 jti 블랙리스트에 추가.
     // 멱등성: 토큰 검증 실패(서명/만료/형식 오류) 해도 throw 하지 않고 200 OK 반환.
     @Transactional
     public void logout(String accessToken, String refreshToken) {
+        clearFcmTokenQuietly(accessToken, refreshToken);
         revokeQuietly(refreshToken, "REFRESH");
         revokeQuietly(accessToken, "ACCESS");
+    }
+
+    // 단일 기기 토큰 구조이므로 로그아웃 시 현재 사용자의 저장 토큰 제거
+    private void clearFcmTokenQuietly(String accessToken, String refreshToken) {
+        try {
+            String token = accessToken != null && !accessToken.isBlank() ? accessToken : refreshToken;
+            if (token == null || token.isBlank()) return;
+
+            userRepository.findById(jwtTokenProvider.getUserId(token))
+                    .ifPresent(User::clearFcmToken);
+        } catch (Exception e) {
+            log.debug("[Logout] FCM 토큰 삭제 실패(무시): {}", e.getMessage());
+        }
     }
 
     // 토큰 1건을 blacklist 에 추가 — 어떤 예외도 무시 (멱등성 보장)

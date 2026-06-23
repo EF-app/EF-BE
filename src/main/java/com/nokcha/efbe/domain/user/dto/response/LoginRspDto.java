@@ -24,6 +24,12 @@ public class LoginRspDto {
     @Schema(description = "로그인 아이디", example = "test001")
     private String loginId;
 
+    @Schema(description = "현재 서버에 저장된 FCM registration token. 없으면 null", example = "fcm_registration_token", nullable = true)
+    private String fcmToken;
+
+    @Schema(description = "Firebase Auth custom token. 프론트는 signInWithCustomToken에 사용합니다.", example = "eyJhbGciOiJSUzI1NiJ9...")
+    private String firebaseToken;
+
     @Schema(description = "활성 제재 정보. 없으면 active=false")
     private UserSuspensionRspDto suspension;
 }

@@ -48,6 +48,22 @@ public class UserInfoController {
         return new RspTemplate<>(HttpStatus.OK, "활성 제재 조회 성공", data);
     }
 
+    @Operation(summary = "FCM 토큰 등록/갱신", description = "클라이언트가 Firebase SDK에서 발급받은 FCM registration token을 저장합니다.")
+    @PreAuthorize("hasRole('USER')")
+    @PatchMapping("/fcm-token")
+    public RspTemplate<Void> updateFcmToken(@Valid @RequestBody FcmTokenReqDto reqDto) {
+        userInfoService.updateFcmToken(reqDto);
+        return new RspTemplate<>(HttpStatus.OK, "FCM 토큰이 저장되었습니다.");
+    }
+
+    @Operation(summary = "FCM 토큰 삭제", description = "로그아웃, 알림 비활성화, 토큰 폐기 시 저장된 FCM token을 삭제합니다.")
+    @PreAuthorize("hasRole('USER')")
+    @DeleteMapping("/fcm-token")
+    public RspTemplate<Void> deleteFcmToken() {
+        userInfoService.deleteFcmToken();
+        return new RspTemplate<>(HttpStatus.OK, "FCM 토큰이 삭제되었습니다.");
+    }
+
     @Operation(summary = "보안코드 설정", description = "로그인한 회원의 보안코드를 설정합니다.")
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/scode")
