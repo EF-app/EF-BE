@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.profile.edit.dto.response;
+package com.nokcha.efbe.domain.profile.dto.response;
 
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
 import com.nokcha.efbe.domain.profile.entity.Mbti;

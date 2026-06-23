@@ -1,4 +1,4 @@
-package com.nokcha.efbe.domain.profile.edit.dto.request;
+package com.nokcha.efbe.domain.profile.dto.request;
 
 import com.nokcha.efbe.domain.profile.entity.Purpose;
 import io.swagger.v3.oas.annotations.media.Schema;

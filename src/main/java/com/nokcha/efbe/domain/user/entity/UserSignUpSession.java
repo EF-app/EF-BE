@@ -192,33 +192,33 @@ public class UserSignUpSession extends BaseEntity {
         this.ageConfirmed = ageConfirmed;
         this.femaleConfirmed = femaleConfirmed;
         this.phoneVerifiedAt = phoneVerifiedAt;
-        this.signUpStep = SignUpStep.PHONE_VERIFIED;
+        updateProgressStep(SignUpStep.PHONE_VERIFIED);
     }
 
     // 이메일 입력 정보 저장
     public void updateEmail(String email, LocalDateTime emailEnteredAt) {
         this.email = email;
         this.emailEnteredAt = emailEnteredAt;
-        this.signUpStep = SignUpStep.EMAIL_COMPLETED;
+        updateProgressStep(SignUpStep.EMAIL_COMPLETED);
     }
 
     // 아이디, 비밀번호 저장
     public void updateCredentials(String loginId, String password) {
         this.loginId = loginId;
         this.password = password;
-        this.signUpStep = SignUpStep.CREDENTIALS_COMPLETED;
+        updateProgressStep(SignUpStep.CREDENTIALS_COMPLETED);
     }
 
     // 닉네임 저장
     public void updateNickname(String nickname) {
         this.nickname = nickname;
-        this.signUpStep = SignUpStep.NICKNAME_COMPLETED;
+        updateProgressStep(SignUpStep.NICKNAME_COMPLETED);
     }
 
     // 지역 저장
     public void updateArea(Long areaId) {
         this.areaId = areaId;
-        this.signUpStep = SignUpStep.AREA_COMPLETED;
+        updateProgressStep(SignUpStep.AREA_COMPLETED);
     }
 
     // 회원가입 목적 저장

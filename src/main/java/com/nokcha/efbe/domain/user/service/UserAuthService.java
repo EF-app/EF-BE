@@ -36,6 +36,7 @@ import com.nokcha.efbe.domain.user.event.UserCreatedEvent;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
 import com.nokcha.efbe.domain.user.repository.UserActivityStatusRepository;
+import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpCustomKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpKeywordRepository;
@@ -73,6 +74,7 @@ public class UserAuthService {
     private final UserSignUpKeywordRepository userSignUpKeywordRepository;
     private final UserSignUpCustomKeywordRepository userSignUpCustomKeywordRepository;
     private final UserSignUpPersonalRepository userSignUpPersonalRepository;
+    private final CodePersonalRepository codePersonalRepository;
     private final ProfileImageRepository profileImageRepository;
     private final ProfileRepository profileRepository;
     private final UserCustomKeywordRepository userCustomKeywordRepository;
@@ -149,9 +151,7 @@ public class UserAuthService {
     public SignUpProgressRspDto verifyPhone(PhoneVerificationReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (!signUpSession.hasRequiredTermsAgreed()) {
-            throw new BusinessException(ErrorCode.TERMS_AGREEMENT_REQUIRED);
-        }
+        requireTermsAgreed(signUpSession);
 
         validatePhoneVerificationRequest(reqDto);
 
@@ -178,18 +178,9 @@ public class UserAuthService {
     public SignUpProgressRspDto createEmail(EmailVerificationReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (!signUpSession.hasRequiredTermsAgreed()) {
-            throw new BusinessException(ErrorCode.TERMS_AGREEMENT_REQUIRED);
-        }
-
-        if (!signUpSession.isPhoneVerified()) {
-            throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
-        }
-
-        if (signUpSession.getSignUpStep() != SignUpStep.CREDENTIALS_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.EMAIL_COMPLETED) {
-            throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
-        }
+        requireTermsAgreed(signUpSession);
+        requirePhoneVerified(signUpSession);
+        requireCredentials(signUpSession);
 
         validateEmailRequest(reqDto);
         signUpSession.updateEmail(reqDto.getEmail(), LocalDateTime.now());
@@ -208,13 +199,8 @@ public class UserAuthService {
 
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (!signUpSession.hasRequiredTermsAgreed()) {
-            throw new BusinessException(ErrorCode.TERMS_AGREEMENT_REQUIRED);
-        }
-
-        if (!signUpSession.isPhoneVerified()) {
-            throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
-        }
+        requireTermsAgreed(signUpSession);
+        requirePhoneVerified(signUpSession);
 
         if (userRepository.existsByLoginId(reqDto.getLoginId()) || adminAccountRepository.existsByLoginId(reqDto.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
@@ -234,11 +220,7 @@ public class UserAuthService {
     public SignUpProgressRspDto createNickname(SignUpNicknameReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (signUpSession.getSignUpStep() != SignUpStep.CREDENTIALS_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.EMAIL_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.NICKNAME_COMPLETED) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
+        requireCredentials(signUpSession);
 
         String nickname = reqDto.getNickname().trim();
 
@@ -260,10 +242,7 @@ public class UserAuthService {
     public SignUpProgressRspDto createArea(SignUpAreaReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (signUpSession.getSignUpStep() != SignUpStep.NICKNAME_COMPLETED
-                && signUpSession.getSignUpStep() != SignUpStep.AREA_COMPLETED) {
-            throw new BusinessException(ErrorCode.NICKNAME_REQUIRED);
-        }
+        requireNickname(signUpSession);
 
         if (!areaRepository.existsById(reqDto.getAreaId())) {
             throw new BusinessException(ErrorCode.AREA_REQUIRED);
@@ -283,9 +262,7 @@ public class UserAuthService {
     public SignUpProgressRspDto createPurpose(SignUpPurposeReqDto reqDto) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(reqDto.getRegistrationToken());
 
-        if (!isPurposeEditableStep(signUpSession.getSignUpStep())) {
-            throw new BusinessException(ErrorCode.AREA_REQUIRED);
-        }
+        requireArea(signUpSession);
 
         if (reqDto.getPurpose() == null) {
             throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
@@ -305,10 +282,6 @@ public class UserAuthService {
     public SignUpCompleteRspDto completeSignUp(String registrationToken) {
         UserSignUpSession signUpSession = getAvailableSignUpSession(registrationToken);
         LocalDate birth = LocalDate.of(1990, 01, 01);   // 임시 값 (핸드폰 인증 작성 시 수정 필요)
-
-        if (signUpSession.getSignUpStep() != SignUpStep.PROFILE_COMPLETED) {
-            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
-        }
 
         validateSignUpSessionForCompletion(signUpSession);
 
@@ -456,11 +429,6 @@ public class UserAuthService {
                 .build();
     }
 
-    // 목적 단계 수정 가능 여부 확인
-    private boolean isPurposeEditableStep(SignUpStep signUpStep) {
-        return signUpStep == SignUpStep.AREA_COMPLETED || signUpStep.isAtLeast(SignUpStep.PURPOSE_SELECTED);
-    }
-
     // 로그인 성공 이력 저장
     private void logSuccess(Long userId, LoginReqDto reqDto, HttpServletRequest request) {
         try {
@@ -527,24 +495,71 @@ public class UserAuthService {
 
     // 회원가입 완료 가능 여부 검증
     private void validateSignUpSessionForCompletion(UserSignUpSession signUpSession) {
-        if (signUpSession.getLoginId() == null || signUpSession.getPassword() == null) {
-            throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
+        requireTermsAgreed(signUpSession);
+        requirePhoneVerified(signUpSession);
+        requireCredentials(signUpSession);
+        requireNickname(signUpSession);
+        requireArea(signUpSession);
+        requireLifestyle(signUpSession.getId());
+        if (signUpSession.getPurpose() == null) {
+            throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
         }
 
+        if (profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId()).isEmpty()) {
+            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
+        }
+    }
+
+    private void requireTermsAgreed(UserSignUpSession signUpSession) {
+        if (!signUpSession.hasRequiredTermsAgreed()) {
+            throw new BusinessException(ErrorCode.TERMS_AGREEMENT_REQUIRED);
+        }
+    }
+
+    private void requirePhoneVerified(UserSignUpSession signUpSession) {
         if (!signUpSession.isPhoneVerified()) {
             throw new BusinessException(ErrorCode.PHONE_VERIFICATION_REQUIRED);
         }
+    }
 
+    private void requireCredentials(UserSignUpSession signUpSession) {
+        if (signUpSession.getLoginId() == null || signUpSession.getPassword() == null) {
+            throw new BusinessException(ErrorCode.CREDENTIALS_REQUIRED);
+        }
+    }
+
+    private void requireNickname(UserSignUpSession signUpSession) {
         if (signUpSession.getNickname() == null || signUpSession.getNickname().isBlank()) {
             throw new BusinessException(ErrorCode.NICKNAME_REQUIRED);
         }
+    }
 
+    private void requireArea(UserSignUpSession signUpSession) {
         if (signUpSession.getAreaId() == null) {
             throw new BusinessException(ErrorCode.AREA_REQUIRED);
         }
+    }
 
-        if (signUpSession.getPurpose() == null) {
-            throw new BusinessException(ErrorCode.PURPOSE_REQUIRED);
+    private void requireLifestyle(Long signUpSessionId) {
+        List<Long> selfPersonalIds = userSignUpPersonalRepository.findBySignUpSessionId(signUpSessionId).stream()
+                .filter(personal -> personal.getPersonalType() == UserPersonalType.SELF)
+                .map(UserSignUpPersonal::getPersonalId)
+                .toList();
+
+        if (selfPersonalIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.ALCOHOL_REQUIRED);
+        }
+
+        List<CodePersonal> codePersonals = codePersonalRepository.findAllById(selfPersonalIds);
+        boolean hasAlcohol = codePersonals.stream().anyMatch(personal -> "음주".equals(personal.getBigCategory()));
+        boolean hasSmoking = codePersonals.stream().anyMatch(personal -> "흡연".equals(personal.getBigCategory()));
+
+        if (!hasAlcohol) {
+            throw new BusinessException(ErrorCode.ALCOHOL_REQUIRED);
+        }
+
+        if (!hasSmoking) {
+            throw new BusinessException(ErrorCode.SMOKING_REQUIRED);
         }
     }
 
