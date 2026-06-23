@@ -26,28 +26,23 @@ public class AdminBalGameReqDto {
     @Size(max = 255)
     private String optionB;
 
-    @Schema(description = "옵션 A 부연설명", maxLength = 500)
-    @NotBlank
+    @Schema(description = "옵션 A 부연설명 (선택)", maxLength = 500)
     @Size(max = 500)
     private String optionADesc;
 
-    @Schema(description = "옵션 B 부연설명", maxLength = 500)
-    @NotBlank
+    @Schema(description = "옵션 B 부연설명 (선택)", maxLength = 500)
     @Size(max = 500)
     private String optionBDesc;
 
     @Schema(description = "옵션 A 표시용 이모지 (선택)", example = "💳", maxLength = 8)
-    @NotBlank
     @Size(max = 8)
     private String optionAEmoji;
 
     @Schema(description = "옵션 B 표시용 이모지 (선택)", example = "🎧", maxLength = 8)
-    @NotBlank
     @Size(max = 8)
     private String optionBEmoji;
 
-    @Schema(description = "게임 전체 배경 설명", maxLength = 1000)
-    @NotBlank
+    @Schema(description = "게임 전체 배경 설명 (선택)", maxLength = 1000)
     @Size(max = 1000)
     private String description;
 

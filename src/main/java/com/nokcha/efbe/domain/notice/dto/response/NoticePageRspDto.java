@@ -1,12 +1,10 @@
 package com.nokcha.efbe.domain.notice.dto.response;
 
-import com.nokcha.efbe.domain.notice.entity.Notice;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter

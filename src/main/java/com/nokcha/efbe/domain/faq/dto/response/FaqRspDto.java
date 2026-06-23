@@ -1,6 +1,5 @@
 package com.nokcha.efbe.domain.faq.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nokcha.efbe.domain.faq.entity.CodeFaq;
 import com.nokcha.efbe.domain.faq.entity.FaqCategory;
 import io.swagger.v3.oas.annotations.media.Schema;

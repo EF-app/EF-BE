@@ -2,7 +2,6 @@ package com.nokcha.efbe.domain.profile.repository;
 
 import com.nokcha.efbe.domain.profile.entity.UserPersonal;
 import com.nokcha.efbe.domain.profile.entity.UserPersonalType;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +16,9 @@ public interface UserPersonalRepository extends JpaRepository<UserPersonal, Long
 
     // 어드민 유저 상세 — 유저의 성향(SELF) / 이상형(IDEAL)
     List<UserPersonal> findByUserId(Long userId);
+
+    // 매칭 배치 — 후보 풀 전체 한 번에 적재
+    List<UserPersonal> findByUserIdIn(Collection<Long> userIds);
 
     // 섹션 수정 — 특정 type 의 row 만 일괄 삭제 후 재삽입(1단계 ideal / self)
     @Modifying

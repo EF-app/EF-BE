@@ -13,6 +13,9 @@ import java.math.BigDecimal;
 @Table(name = "code_area",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_code_area_country_city", columnNames = {"country", "city"})
+        },
+        indexes = {
+                @Index(name = "idx_code_area_lat_lon", columnList = "latitude, longitude")
         })
 public class CodeArea {
 

@@ -4,7 +4,6 @@ import com.nokcha.efbe.domain.policy.repository.CodePolicyDocumentRepository;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
