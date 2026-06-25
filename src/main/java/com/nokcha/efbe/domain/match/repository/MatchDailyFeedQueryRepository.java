@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.match.repository;
 
+import com.nokcha.efbe.common.util.JdbcTimeMapper;
 import com.nokcha.efbe.domain.match.entity.MatchDailyFeed;
 import com.nokcha.efbe.domain.match.model.DailyFeedRow;
 import com.nokcha.efbe.domain.match.repository.projection.FeedView;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * match_daily_feed 데이터 액세스 — read-time 오버레이 native query + DELETE+INSERT 교체.
  *  - {@link #findCurrentFeed}: 피드 조회 시 read-time 오버레이
  *  - {@link #countByViewerId}: viewer 의 row 수 — lazy fallback 판단용
  *  - {@link #replaceDailyFeed}: viewer 의 모든 row 를 지우고 새로 저장 (배치/콜드스타트/단건 재계산)
@@ -58,7 +58,8 @@ public class MatchDailyFeedQueryRepository {
                                   POINT(me_ca.longitude, me_ca.latitude),
                                   POINT(ca.longitude, ca.latitude)
                               ) / 1000.0
-                       END AS distance_km
+                       END AS distance_km,
+                       u.last_active_at
                   FROM match_daily_feed f
                   JOIN users u         ON u.id = f.target_id
                   JOIN user_profile up ON up.user_id = f.target_id
@@ -102,7 +103,8 @@ public class MatchDailyFeedQueryRepository {
                     (String) r[9],
                     (String) r[10],
                     (String) r[11],
-                    r[12] == null ? null : ((Number) r[12]).doubleValue()
+                    r[12] == null ? null : ((Number) r[12]).doubleValue(),
+                    JdbcTimeMapper.toLocalDateTimeOrNull(r[13])
             ));
         }
         return result;
