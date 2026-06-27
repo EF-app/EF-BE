@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.admin.match.repository;
 
+import com.nokcha.efbe.common.util.JdbcTimeMapper;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedItemRspDto;
 import com.nokcha.efbe.domain.admin.match.dto.response.AdminDailyFeedPageRspDto;
 import com.nokcha.efbe.domain.match.entity.MatchDailyFeed.SlotType;
@@ -10,14 +11,12 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 관리자 일일 피드 조회 데이터 액세스 — match_daily_feed + users JOIN.
  *  - 동적 필터: viewerIdFrom~viewerIdTo (range, 단일이면 from=to) / targetId / feedDate / slotType / rank
- *  - LIMIT/OFFSET 은 setMaxResults / setFirstResult 사용
  */
 @Repository
 @RequiredArgsConstructor
@@ -96,7 +95,7 @@ public class AdminDailyFeedQueryRepository {
                     .slotType((String) r[6])
                     .sortKey((BigDecimal) r[7])
                     .tagsJson((String) r[8])
-                    .createdAt(toLocalDateTime(r[9]))
+                    .createdAt(JdbcTimeMapper.toLocalDateTime(r[9]))
                     .build());
         }
         return AdminDailyFeedPageRspDto.builder()
@@ -111,11 +110,5 @@ public class AdminDailyFeedQueryRepository {
         if (v instanceof LocalDate ld) return ld;
         if (v instanceof java.sql.Date d) return d.toLocalDate();
         throw new IllegalStateException("feed_date 컬럼 타입 예상 외: " + v.getClass());
-    }
-
-    private static LocalDateTime toLocalDateTime(Object v) {
-        if (v instanceof LocalDateTime ldt) return ldt;
-        if (v instanceof java.sql.Timestamp ts) return ts.toLocalDateTime();
-        throw new IllegalStateException("create_time 컬럼 타입 예상 외: " + v.getClass());
     }
 }

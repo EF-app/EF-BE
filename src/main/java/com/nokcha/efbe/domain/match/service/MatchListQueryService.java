@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.match.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nokcha.efbe.common.response.CursorPageResponse;
+import com.nokcha.efbe.common.util.ActivityStatusResolver;
 import com.nokcha.efbe.domain.match.dto.response.MatchLikeUserDto;
 import com.nokcha.efbe.domain.match.dto.response.MutualMatchItemRspDto;
 import com.nokcha.efbe.domain.match.dto.response.ReceivedLikeItemRspDto;
@@ -122,7 +123,8 @@ public class MatchListQueryService {
             MatchLikeUserDto user = new MatchLikeUserDto(
                     String.valueOf(r.userId()), r.nickname(), r.age(), region,
                     parsed.tags(), parsed.matchScore(), isOnline, r.mainPhotoUrl(),
-                    r.bioMessage(), r.distanceKm()
+                    r.bioMessage(), r.distanceKm(),
+                    ActivityStatusResolver.resolve(r.lastActiveAt())
             );
             items.add(new MutualMatchItemRspDto(
                     String.valueOf(r.matchId()),
@@ -152,7 +154,8 @@ public class MatchListQueryService {
         return new MatchLikeUserDto(
                 String.valueOf(r.userId()), r.nickname(), r.age(), region,
                 parsed.tags(), parsed.matchScore(), isOnline, r.mainPhotoUrl(),
-                r.bioMessage(), r.distanceKm()
+                r.bioMessage(), r.distanceKm(),
+                ActivityStatusResolver.resolve(r.lastActiveAt())
         );
     }
 
