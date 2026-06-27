@@ -114,10 +114,11 @@ public class MatchDailyFeedQueryRepository {
      *  본인이 다 액션해서 오버레이로 0건이 된 경우 vs 04:00 배치 자체가 안 돈 경우 구분 (lazy fallback).
      */
     public int countByViewerId(long viewerId) {
-        return ((Number) em.createNativeQuery(
-                "SELECT COUNT(*) FROM match_daily_feed WHERE viewer_id = :v")
+        Long count = em.createQuery(
+                "SELECT COUNT(f) FROM MatchDailyFeed f WHERE f.viewerId = :v", Long.class)
                 .setParameter("v", viewerId)
-                .getSingleResult()).intValue();
+                .getSingleResult();
+        return count.intValue();
     }
 
     /**

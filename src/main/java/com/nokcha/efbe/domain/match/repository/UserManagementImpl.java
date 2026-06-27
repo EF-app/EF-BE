@@ -11,6 +11,7 @@ import com.nokcha.efbe.domain.match.model.HairLength;
 import com.nokcha.efbe.domain.match.model.HeightBand;
 import com.nokcha.efbe.domain.match.model.Ideal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
+import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
 import com.nokcha.efbe.domain.profile.entity.Purpose;
 import com.nokcha.efbe.domain.match.model.Self;
 import com.nokcha.efbe.domain.match.model.Smoking;
@@ -29,6 +30,7 @@ import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
 import com.nokcha.efbe.domain.user.entity.User;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
@@ -127,19 +129,20 @@ public class UserManagementImpl implements UserManagement {
     public List<UserContext> findEligibleViewers(MatchingConfig cfg) {
         LocalDateTime since = LocalDateTime.now().minusDays(cfg.getLastActiveDays());
 
-        @SuppressWarnings("unchecked")
-        List<Number> rows = em.createNativeQuery("""
+        List<Long> ids = em.createQuery("""
                 SELECT u.id
-                  FROM users u
-                  JOIN user_profile up ON up.user_id = u.id
-                 WHERE u.status = 'ACTIVE'
-                   AND up.profile_status = 'APPROVED'
-                   AND u.last_active_at >= :since
-                """)
+                  FROM User u
+                  JOIN UserProfile up ON up.userId = u.id
+                 WHERE u.status = :active
+                   AND up.profileStatus = :approved
+                   AND u.lastActiveAt >= :since
+                """, Long.class)
+                .setParameter("active", UserStatus.ACTIVE)
+                .setParameter("approved", ProfileStatus.APPROVED)
                 .setParameter("since", since)
                 .getResultList();
 
-        return loadContexts(toLongIds(rows));
+        return loadContexts(ids);
     }
 
     @Override
@@ -215,28 +218,29 @@ public class UserManagementImpl implements UserManagement {
     public List<UserContext> recentlyActive(UserContext me, MatchingConfig cfg) {
         boolean meIsOverseas = !CandidateSelector.isDomestic(me);
 
-        @SuppressWarnings("unchecked")
-        List<Number> rows = em.createNativeQuery("""
+        List<Long> ids = em.createQuery("""
                 SELECT u.id
-                  FROM users u
-                  JOIN user_profile up ON up.user_id = u.id
-                  JOIN code_area ca    ON ca.id = u.area_id
-                 WHERE u.status = 'ACTIVE'
-                   AND up.profile_status = 'APPROVED'
-                   AND u.id != :meId
+                  FROM User u
+                  JOIN UserProfile up ON up.userId = u.id
+                  JOIN CodeArea ca ON ca.id = u.areaId
+                 WHERE u.status = :active
+                   AND up.profileStatus = :approved
+                   AND u.id <> :meId
                    AND ABS(u.age - :myAge) <= :ageMaxDiff
-                   AND (ca.country = '해외') = :meIsOverseas
-                 ORDER BY u.last_active_at DESC
-                 LIMIT :limit
-                """)
+                   AND ((:meIsOverseas = TRUE AND ca.country = '해외')
+                        OR (:meIsOverseas = FALSE AND ca.country <> '해외'))
+                 ORDER BY u.lastActiveAt DESC
+                """, Long.class)
+                .setParameter("active", UserStatus.ACTIVE)
+                .setParameter("approved", ProfileStatus.APPROVED)
                 .setParameter("meId", me.id())
                 .setParameter("myAge", me.age())
                 .setParameter("ageMaxDiff", cfg.getAgeMaxDiff())
-                .setParameter("meIsOverseas", meIsOverseas ? 1 : 0)
-                .setParameter("limit", cfg.getDailyShow())
+                .setParameter("meIsOverseas", meIsOverseas)
+                .setMaxResults(cfg.getDailyShow())
                 .getResultList();
 
-        return loadContexts(toLongIds(rows));
+        return loadContexts(ids);
     }
 
     /**
