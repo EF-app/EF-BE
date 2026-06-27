@@ -121,6 +121,18 @@ public class MatchDailyFeedQueryRepository {
         return count.intValue();
     }
 
+    public List<Long> findViewerIdsByFeedDate(LocalDate feedDate) {
+        return em.createQuery("""
+                        SELECT DISTINCT f.viewerId
+                          FROM MatchDailyFeed f
+                          JOIN User u ON u.id = f.viewerId
+                         WHERE f.feedDate = :feedDate
+                           AND u.status = com.nokcha.efbe.domain.user.entity.UserStatus.ACTIVE
+                        """, Long.class)
+                .setParameter("feedDate", feedDate)
+                .getResultList();
+    }
+
     /**
      * viewer 의 모든 row 를 교체 — DELETE (전체 날짜) + INSERT.
      *  feed_date 는 생성 시각의 날짜로 저장

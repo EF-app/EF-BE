@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.user.repository;
 
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
+import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +46,26 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from User u where u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWING " +
             "and u.status <> com.nokcha.efbe.domain.user.entity.UserStatus.WITHDRAWN")
     List<User> findAllNonWithdrawn();
+
+    @Query("select u from User u " +
+            "where u.status = com.nokcha.efbe.domain.user.entity.UserStatus.ACTIVE " +
+            "and exists (" +
+            "   select 1 from UserPolicy p " +
+            "   where p.userId = u.id " +
+            "   and p.policyType = :policyType" +
+            ")")
+    List<User> findActiveUsersAgreedToPolicy(@Param("policyType") PolicyType policyType);
+
+    @Query("select u from User u " +
+            "where u.id in :userIds " +
+            "and u.status = com.nokcha.efbe.domain.user.entity.UserStatus.ACTIVE " +
+            "and exists (" +
+            "   select 1 from UserPolicy p " +
+            "   where p.userId = u.id " +
+            "   and p.policyType = :policyType" +
+            ")")
+    List<User> findActiveUsersByIdsAndPolicy(@Param("userIds") Collection<Long> userIds,
+                                             @Param("policyType") PolicyType policyType);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update User u set u.lastActiveAt = :lastActiveAt where u.id = :userId")

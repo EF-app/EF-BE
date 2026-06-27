@@ -9,10 +9,12 @@ import com.nokcha.efbe.domain.match.dto.response.MatchFeedActionResultRspDto;
 import com.nokcha.efbe.domain.match.entity.MatchAction;
 import com.nokcha.efbe.domain.match.model.MatchActionType;
 import com.nokcha.efbe.domain.match.model.MatchTriggerType;
+import com.nokcha.efbe.domain.match.model.MutualRecord;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
+import com.nokcha.efbe.domain.notification.service.NotificationService;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class MatchFeedActionService {
     private final TagDisplayFormatter tagFormatter;
     // mutual 성사 시 match_results INSERT — recordAction 안에서 호출
     private final MatchResultService matchResultService;
+    private final NotificationService notificationService;
 
     /**
      * 매칭피드 카드의 ❤/✕/⭐/💌 등록.
@@ -69,6 +72,12 @@ public class MatchFeedActionService {
         }
 
         MatchingConfig cfg = configLoader.load();
+
+        var previousAction = actionRepo.findByActorIdAndTargetId(actorId, targetId);
+        boolean wasLike = previousAction
+                .map(MatchAction::getActionType)
+                .filter(previousType -> previousType == MatchActionType.LIKE || previousType == MatchActionType.SUPER_LIKE)
+                .isPresent();
 
         /* DELETE + INSERT — UNIQUE(actor,target) 보장. */
         actionRepo.deleteByActorIdAndTargetId(actorId, targetId);
@@ -92,6 +101,8 @@ public class MatchFeedActionService {
         // mutual 성사 시 match_results INSERT (idempotent — UNIQUE 페어 보장).
         boolean isMatched = false;
         boolean mutualIsSuper = false;
+        Long matchResultId = null;
+        boolean matchResultCreated = false;
         if (type == MatchActionType.LIKE || type == MatchActionType.SUPER_LIKE) {
             var otherActionOpt = actionRepo.findByActorIdAndTargetId(targetId, actorId);
             if (otherActionOpt.isPresent()) {
@@ -101,10 +112,18 @@ public class MatchFeedActionService {
                     isMatched = true;
                     mutualIsSuper = type == MatchActionType.SUPER_LIKE
                             || otherType == MatchActionType.SUPER_LIKE;
-                    matchResultService.recordMutual(actorId, targetId, mutualIsSuper,
-                            MatchTriggerType.MUTUAL_LIKE);
+                    MutualRecord mutualRecord = matchResultService.recordMutual(actorId, targetId, mutualIsSuper, MatchTriggerType.MUTUAL_LIKE);
+                    matchResultId = mutualRecord.matchResult().getId();
+                    matchResultCreated = mutualRecord.created();
                 }
             }
+        }
+
+        // 매칭이 성사되거나 좋아요를 누른 경우 알림
+        if (isMatched && matchResultCreated) {
+            notificationService.sendMatchCompletedNotification(actorId, targetId, matchResultId);
+        } else if (!isMatched && (type == MatchActionType.LIKE || type == MatchActionType.SUPER_LIKE) && !wasLike) {
+            notificationService.sendMatchLikeNotification(targetId, actorId);
         }
 
         log.debug("[MatchFeedAction] {} {} → {}, expiresAt={}, hasTags={}, isMatched={}, isSuper={}",

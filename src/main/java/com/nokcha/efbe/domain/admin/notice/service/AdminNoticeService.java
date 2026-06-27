@@ -12,6 +12,7 @@ import com.nokcha.efbe.domain.notice.entity.Notice;
 import com.nokcha.efbe.domain.notice.entity.NoticeCategory;
 import com.nokcha.efbe.domain.notice.entity.NoticeStatus;
 import com.nokcha.efbe.domain.notice.repository.NoticeRepository;
+import com.nokcha.efbe.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +33,7 @@ public class AdminNoticeService {
 
     private final NoticeRepository noticeRepository;
     private final AdminAccountRepository adminAccountRepository;
+    private final NotificationService notificationService;
 
     // 공지사항 작성
     @Transactional
@@ -55,6 +57,10 @@ public class AdminNoticeService {
                 .sortOrder(sortOrder)
                 .build());
 
+        if (notice.getStatus() == NoticeStatus.PUBLISHED) {
+            notificationService.sendNoticeNotification(notice.getId(), notice.getTitle());
+        }
+
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
     }
 
@@ -68,6 +74,7 @@ public class AdminNoticeService {
             throw new BusinessException(ErrorCode.INVALID_AMEND_NOTICE_UPDATE);
         }
 
+        NoticeStatus previousStatus = notice.getStatus();
         NoticeStatus status = resolveStatus(reqDto);
         LocalDateTime scheduledAt = resolveScheduledAt(reqDto);
         validateScheduledAt(status, scheduledAt);
@@ -75,6 +82,9 @@ public class AdminNoticeService {
         adjustSortOrder(notice, newSortOrder);
 
         notice.update(reqDto.getTitle(), reqDto.getContent(), resolveCategory(reqDto), status, scheduledAt, newSortOrder);
+        if (previousStatus != NoticeStatus.PUBLISHED && status == NoticeStatus.PUBLISHED) {
+            notificationService.sendNoticeNotification(notice.getId(), notice.getTitle());
+        }
         return NoticeDetailRspDto.from(notice, getAuthorNickname(notice));
     }
 
@@ -121,7 +131,10 @@ public class AdminNoticeService {
         List<Notice> dueNotices = noticeRepository.findAllByStatusAndScheduledAtLessThanEqual(NoticeStatus.SCHEDULED, now);
         if (dueNotices.isEmpty()) return;
 
-        dueNotices.forEach(notice -> notice.publish(now));
+        dueNotices.forEach(notice -> {
+            notice.publish(now);
+            notificationService.sendNoticeNotification(notice.getId(), notice.getTitle());
+        });
     }
 
     // 공지사항 작성자 닉네임 조회

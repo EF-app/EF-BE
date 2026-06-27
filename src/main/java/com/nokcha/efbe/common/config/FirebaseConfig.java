@@ -1,4 +1,4 @@
-package com.nokcha.efbe.common.init;
+package com.nokcha.efbe.common.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -15,7 +15,7 @@ import java.io.InputStream;
 
 @Component
 @RequiredArgsConstructor
-public class FcmInitializer {
+public class FirebaseConfig {
 
     private final ResourceLoader resourceLoader;
 

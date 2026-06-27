@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.match.service;
 
 import com.nokcha.efbe.domain.match.entity.MatchResult;
 import com.nokcha.efbe.domain.match.model.MatchTriggerType;
+import com.nokcha.efbe.domain.match.model.MutualRecord;
 import com.nokcha.efbe.domain.match.repository.MatchResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,15 +31,16 @@ public class MatchResultService {
      *  @param trigger   매칭 트리거 (대부분 MUTUAL_LIKE)
      */
     @Transactional
-    public void recordMutual(long actorId, long targetId, boolean isSuper, MatchTriggerType trigger) {
+    public MutualRecord recordMutual(long actorId, long targetId, boolean isSuper, MatchTriggerType trigger) {
         long userA = Math.min(actorId, targetId);
         long userB = Math.max(actorId, targetId);
-        if (matchResultRepo.existsByUserAIdAndUserBId(userA, userB)) {
+        var existing = matchResultRepo.findByUserAIdAndUserBId(userA, userB);
+        if (existing.isPresent()) {
             // 이미 매칭 — cancel/restore 토글 흐름. is_super 갱신만 검토 (단순화 — 첫 매칭 시점 그대로)
             log.debug("[MatchResult] mutual 이미 존재 — userA={}, userB={}", userA, userB);
-            return;
+            return new MutualRecord(existing.get(), false);
         }
-        matchResultRepo.save(MatchResult.builder()
+        MatchResult matchResult = matchResultRepo.save(MatchResult.builder()
                 .userAId(userA)
                 .userBId(userB)
                 .triggerType(trigger)
@@ -46,5 +48,6 @@ public class MatchResultService {
                 .build());
         log.debug("[MatchResult] mutual 신규 — userA={}, userB={}, isSuper={}, trigger={}",
                 userA, userB, isSuper, trigger);
+        return new MutualRecord(matchResult, true);
     }
 }

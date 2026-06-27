@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "user_policy",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_terms_user_id_term_type", columnNames = {"user_id", "term_type"})
+                @UniqueConstraint(name = "uk_user_terms_user_id_term_type", columnNames = {"user_id", "policy_type"})
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

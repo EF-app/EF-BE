@@ -39,6 +39,8 @@ public interface BalGameRepository extends JpaRepository<BalGame, Long>, BalGame
     // PUBLISHED, update_time DESC.
     List<BalGame> findByStatusOrderByUpdateTimeDescIdDesc(BalGameStatus status, Pageable pageable);
 
+    boolean existsByStatus(BalGameStatus status);
+
     // 예약 게시 자동 전환 대상 조회 (SCHEDULED + scheduled_at 도달)
     @Query("select g from BalGame g where g.status = :status and g.scheduledAt is not null and g.scheduledAt <= :now")
     List<BalGame> findDueScheduled(@Param("status") BalGameStatus status, @Param("now") LocalDateTime now);
