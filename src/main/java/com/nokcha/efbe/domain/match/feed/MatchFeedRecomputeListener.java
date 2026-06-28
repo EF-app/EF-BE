@@ -6,6 +6,8 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.payment.service.DailyUsageService;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import com.nokcha.efbe.domain.profile.event.ProfileUpdatedEvent;
 import com.nokcha.efbe.domain.user.event.UserCreatedEvent;
 import com.nokcha.efbe.domain.user.event.UserReactivatedEvent;
@@ -59,6 +61,7 @@ public class MatchFeedRecomputeListener {
     private final FeedRecomputeThrottle throttle;
     private final MatchActionRepository actionRepo;
     private final DailyUsageService dailyUsage;
+    private final SystemErrorLogService systemErrorLogService;
 
     /* ─── (1) 가입 → ColdStart ─── */
 
@@ -75,6 +78,7 @@ public class MatchFeedRecomputeListener {
         } catch (Exception e) {
             log.warn("[MatchFeedRecompute] 가입 ColdStart 실패 — userId={}, err={}",
                     event.userId(), e.getMessage(), e);
+            systemErrorLogService.logStoreEvent(ErrorSeverity.WARN, "MatchFeedRecomputeListener.onUserCreated", event.userId(), e);
         }
     }
 
@@ -113,6 +117,7 @@ public class MatchFeedRecomputeListener {
         } catch (Exception e) {
             log.warn("[MatchFeedRecompute] 프로필 재계산 실패 — userId={}, kind={}, err={}",
                     event.userId(), event.kind(), e.getMessage(), e);
+            systemErrorLogService.logStoreEvent(ErrorSeverity.WARN, "MatchFeedRecomputeListener.onProfileUpdated", event.userId(), e);
         }
     }
 
@@ -128,6 +133,7 @@ public class MatchFeedRecomputeListener {
         } catch (Exception e) {
             log.warn("[MatchFeedRecompute] 복귀 재계산 실패 — userId={}, reason={}, err={}",
                     event.userId(), event.reason(), e.getMessage(), e);
+            systemErrorLogService.logStoreEvent(ErrorSeverity.WARN, "MatchFeedRecomputeListener.onUserReactivated", event.userId(), e);
         }
     }
 }
