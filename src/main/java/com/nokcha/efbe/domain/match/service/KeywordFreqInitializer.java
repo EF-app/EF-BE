@@ -1,5 +1,7 @@
 package com.nokcha.efbe.domain.match.service;
 
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class KeywordFreqInitializer {
 
     private final KeywordFreqService keywordFreqService;
+    private final SystemErrorLogService systemErrorLogService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
@@ -31,6 +34,7 @@ public class KeywordFreqInitializer {
         } catch (Exception e) {
             log.warn("[KeywordFreqInitializer] 부팅 시 캐시 초기화 실패 — 04:00 배치까지 빈 상태. err={}",
                     e.getMessage(), e);
+            systemErrorLogService.logStoreEvent(ErrorSeverity.WARN, "KeywordFreqInitializer.onApplicationReady", null, e);
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.nokcha.efbe.infra.scheduler.user;
 
 import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,13 +19,19 @@ import java.time.LocalDateTime;
 public class RevokedTokenCleanupScheduler {
 
     private final RevokedTokenRepository revokedTokenRepository;
+    private final SystemErrorLogService systemErrorLogService;
 
     @Transactional
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
     public void cleanupExpired() {
-        int deleted = revokedTokenRepository.deleteAllExpired(LocalDateTime.now());
-        if (deleted > 0) {
-            log.info("[RevokedTokenCleanup] 만료된 폐기 토큰 row 삭제: {}", deleted);
+        try {
+            int deleted = revokedTokenRepository.deleteAllExpired(LocalDateTime.now());
+            if (deleted > 0) {
+                log.info("[RevokedTokenCleanup] 만료된 폐기 토큰 row 삭제: {}", deleted);
+            }
+        } catch (Exception e) {
+            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "RevokedTokenCleanupScheduler.cleanupExpired", null, e);
+            throw e;
         }
     }
 }

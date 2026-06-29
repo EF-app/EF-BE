@@ -9,6 +9,8 @@ import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import jakarta.persistence.EntityManager;
@@ -64,6 +66,7 @@ public class RecentNewbieBatch {
     private final MatchCalculator matchCalculator;
     private final SortKeyCalculator sortKeyCalculator;
     private final TagDisplayFormatter tagFormatter;
+    private final SystemErrorLogService systemErrorLogService;
 
     /**
      * 매시 30분 KST — 04:00 NightlyMatchBatch 와 시간차 30분 확보.
@@ -74,34 +77,41 @@ public class RecentNewbieBatch {
     @Transactional
     public void run() {
         long start = System.currentTimeMillis();
-        MatchingConfig cfg = configLoader.load();
+        try {
+            MatchingConfig cfg = configLoader.load();
 
-        List<Integer> reservedRanks = sortedReserved(cfg);
-        if (reservedRanks.isEmpty()) {
-            log.debug("[RecentNewbieBatch] 예약 자리 0 — 비활성");
-            return;
-        }
-
-        LocalDateTime since = LocalDateTime.now().minusHours(cfg.getFreshNewbieWindowHours());
-        List<Long> newcomers = findRecentNewcomers(since);
-        if (newcomers.isEmpty()) {
-            log.debug("[RecentNewbieBatch] 신규자 없음 — since={}", since);
-            return;
-        }
-
-        int totalInserted = 0;
-        for (Long newcomerId : newcomers) {
-            try {
-                totalInserted += fanOut(newcomerId, cfg, reservedRanks);
-            } catch (Exception e) {
-                log.warn("[RecentNewbieBatch] newcomer 처리 실패 — id={}, err={}",
-                        newcomerId, e.getMessage(), e);
+            List<Integer> reservedRanks = sortedReserved(cfg);
+            if (reservedRanks.isEmpty()) {
+                log.debug("[RecentNewbieBatch] 예약 자리 0 — 비활성");
+                return;
             }
-        }
 
-        long ms = System.currentTimeMillis() - start;
-        log.info("[RecentNewbieBatch] 완료 — newcomers={}, inserts={}, 소요={}ms",
-                newcomers.size(), totalInserted, ms);
+            LocalDateTime since = LocalDateTime.now().minusHours(cfg.getFreshNewbieWindowHours());
+            List<Long> newcomers = findRecentNewcomers(since);
+            if (newcomers.isEmpty()) {
+                log.debug("[RecentNewbieBatch] 신규자 없음 — since={}", since);
+                return;
+            }
+
+            int totalInserted = 0;
+            for (Long newcomerId : newcomers) {
+                try {
+                    totalInserted += fanOut(newcomerId, cfg, reservedRanks);
+                } catch (Exception e) {
+                    log.warn("[RecentNewbieBatch] newcomer 처리 실패 — id={}, err={}",
+                            newcomerId, e.getMessage(), e);
+                    systemErrorLogService.logStoreBatch(ErrorSeverity.WARN, "RecentNewbieBatch.run", newcomerId, e);
+                }
+            }
+
+            long ms = System.currentTimeMillis() - start;
+            log.info("[RecentNewbieBatch] 완료 — newcomers={}, inserts={}, 소요={}ms",
+                    newcomers.size(), totalInserted, ms);
+        } catch (Exception e) {
+            // 배치 전체 중단(설정 로드/신규자 조회 실패 등)
+            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "RecentNewbieBatch.run", null, e);
+            throw e;
+        }
     }
 
     private static List<Integer> sortedReserved(MatchingConfig cfg) {

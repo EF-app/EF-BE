@@ -4,10 +4,17 @@ import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.exception.dto.ErrorRspDto;
 import com.nokcha.efbe.common.util.LoggingUtil;
+import com.nokcha.efbe.common.util.SecurityUtil;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSource;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -22,7 +29,14 @@ import java.util.NoSuchElementException;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private static final String ADMIN_PATH_PREFIX = "/v1/admin";
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+
+    private final SystemErrorLogService systemErrorLogService;
+    private final SecurityUtil securityUtil;
     // BingException 발생 시 (유효성 검사)
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorRspDto<Map<String, String>>> handleBindException(BindException e, HttpServletRequest request) {
@@ -69,6 +83,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({BusinessException.class})
     public ResponseEntity<ErrorRspDto<String>> handleBusinessException(BusinessException e, HttpServletRequest request){
         printLog(e, request);
+        // cause 를 품은 BusinessException = 외부연동(R2·Firestore·FirebaseAuth 등) 실패
+        if (e.getCause() != null) {
+            logStoreExternal(e, request);
+        }
         ErrorRspDto<String> body = new ErrorRspDto<>(e.getCode(), e.getHttpStatus(), e.getErrorCode(), e.getMessage());
         return ResponseEntity.status(e.getHttpStatus()).body(body);
     }
@@ -86,6 +104,7 @@ public class GlobalExceptionHandler {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         log.error("예외 처리 범위 외의 오류 발생");
         printLog(e, request);
+        logStoreApi(e, request, httpStatus.value());
         String fullStackTrace = LoggingUtil.stackTraceToString(e);
 
         return createErrorResponse(httpStatus.value(), httpStatus, e.getMessage() +", " + fullStackTrace);
@@ -111,5 +130,49 @@ public class GlobalExceptionHandler {
     private void printLog(Exception e, HttpServletRequest request) {
         log.error("발생 예외: {}, 에러 메시지: {}, 요청 Method: {}, 요청 url: {}",
                 e.getClass().getSimpleName(), e.getMessage(), request.getMethod(), request.getRequestURI(), e);
+    }
+
+    // 미처리 예외(500) → API / ADMIN_API 적재
+    private void logStoreApi(Exception e, HttpServletRequest request, int httpStatus) {
+        boolean admin = isAdminRequest(request);
+        Long principalId = securityUtil.getCurrentUserIdOrNull();
+        systemErrorLogService.logStore(
+                admin ? ErrorSource.ADMIN_API : ErrorSource.API,
+                ErrorSeverity.ERROR,
+                request.getMethod() + " " + request.getRequestURI(),
+                httpStatus,
+                request.getRequestURI(),
+                admin ? null : principalId,
+                admin ? principalId : null,
+                e,
+                null);
+    }
+
+    // cause 를 품은 BusinessException → EXTERNAL 적재. error_class·stacktrace 는 실제 원인(cause) 기준.
+    private void logStoreExternal(BusinessException e, HttpServletRequest request) {
+        boolean admin = isAdminRequest(request);
+        Long principalId = securityUtil.getCurrentUserIdOrNull();
+        String errorType = e.getErrorCode() != null ? e.getErrorCode() : request.getRequestURI();
+        systemErrorLogService.logStore(
+                ErrorSource.EXTERNAL,
+                ErrorSeverity.ERROR,
+                errorType,
+                e.getHttpStatus().value(),
+                request.getRequestURI(),
+                admin ? null : principalId,
+                admin ? principalId : null,
+                e.getCause(),
+                null);
+    }
+
+    // 관리자 요청 판별 — URL prefix 또는 ROLE_ADMIN 권한.
+    private boolean isAdminRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith(ADMIN_PATH_PREFIX)) {
+            return true;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> ROLE_ADMIN.equals(a.getAuthority()));
     }
 }

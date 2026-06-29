@@ -5,6 +5,8 @@ import com.nokcha.efbe.domain.suspension.repository.UserSuspensionRepository;
 import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
+import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
+import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,38 +30,44 @@ public class SuspensionExpirationScheduler {
     private final UserSuspensionRepository userSuspensionRepository;
     private final UserRepository userRepository;
     private final SuspensionService suspensionService;
+    private final SystemErrorLogService systemErrorLogService;
 
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     @Transactional
     public void expireSuspensions() {
-        LocalDateTime now = LocalDateTime.now();
-        List<UserSuspension> expired = userSuspensionRepository.findJustExpiredSuspensions(now);
-        if (expired.isEmpty()) {
-            log.info("[SuspensionExpiration] no expired rows — skip");
-            return;
-        }
-
-        // 만료 row 일괄 자동 해제 마킹
-        Set<Long> affectedUserIds = new HashSet<>();
-        for (UserSuspension row : expired) {
-            row.liftAutomatically();
-            affectedUserIds.add(row.getUser().getId());
-        }
-
-        // users.status 변경
-        int statusChanged = 0;
-        for (Long userId : affectedUserIds) {
-            User user = userRepository.findById(userId).orElse(null);
-            if (user == null) continue;
-            var before = user.getStatus();
-            suspensionService.evaluateAndUpdateStatus(user);
-            if (user.getStatus() != before) {
-                statusChanged++;
-                log.info("[SuspensionExpiration] userId={} : {} → {}", userId, before, user.getStatus());
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<UserSuspension> expired = userSuspensionRepository.findJustExpiredSuspensions(now);
+            if (expired.isEmpty()) {
+                log.info("[SuspensionExpiration] no expired rows — skip");
+                return;
             }
-        }
 
-        log.info("[SuspensionExpiration] expired rows={}, affected users={}, status changed={}",
-                expired.size(), affectedUserIds.size(), statusChanged);
+            // 만료 row 일괄 자동 해제 마킹
+            Set<Long> affectedUserIds = new HashSet<>();
+            for (UserSuspension row : expired) {
+                row.liftAutomatically();
+                affectedUserIds.add(row.getUser().getId());
+            }
+
+            // users.status 변경
+            int statusChanged = 0;
+            for (Long userId : affectedUserIds) {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) continue;
+                var before = user.getStatus();
+                suspensionService.evaluateAndUpdateStatus(user);
+                if (user.getStatus() != before) {
+                    statusChanged++;
+                    log.info("[SuspensionExpiration] userId={} : {} → {}", userId, before, user.getStatus());
+                }
+            }
+
+            log.info("[SuspensionExpiration] expired rows={}, affected users={}, status changed={}",
+                    expired.size(), affectedUserIds.size(), statusChanged);
+        } catch (Exception e) {
+            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "SuspensionExpirationScheduler.expireSuspensions", null, e);
+            throw e;
+        }
     }
 }
