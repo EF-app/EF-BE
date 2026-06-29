@@ -1,9 +1,12 @@
 package com.nokcha.efbe.domain.chat.dto.response;
 
+import com.nokcha.efbe.common.util.ActivityStatusResolver;
 import com.nokcha.efbe.domain.chat.entity.ChatRoom;
 import com.nokcha.efbe.domain.chat.entity.ChatRoomType;
 import com.nokcha.efbe.domain.chat.entity.ChatParticipant;
+import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
+import com.nokcha.efbe.domain.user.model.ActivityStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -72,6 +75,9 @@ public class ChatRoomRspDto {
     @Schema(description = "상대 유저 대표 프로필 사진 URL. 익명 채팅방이거나 사진이 없으면 null", example = "https://cdn.example.com/users/14/profile-1.jpg", nullable = true)
     private String userProfileImageUrl;
 
+    @Schema(description = "상대 유저 접속 상태 (NOW ≤10분 / RECENT ≤60분 / TODAY ≤24h / OLDER). 익명 채팅방 또는 상대 정보 없으면 null", nullable = true)
+    private ActivityStatus activityStatus;
+
     @Schema(description = "채팅방 생성 시각", example = "2026-05-25T16:00:00")
     private LocalDateTime createTime;
 
@@ -84,12 +90,14 @@ public class ChatRoomRspDto {
     }
 
     public static ChatRoomRspDto from(ChatRoom r, ChatParticipant myParticipant, ChatParticipant targetParticipant, String userProfileImageUrl) {
+        boolean anonymous = Boolean.TRUE.equals(r.getIsAnonymous());
         return baseBuilder(r)
                 .memo(myParticipant == null ? null : myParticipant.getMemo())
                 .userId(resolveUserId(targetParticipant))
                 .userNicknameSnapshot(targetParticipant == null ? null : targetParticipant.getDisplayName())
                 .userStatus(resolveUserStatus(targetParticipant))
                 .userProfileImageUrl(userProfileImageUrl)
+                .activityStatus(anonymous ? null : resolveActivityStatus(targetParticipant))
                 .build();
     }
 
@@ -124,5 +132,12 @@ public class ChatRoomRspDto {
             return null;
         }
         return participant.getUser().getStatus();
+    }
+
+    private static ActivityStatus resolveActivityStatus(ChatParticipant participant) {
+        if (participant == null) return null;
+        User user = participant.getUser();
+        if (user == null) return null;
+        return ActivityStatusResolver.resolve(user.getLastActiveAt());
     }
 }

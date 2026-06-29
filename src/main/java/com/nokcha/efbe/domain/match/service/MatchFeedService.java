@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.match.service;
 
+import com.nokcha.efbe.common.util.ActivityStatusResolver;
 import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.match.config.MatchingConfigLoader;
 import com.nokcha.efbe.domain.match.model.UserContext;
@@ -58,7 +59,8 @@ public class MatchFeedService {
                         v.job(),
                         v.bioMessage(),
                         v.mainPhotoUrl(),
-                        v.distanceKm()))
+                        v.distanceKm(),
+                        ActivityStatusResolver.resolve(v.lastActiveAt())))
                 .toList();
     }
 

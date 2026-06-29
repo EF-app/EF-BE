@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.match.dto.response;
 
+import com.nokcha.efbe.domain.user.model.ActivityStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,4 +44,7 @@ public class MatchLikeUserDto {
 
     @Schema(description = "viewer 와 상대방 사이 거리 km. 좌표 미설정 시 null")
     private Double distanceKm;
+
+    @Schema(description = "접속 상태 (NOW ≤10분 / RECENT ≤60분 / TODAY ≤24h / OLDER). FE 는 OLDER 를 숨김 처리")
+    private ActivityStatus activityStatus;
 }

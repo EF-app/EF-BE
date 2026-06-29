@@ -11,6 +11,8 @@ import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
 import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
+import com.nokcha.efbe.domain.user.entity.UserStatus;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -126,19 +128,19 @@ public class RecentNewbieBatch {
      *  24h 안 가입자만 필터 + status/profile_status 추가 필터 → 풀스캔이라도 결과 row 가 적음.
      *  users 행이 10만 넘으면 (create_time, status) 복합 인덱스 검토.
      */
-    @SuppressWarnings("unchecked")
     private List<Long> findRecentNewcomers(LocalDateTime since) {
-        return ((List<Number>) em.createNativeQuery("""
-                SELECT u.id FROM users u
-                  JOIN user_profile up ON up.user_id = u.id
-                 WHERE u.create_time >= :since
-                   AND u.status = 'ACTIVE'
-                   AND up.profile_status = 'APPROVED'
-                 ORDER BY u.create_time DESC
-                """)
+        return em.createQuery("""
+                SELECT u.id FROM User u
+                  JOIN UserProfile up ON up.userId = u.id
+                 WHERE u.createTime >= :since
+                   AND u.status = :active
+                   AND up.profileStatus = :approved
+                 ORDER BY u.createTime DESC
+                """, Long.class)
                 .setParameter("since", since)
-                .getResultList()).stream()
-                .map(Number::longValue).toList();
+                .setParameter("active", UserStatus.ACTIVE)
+                .setParameter("approved", ProfileStatus.APPROVED)
+                .getResultList();
     }
 
     /**

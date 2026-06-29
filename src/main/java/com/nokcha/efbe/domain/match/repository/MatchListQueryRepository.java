@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.match.repository;
 
+import com.nokcha.efbe.common.util.JdbcTimeMapper;
 import com.nokcha.efbe.domain.match.repository.projection.LikeActionRow;
 import com.nokcha.efbe.domain.match.repository.projection.MutualMatchRow;
 import jakarta.persistence.EntityManager;
@@ -7,7 +8,6 @@ import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -277,7 +277,7 @@ public class MatchListQueryRepository {
         List<MutualMatchRow> result = new ArrayList<>(rows.size());
         for (Object[] r : rows) {
             long matchId = ((Number) r[0]).longValue();
-            LocalDateTime matchedAt = toLocalDateTime(r[1]);
+            LocalDateTime matchedAt = JdbcTimeMapper.toLocalDateTime(r[1]);
             String tagsJson = (String) r[2];
             // MariaDB BIT(1) → Boolean. 안전 분기 (Number 도 대응).
             boolean isSuper;
@@ -288,7 +288,7 @@ public class MatchListQueryRepository {
             long userId = ((Number) r[5]).longValue();
             String nickname = (String) r[6];
             Integer age = r[7] == null ? null : ((Number) r[7]).intValue();
-            LocalDateTime lastActiveAt = r[8] == null ? null : toLocalDateTime(r[8]);
+            LocalDateTime lastActiveAt = JdbcTimeMapper.toLocalDateTimeOrNull(r[8]);
             String country = (String) r[9];
             String city = (String) r[10];
             String mainPhotoUrl = (String) r[11];
@@ -307,12 +307,12 @@ public class MatchListQueryRepository {
         for (Object[] r : rows) {
             long actionId = ((Number) r[0]).longValue();
             String actionType = (String) r[1];
-            LocalDateTime createdAt = toLocalDateTime(r[2]);
+            LocalDateTime createdAt = JdbcTimeMapper.toLocalDateTime(r[2]);
             String tagsJson = (String) r[3];
             long userId = ((Number) r[4]).longValue();
             String nickname = (String) r[5];
             Integer age = r[6] == null ? null : ((Number) r[6]).intValue();
-            LocalDateTime lastActiveAt = r[7] == null ? null : toLocalDateTime(r[7]);
+            LocalDateTime lastActiveAt = JdbcTimeMapper.toLocalDateTimeOrNull(r[7]);
             String country = (String) r[8];
             String city = (String) r[9];
             String mainPhotoUrl = (String) r[10];
@@ -322,11 +322,5 @@ public class MatchListQueryRepository {
                     userId, nickname, age, lastActiveAt, country, city, mainPhotoUrl, bioMessage, distanceKm));
         }
         return result;
-    }
-
-    private static LocalDateTime toLocalDateTime(Object v) {
-        if (v instanceof LocalDateTime ldt) return ldt;
-        if (v instanceof Timestamp ts) return ts.toLocalDateTime();
-        throw new IllegalStateException("DATETIME 타입 예상 외: " + v.getClass());
     }
 }
