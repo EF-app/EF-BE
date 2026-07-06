@@ -6,7 +6,6 @@ import com.nokcha.efbe.domain.payment.entity.CodeItem;
 import com.nokcha.efbe.domain.payment.entity.InkHistory;
 import com.nokcha.efbe.domain.payment.entity.ItemUsageHistory;
 import com.nokcha.efbe.domain.payment.model.ItemCodes;
-import com.nokcha.efbe.domain.payment.model.ItemPolicy;
 import com.nokcha.efbe.domain.payment.model.ItemValueType;
 import com.nokcha.efbe.domain.payment.model.UsageResult;
 import com.nokcha.efbe.domain.payment.model.UsageSource;

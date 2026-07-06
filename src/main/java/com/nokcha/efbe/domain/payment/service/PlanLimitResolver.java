@@ -3,7 +3,6 @@ package com.nokcha.efbe.domain.payment.service;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
-import com.nokcha.efbe.domain.payment.model.ItemPolicy;
 import com.nokcha.efbe.domain.payment.model.UserTier;
 import com.nokcha.efbe.domain.payment.repository.CodeItemRepository;
 import com.nokcha.efbe.domain.payment.repository.UserPaletteRepository;
