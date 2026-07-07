@@ -5,7 +5,6 @@ import com.nokcha.efbe.domain.match.config.MatchingConfigLoader;
 import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
-import com.nokcha.efbe.domain.payment.service.DailyUsageService;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
 import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import com.nokcha.efbe.domain.profile.event.ProfileUpdatedEvent;
@@ -39,7 +38,6 @@ import java.time.LocalDate;
  *  ── 어뷰즈 가드 — 프로필 변경만 적용 ──────────────────────────
  *    - throttle 30초 atomic CAS (FeedRecomputeThrottle)
  *    - 오늘 본인 액션 수 ≥ recomputeActionThreshold(5) → 차단 (이미 카드 충분히 봤음)
- *    - 일일 재계산 횟수 ≥ recomputeMaxPerDay(1) → 차단 (user_daily_usage 카운트)
  *    가입/복귀 3종은 자동 트리거라 어뷰즈 통로 X — 가드 미적용.
  *
  *  ── 가입은 ColdStart, 복귀는 정상 매칭 (사용자 합의) ──────────────────
@@ -51,16 +49,12 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class MatchFeedRecomputeListener {
 
-    /** user_daily_usage 의 action_code. */
-    static final String ACTION_CODE_RECOMPUTE = "MATCH_PROFILE_RECOMPUTE";
-
     private final UserManagement userMgmt;
     private final ColdStartFeed coldStartFeed;
     private final MyFeedRecomputer recomputer;
     private final MatchingConfigLoader configLoader;
     private final FeedRecomputeThrottle throttle;
     private final MatchActionRepository actionRepo;
-    private final DailyUsageService dailyUsage;
     private final SystemErrorLogService systemErrorLogService;
 
     /* ─── (1) 가입 → ColdStart ─── */
@@ -102,15 +96,7 @@ public class MatchFeedRecomputeListener {
             return;
         }
 
-        int recomputeToday = dailyUsage.getUsedCount(event.userId(), ACTION_CODE_RECOMPUTE);
-        if (recomputeToday >= cfg.getRecomputeMaxPerDay()) {
-            log.debug("[MatchFeedRecompute] 프로필 — 일일 횟수({}) 초과 차단. userId={}, used={}",
-                    cfg.getRecomputeMaxPerDay(), event.userId(), recomputeToday);
-            return;
-        }
-
         try {
-            dailyUsage.consume(event.userId(), ACTION_CODE_RECOMPUTE, cfg.getRecomputeMaxPerDay());
             recomputer.recompute(event.userId());
             log.debug("[MatchFeedRecompute] 프로필 재계산 완료 — userId={}, kind={}",
                     event.userId(), event.kind());

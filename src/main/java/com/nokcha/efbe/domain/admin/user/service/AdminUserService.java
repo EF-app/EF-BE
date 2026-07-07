@@ -15,11 +15,6 @@ import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.UserLoginLog;
 import com.nokcha.efbe.domain.log.repository.UserLoginLogRepository;
-import com.nokcha.efbe.domain.payment.entity.UserSubscription;
-import com.nokcha.efbe.domain.payment.entity.UserInkFund;
-import com.nokcha.efbe.domain.payment.repository.PaymentLogRepository;
-import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
-import com.nokcha.efbe.domain.payment.repository.UserSubscriptionRepository;
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
@@ -71,9 +66,6 @@ public class AdminUserService {
     private final ProfileRepository profileRepository;
     private final ProfileImageRepository profileImageRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
-    private final UserSubscriptionRepository userSubscriptionRepository;
-    private final UserInkFundRepository userInkFundRepository;
-    private final PaymentLogRepository paymentLogRepository;
     private final UserLoginLogRepository userLoginLogRepository;
     private final AreaRepository areaRepository;
     private final UserKeywordRepository userKeywordRepository;
@@ -139,15 +131,11 @@ public class AdminUserService {
                 .map(UserWithdrawal::getRequestedAt)
                 .orElse(null);
 
-        BigDecimal paymentTotal = paymentLogRepository.sumSuccessAmountByUserId(id);
-
-        UserSubscription sub = userSubscriptionRepository.findByUserIdAndIsActiveTrue(id).orElse(null);
-        LocalDateTime premiumUntil = sub == null ? null : sub.getEndDate();
-        boolean premium = premiumUntil != null && premiumUntil.isAfter(LocalDateTime.now());
-
-        Integer inkBalance = userInkFundRepository.findByUserId(id)
-                .map(UserInkFund::getFund)
-                .orElse(0);
+        // 결제 집계/구독/잉크 — 신규 결제 도메인(payment) 미연동 → 안전 기본값. 필요 시 배선.
+        BigDecimal paymentTotal = null;
+        LocalDateTime premiumUntil = null;
+        boolean premium = false;
+        Integer inkBalance = 0;
 
         // 제재 이력 — 전체 + 활성 차단 제재 1건
         List<UserSuspension> suspensions = adminSuspensionRepository
