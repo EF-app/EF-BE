@@ -20,4 +20,7 @@ public interface UserPaletteRepository extends JpaRepository<UserPalette, Long> 
 
     /** 자동갱신 배치 — auto_renew=true & 곧 만료 대상. */
     List<UserPalette> findByAutoRenewTrueAndPremiumUntilBetween(LocalDateTime from, LocalDateTime to);
+
+    /** 만료 배치 — premium_until 이 기간 내(최근 만료)인 구독. */
+    List<UserPalette> findByPremiumUntilBetween(LocalDateTime from, LocalDateTime to);
 }

@@ -53,6 +53,13 @@ public class CodePaymentProduct extends BaseEntity {
     @Column(name = "duration_days")
     private Integer durationDays;
 
+    // 스토어 상품 ID 매핑 (App Store Connect / Play Console). null 이면 미등록.
+    @Column(name = "apple_product_id", length = 100)
+    private String appleProductId;
+
+    @Column(name = "google_product_id", length = 100)
+    private String googleProductId;
+
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 

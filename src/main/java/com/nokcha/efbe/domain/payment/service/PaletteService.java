@@ -31,6 +31,12 @@ public class PaletteService {
                 .orElse(false);
     }
 
+    /** 구독 상태 조회 (premium_until / auto_renew / canceled_at). 없으면 empty = 무료. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<UserPalette> findStatus(Long userId) {
+        return paletteRepository.findById(userId);
+    }
+
     /** 결제 PAID 시 구독 부여/연장. paymentId null 이면 무료/관리자 지급(GIFT). */
     @Transactional
     public void applyPurchase(Long userId, int durationDays, Long paymentId) {
@@ -49,6 +55,17 @@ public class PaletteService {
         record(userId, event, paymentId, before, newUntil, null);
     }
 
+    /** 스토어 구독 이벤트로 만료일 반영 (RevenueCat INITIAL/RENEWAL) — 절대 만료일 그대로. */
+    @Transactional
+    public void applyStoreSubscription(Long userId, LocalDateTime premiumUntil, boolean autoRenew,
+                                       String originalTransactionId) {
+        UserPalette palette = lockOrCreate(userId);
+        LocalDateTime before = palette.getPremiumUntil();
+        boolean wasActive = palette.isPremium(LocalDateTime.now());
+        palette.applyStoreSubscription(premiumUntil, autoRenew, originalTransactionId);
+        record(userId, wasActive ? PaletteEventType.EXTEND : PaletteEventType.START, null, before, premiumUntil, "스토어 구독");
+    }
+
     /** 자동갱신 해지 — 만료일까지는 프리미엄 유지. */
     @Transactional
     public void cancel(Long userId) {
@@ -65,12 +82,27 @@ public class PaletteService {
         palette.reactivate();
     }
 
-    /** 만료 배치 — 이력에 EXPIRE 남김 (상태는 조회 시 until<now 로 자동 무료 판정). */
+    /**
+     * 만료 배치 — 이력에 EXPIRE 남김 (상태는 조회 시 until<now 로 자동 무료 판정). 멱등:
+     * 아직 안 만료됐거나 이미 EXPIRE 이력이 최신이면 스킵 → 배치 재실행/중복 후보에도 중복 기록 없음.
+     */
     @Transactional
     public void markExpired(Long userId) {
-        paletteRepository.findByUserIdForUpdate(userId).ifPresent(palette ->
-                record(userId, PaletteEventType.EXPIRE, null,
-                        palette.getPremiumUntil(), palette.getPremiumUntil(), "구독 만료"));
+        UserPalette palette = paletteRepository.findByUserIdForUpdate(userId).orElse(null);
+        if (palette == null) {
+            return;
+        }
+        if (palette.getPremiumUntil() == null || palette.getPremiumUntil().isAfter(LocalDateTime.now())) {
+            return; // 아직 만료 안 됨
+        }
+        boolean alreadyLogged = historyRepository.findTop1ByUserIdOrderByCreateTimeDesc(userId)
+                .map(h -> h.getEventType() == PaletteEventType.EXPIRE)
+                .orElse(false);
+        if (alreadyLogged) {
+            return; // 이미 만료 이력 기록됨
+        }
+        record(userId, PaletteEventType.EXPIRE, null,
+                palette.getPremiumUntil(), palette.getPremiumUntil(), "구독 만료");
     }
 
     private UserPalette lockOrCreate(Long userId) {

@@ -49,6 +49,13 @@ public class PlanLimitResolver {
         return resolveValue(userId, itemCode) >= 1;
     }
 
+    /** 이미 resolve 된 등급으로 CAPABILITY 판정 — 한 요청에서 여러 기능을 볼 때 등급 재조회 회피. */
+    public boolean isCapable(UserTier tier, String itemCode) {
+        CodeItem item = codeItemRepository.findById(itemCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ITEM));
+        return item.resolveValue(tier) >= 1;
+    }
+
     /** CAPABILITY 게이트 — 불가 등급이면 throw (예: 기본 유저의 고정핀·배지). */
     public void assertCapable(Long userId, String itemCode) {
         if (!isCapable(userId, itemCode)) {

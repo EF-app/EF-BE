@@ -44,6 +44,10 @@ public class UserPalette extends BaseEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
+    /** 스토어 구독 원거래 ID (RevenueCat/애플/구글 대사용). */
+    @Column(name = "original_transaction_id", length = 120)
+    private String originalTransactionId;
+
     @Builder
     private UserPalette(Long userId) {
         this.userId = userId;
@@ -71,5 +75,20 @@ public class UserPalette extends BaseEntity {
     public void reactivate() {
         this.autoRenew = true;
         this.canceledAt = null;
+    }
+
+    /**
+     * 스토어 구독 이벤트로 만료일 직접 설정 — 갱신은 스토어가 진실이라 절대 만료일(absolute)을 그대로 반영.
+     * RevenueCat webhook(INITIAL/RENEWAL) 경로에서 사용.
+     */
+    public void applyStoreSubscription(LocalDateTime premiumUntil, boolean autoRenew, String originalTransactionId) {
+        this.premiumUntil = premiumUntil;
+        this.autoRenew = autoRenew;
+        if (originalTransactionId != null) {
+            this.originalTransactionId = originalTransactionId;
+        }
+        if (autoRenew) {
+            this.canceledAt = null;
+        }
     }
 }

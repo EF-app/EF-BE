@@ -26,6 +26,18 @@ public class InkService {
         return walletRepository.findById(userId).map(InkWallet::getBalance).orElse(0);
     }
 
+    /** 지갑 조회 (잔액 + 누적 통계). 없으면 empty. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<InkWallet> findWallet(Long userId) {
+        return walletRepository.findById(userId);
+    }
+
+    /** 잉크 내역 (최신순). */
+    @Transactional(readOnly = true)
+    public java.util.List<InkHistory> getHistory(Long userId) {
+        return historyRepository.findByUserIdOrderByCreateTimeDesc(userId);
+    }
+
     /** 결제 충전 — PAID 전이 시 호출. 지갑 없으면 생성. */
     @Transactional
     public InkHistory charge(Long userId, int amount, Long paymentId, String description) {
@@ -60,8 +72,9 @@ public class InkService {
     }
 
     private InkWallet lockOrCreate(Long userId) {
+        walletRepository.ensureWallet(userId); // 없으면 멱등 생성(동시 첫 생성 레이스 제거)
         return walletRepository.findByUserIdForUpdate(userId)
-                .orElseGet(() -> walletRepository.save(InkWallet.builder().userId(userId).build()));
+                .orElseThrow(() -> new IllegalStateException("ink_wallet ensure 실패: userId=" + userId));
     }
 
     private InkHistory record(Long userId, InkTxType type, int amount, int balanceAfter,

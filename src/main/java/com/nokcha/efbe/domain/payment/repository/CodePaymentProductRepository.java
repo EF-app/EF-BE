@@ -10,5 +10,9 @@ public interface CodePaymentProductRepository extends JpaRepository<CodePaymentP
 
     Optional<CodePaymentProduct> findByProductCode(String productCode);
 
+    Optional<CodePaymentProduct> findByAppleProductId(String appleProductId);
+
+    Optional<CodePaymentProduct> findByGoogleProductId(String googleProductId);
+
     List<CodePaymentProduct> findByIsActiveTrueOrderBySortOrderAsc();
 }

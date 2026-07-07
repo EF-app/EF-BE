@@ -1,8 +1,10 @@
 package com.nokcha.efbe.domain.payment.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
+import com.nokcha.efbe.domain.payment.model.PaymentEnvironment;
 import com.nokcha.efbe.domain.payment.model.PaymentStatus;
 import com.nokcha.efbe.domain.payment.model.ProductType;
+import com.nokcha.efbe.domain.payment.model.StoreType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,13 +23,16 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 결제 이력 — 잉크 충전/구독 결제 공용. 결제 시점 상품 정보를 스냅샷으로 보존.
+ * 결제 이력 — 인앱결제(IAP) 기록. RevenueCat webhook 이 스토어 결제를 이 원장에 남김(감사·영수증).
+ *
+ * {@code store_transaction_id} 유니크로 멱등(중복 이벤트 방어). 상품 정보는 스냅샷으로 보존.
+ * user_id/product_id 는 논리 FK.
  */
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "payment_history",
-        uniqueConstraints = @UniqueConstraint(name = "uk_pg_tid", columnNames = "pg_tid"),
+        uniqueConstraints = @UniqueConstraint(name = "uk_store_tx", columnNames = "store_transaction_id"),
         indexes = {
                 @Index(name = "idx_pay_user_time", columnList = "user_id, create_time"),
                 @Index(name = "idx_pay_status_time", columnList = "status, create_time")
@@ -62,18 +67,29 @@ public class PaymentHistory extends BaseEntity {
     @Column(name = "duration_days")
     private Integer durationDays;
 
-    // ── 결제 ──
     @Column(name = "amount", nullable = false)
-    private int amount;
+    private int amount; // 스토어가 정한 결제액(원)
 
-    @Column(name = "payment_method", length = 30)
-    private String paymentMethod;
+    // ── 스토어(IAP) 식별 — RevenueCat webhook 기반 ──
+    @Enumerated(EnumType.STRING)
+    @Column(name = "store", length = 10)
+    private StoreType store;
 
-    @Column(name = "pg_provider", length = 30)
-    private String pgProvider;
+    @Column(name = "store_product_id", length = 100)
+    private String storeProductId;
 
-    @Column(name = "pg_tid", length = 100)
-    private String pgTid;
+    @Column(name = "store_transaction_id", length = 120)
+    private String storeTransactionId;
+
+    @Column(name = "original_transaction_id", length = 120)
+    private String originalTransactionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "environment", length = 12)
+    private PaymentEnvironment environment;
+
+    @Column(name = "rc_event_type", length = 40)
+    private String rcEventType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
@@ -87,8 +103,7 @@ public class PaymentHistory extends BaseEntity {
 
     @Builder
     private PaymentHistory(Long userId, Long productId, String productCode, String productName,
-                           ProductType productType, Integer inkAmount, Integer durationDays,
-                           int amount, String paymentMethod, String pgProvider, String pgTid) {
+                           ProductType productType, Integer inkAmount, Integer durationDays, int amount) {
         this.userId = userId;
         this.productId = productId;
         this.productCode = productCode;
@@ -97,25 +112,21 @@ public class PaymentHistory extends BaseEntity {
         this.inkAmount = inkAmount;
         this.durationDays = durationDays;
         this.amount = amount;
-        this.paymentMethod = paymentMethod;
-        this.pgProvider = pgProvider;
-        this.pgTid = pgTid;
         this.status = PaymentStatus.PENDING;
     }
 
-    public void markPaid(String pgTid, LocalDateTime paidAt) {
+    /** 스토어(IAP) 결제 정보로 PAID 확정 — RevenueCat webhook 지급 경로. */
+    public void applyStorePaid(StoreType store, String storeProductId, String storeTransactionId,
+                               String originalTransactionId, PaymentEnvironment environment,
+                               String rcEventType, LocalDateTime paidAt) {
+        this.store = store;
+        this.storeProductId = storeProductId;
+        this.storeTransactionId = storeTransactionId;
+        this.originalTransactionId = originalTransactionId;
+        this.environment = environment;
+        this.rcEventType = rcEventType;
         this.status = PaymentStatus.PAID;
-        this.pgTid = pgTid;
         this.paidAt = paidAt;
-    }
-
-    public void markFailed() {
-        this.status = PaymentStatus.FAILED;
-    }
-
-    public void markCanceled(LocalDateTime at) {
-        this.status = PaymentStatus.CANCELED;
-        this.canceledAt = at;
     }
 
     public void markRefunded(LocalDateTime at) {
