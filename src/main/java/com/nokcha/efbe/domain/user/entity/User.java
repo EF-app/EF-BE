@@ -72,6 +72,9 @@ public class User extends BaseEntity {
     @Column
     private LocalDateTime lastNicknameChangedAt;
 
+    @Column
+    private LocalDateTime lastLocationChangedAt;
+
     @Column(name = "fcm_token")
     private String fcmToken;
 
@@ -136,6 +139,11 @@ public class User extends BaseEntity {
     // 지역 변경 (마이 프로필 수정)
     public void updateAreaId(Long areaId) {
         this.areaId = areaId;
+    }
+
+    // 지역 변경 시각 갱신 (등급별 쿨다운 집행용)
+    public void markLocationChanged(LocalDateTime when) {
+        this.lastLocationChangedAt = when;
     }
 
     // 상태 갱신

@@ -123,6 +123,7 @@ public enum ErrorCode {
     NICKNAME_GENERATION_FAILED(500, "닉네임 생성에 실패했습니다."),
     NICKNAME_ALREADY_TAKEN(409, "이미 사용 중인 닉네임입니다."),
     NICKNAME_COOLDOWN(429, "닉네임 변경 쿨다운 기간입니다."),
+    LOCATION_COOLDOWN(429, "위치 변경 쿨다운 기간입니다."),
 
     // 포스트잇
     NOT_FOUND_POST(404, "포스트잇을 찾을 수 없습니다."),
@@ -142,6 +143,10 @@ public enum ErrorCode {
     DUPLICATE_PAYMENT(409, "이미 처리된 결제입니다."),
     DUPLICATE_AD_REWARD(409, "이미 지급된 광고 보상입니다."),
     DAILY_LIMIT_EXCEEDED(429, "일일 한도를 초과했습니다."),
+    FEATURE_NOT_AVAILABLE(403, "현재 등급에서 사용할 수 없는 기능입니다."),
+    NOT_FOUND_PRODUCT(404, "결제 상품을 찾을 수 없습니다."),
+    NOT_FOUND_PAYMENT(404, "결제 내역을 찾을 수 없습니다."),
+    PAYMENT_APPROVAL_FAILED(400, "결제 승인에 실패했습니다."),
 
     // 신고·동의·사진
     DUPLICATE_REPORT(409, "이미 신고된 항목입니다."),

@@ -29,6 +29,8 @@ import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.PlanLimitResolver;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
@@ -50,7 +52,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ProfileEditService {
 
-    private static final long NICKNAME_COOLDOWN_DAYS = 7L;
     private static final int MAX_PROFILE_IMAGES = 5;
     private static final String PROFILE_R2_DIRECTORY = "profile";
 
@@ -81,6 +82,7 @@ public class ProfileEditService {
     private final CodePersonalRepository codePersonalRepository;
     private final R2ImageService r2ImageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PlanLimitResolver planLimitResolver;
 
     /* ─────────── 풀 조회 ─────────── */
 
@@ -142,10 +144,12 @@ public class ProfileEditService {
             user.updateNickname(req.getNickname(), LocalDateTime.now());
         }
         if (req.getAreaId() != null && !req.getAreaId().equals(user.getAreaId())) {
+            ensureLocationCooldownPassed(user);
             if (!areaRepository.existsById(req.getAreaId())) {
                 throw new BusinessException(ErrorCode.AREA_REQUIRED);
             }
             user.updateAreaId(req.getAreaId());
+            user.markLocationChanged(LocalDateTime.now());
             // 지역 변경 — 후보 풀/거리/국내·해외 그룹 자체가 바뀜 → 본인 피드 재계산
             eventPublisher.publishEvent(new ProfileUpdatedEvent(userId, ProfileChangeKind.AREA));
         }
@@ -318,9 +322,22 @@ public class ProfileEditService {
     private void ensureNicknameCooldownPassed(User user) {
         LocalDateTime last = user.getLastNicknameChangedAt();
         if (last == null) return;
+        // 등급별 변경 주기(일) — 기본 30 / 프리미엄 7 (NICKNAME_CHANGE, COOLDOWN 타입)
+        long cooldownDays = planLimitResolver.resolveValue(user.getId(), ItemCodes.NICKNAME_CHANGE);
         long days = Duration.between(last, LocalDateTime.now()).toDays();
-        if (days < NICKNAME_COOLDOWN_DAYS) {
+        if (days < cooldownDays) {
             throw new BusinessException(ErrorCode.NICKNAME_COOLDOWN);
+        }
+    }
+
+    private void ensureLocationCooldownPassed(User user) {
+        LocalDateTime last = user.getLastLocationChangedAt();
+        if (last == null) return;
+        // 등급별 변경 주기(일) — 기본 30 / 프리미엄 7 (LOCATION_CHANGE, COOLDOWN 타입)
+        long cooldownDays = planLimitResolver.resolveValue(user.getId(), ItemCodes.LOCATION_CHANGE);
+        long days = Duration.between(last, LocalDateTime.now()).toDays();
+        if (days < cooldownDays) {
+            throw new BusinessException(ErrorCode.LOCATION_COOLDOWN);
         }
     }
 

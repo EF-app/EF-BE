@@ -25,6 +25,8 @@ import com.nokcha.efbe.domain.chat.repository.projection.ChatRoomCursor;
 import com.nokcha.efbe.domain.postIt.dto.request.PostReplyReqDto;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.ItemUsageService;
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
@@ -85,6 +87,7 @@ public class ChatService {
     private final ProfileImageRepository profileImageRepository;
     private final CursorCodec cursorCodec;
     private final ChatFirebaseService chatFirebaseService;
+    private final ItemUsageService itemUsageService;
 
     // 내 채팅방 목록
     @Transactional(readOnly = true)
@@ -137,6 +140,9 @@ public class ChatService {
                 ChatRoomType.POST, post.getId(), partnerId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_POST_REPLY);
         }
+
+        // 답장 일일 한도 집행 — 무료 소진 시 잉크 폴백(post_reply). actor=답장자(partnerId), target=글쓴이.
+        itemUsageService.consume(partnerId, ItemCodes.POST_REPLY, post.getUser().getId());
 
         return createPostChatRoom(post, partner, pair, req);
     }
