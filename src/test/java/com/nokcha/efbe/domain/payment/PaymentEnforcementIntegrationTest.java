@@ -1,6 +1,7 @@
 package com.nokcha.efbe.domain.payment;
 
 import com.nokcha.efbe.common.exception.BusinessException;
+import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.payment.dto.request.RcWebhookReqDto;
 import com.nokcha.efbe.domain.payment.entity.ItemUsageCounter;
 import com.nokcha.efbe.domain.payment.model.ItemCodes;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 결제 집행 통합 테스트 — 실제 MariaDB + 전체 컨텍스트(StubPaymentGateway 포함).
+ * 결제 집행 통합 테스트 — 실제 MariaDB + 전체 컨텍스트.
  * code_item 시드는 CodeItemInitializer 가 컨텍스트 기동 시 적재. payment 테이블은 논리 FK라 임의 userId 사용.
  */
 @IntegrationTest
@@ -140,5 +141,27 @@ class PaymentEnforcementIntegrationTest {
         paletteService.applyPurchase(u, 30, null);
 
         assertThat(paletteService.isPremium(u)).isTrue();
+    }
+
+    @Test
+    void 닉네임변경_무료_월1회_초과차단() {
+        long u = 90008L;
+        // nickname_change = COUNT/MONTHLY, 무료 1회. 1회 성공 → 2회째 NICKNAME_COOLDOWN.
+        itemUsageService.consumeFreeOnly(u, ItemCodes.NICKNAME_CHANGE, ErrorCode.NICKNAME_COOLDOWN);
+        assertThatThrownBy(() ->
+                itemUsageService.consumeFreeOnly(u, ItemCodes.NICKNAME_CHANGE, ErrorCode.NICKNAME_COOLDOWN))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void 위치변경_프리미엄_월4회() {
+        long u = 90009L;
+        paletteService.applyPurchase(u, 30, null); // 프리미엄 → location_change palette_value=4
+        for (int i = 0; i < 4; i++) {
+            itemUsageService.consumeFreeOnly(u, ItemCodes.LOCATION_CHANGE, ErrorCode.LOCATION_COOLDOWN);
+        }
+        assertThatThrownBy(() ->
+                itemUsageService.consumeFreeOnly(u, ItemCodes.LOCATION_CHANGE, ErrorCode.LOCATION_COOLDOWN))
+                .isInstanceOf(BusinessException.class); // 5회째 차단
     }
 }

@@ -75,9 +75,15 @@ public class ItemUsageService {
         consumeFreeOnly(userId, ItemCodes.POST_FLASH);
     }
 
-    /** 무료 전용 소비(ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요). 소진이면 throw. */
+    /** 무료 전용 소비(ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요). 소진이면 DAILY_LIMIT_EXCEEDED. */
     @Transactional
     public void consumeFreeOnly(Long userId, String itemCode) {
+        consumeFreeOnly(userId, itemCode, ErrorCode.DAILY_LIMIT_EXCEEDED);
+    }
+
+    /** 무료 전용 소비 (ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요·닉변·위치변경)  — 한도 초과 시 지정 에러로 throw */
+    @Transactional
+    public void consumeFreeOnly(Long userId, String itemCode, ErrorCode limitExceeded) {
         ItemPolicy policy = planLimitResolver.resolvePolicy(userId, itemCode);
         requireCount(policy.item());
         if (policy.isUnlimited()) {
@@ -85,7 +91,7 @@ public class ItemUsageService {
             return;
         }
         if (policy.value() <= 0 || !tryConsumeFree(userId, policy.item(), policy.value())) {
-            throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+            throw new BusinessException(limitExceeded);
         }
         record(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, null);
     }

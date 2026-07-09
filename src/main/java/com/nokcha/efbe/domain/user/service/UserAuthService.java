@@ -310,7 +310,6 @@ public class UserAuthService {
                 .email(signUpSession.getEmail())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
-                .lastNicknameChangedAt(LocalDateTime.now())
                 .status(UserStatus.ACTIVE)
                 .build());
 
