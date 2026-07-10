@@ -2,6 +2,7 @@ package com.nokcha.efbe.infra.scheduler.postIt;
 
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -19,16 +20,19 @@ import java.util.List;
 public class PostItScheduler {
 
     private final PostItRepository postItRepository;
+    private final SchedulerGuard schedulerGuard;
 
     // 만료된 포스트잇의 고정 해제 (만료 후에는 피드에서 자연스럽게 빠지므로 추가 상태 전이 불필요)
-//    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "PostItScheduler.expirePins", lockAtMostFor = "PT55S", lockAtLeastFor = "PT5S")
     @Transactional
     public void expirePins() {
-        LocalDateTime now = LocalDateTime.now();
-        List<PostIt> expired = postItRepository.findExpiredPins(now);
-        if (expired.isEmpty()) return;
-        expired.forEach(PostIt::clearPin);
-        log.info("[PostItScheduler] cleared {} expired pins at {}", expired.size(), now);
+        schedulerGuard.runGuarded("PostItScheduler.expirePins", () -> {
+            LocalDateTime now = LocalDateTime.now();
+            List<PostIt> expired = postItRepository.findExpiredPins(now);
+            if (expired.isEmpty()) return;
+            expired.forEach(PostIt::clearPin);
+            log.info("[PostItScheduler] cleared {} expired pins at {}", expired.size(), now);
+        });
     }
 }

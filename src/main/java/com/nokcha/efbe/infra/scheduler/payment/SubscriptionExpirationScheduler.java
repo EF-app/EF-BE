@@ -5,6 +5,7 @@ import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
 import com.nokcha.efbe.domain.payment.entity.UserPalette;
 import com.nokcha.efbe.domain.payment.repository.UserPaletteRepository;
 import com.nokcha.efbe.domain.payment.service.PaletteService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -37,11 +38,12 @@ public class SubscriptionExpirationScheduler {
     private final UserPaletteRepository userPaletteRepository;
     private final PaletteService paletteService;
     private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     @Scheduled(cron = "0 10 0 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "SubscriptionExpirationScheduler.run", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
     public void run() {
-        runExpiry(LocalDateTime.now());
+        schedulerGuard.runGuarded("SubscriptionExpirationScheduler.run", () -> runExpiry(LocalDateTime.now()));
     }
 
     /** 락 없는 본문 — 최근 만료 구독에 EXPIRE 기록. 대상별 독립 트랜잭션, 실패는 격리 후 루프 계속. */
