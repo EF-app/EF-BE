@@ -3,6 +3,7 @@ package com.nokcha.efbe.infra.scheduler.balGame;
 import com.nokcha.efbe.domain.balGame.entity.BalGame;
 import com.nokcha.efbe.domain.balGame.entity.BalGameStatus;
 import com.nokcha.efbe.domain.balGame.repository.BalGameRepository;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -20,17 +21,20 @@ import java.util.List;
 public class BalGameScheduler {
 
     private final BalGameRepository balGameRepository;
+    private final SchedulerGuard schedulerGuard;
 
     // 매 분 0초에 scheduled_at 이 지난 SCHEDULED 게임을 PUBLISHED 로 전환
-//    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "BalGameScheduler.publishDue", lockAtMostFor = "PT55S", lockAtLeastFor = "PT5S")
     @Transactional
     public void publishDueScheduledGames() {
-        LocalDateTime now = LocalDateTime.now();
-        List<BalGame> due = balGameRepository.findDueScheduled(BalGameStatus.SCHEDULED, now);
-        if (due.isEmpty()) return;
+        schedulerGuard.runGuarded("BalGameScheduler.publishDueScheduledGames", () -> {
+            LocalDateTime now = LocalDateTime.now();
+            List<BalGame> due = balGameRepository.findDueScheduled(BalGameStatus.SCHEDULED, now);
+            if (due.isEmpty()) return;
 
-        due.forEach(g -> g.changeStatus(BalGameStatus.PUBLISHED));
-        log.info("[BalGameScheduler] published {} scheduled balance games at {}", due.size(), now);
+            due.forEach(g -> g.changeStatus(BalGameStatus.PUBLISHED));
+            log.info("[BalGameScheduler] published {} scheduled balance games at {}", due.size(), now);
+        });
     }
 }
