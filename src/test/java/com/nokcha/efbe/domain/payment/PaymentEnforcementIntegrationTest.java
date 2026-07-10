@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.payment;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.payment.dto.request.RcWebhookReqDto;
+import com.nokcha.efbe.domain.payment.dto.response.ItemQuotaRspDto;
 import com.nokcha.efbe.domain.payment.entity.ItemUsageCounter;
 import com.nokcha.efbe.domain.payment.model.ItemCodes;
 import com.nokcha.efbe.domain.payment.model.ItemResetPeriod;
@@ -15,6 +16,7 @@ import com.nokcha.efbe.domain.payment.service.InkService;
 import com.nokcha.efbe.domain.payment.service.ItemUsageService;
 import com.nokcha.efbe.domain.payment.service.PaletteService;
 import com.nokcha.efbe.domain.payment.service.PeriodKeyResolver;
+import com.nokcha.efbe.domain.payment.service.ItemQuotaService;
 import com.nokcha.efbe.domain.payment.service.PlanLimitResolver;
 import com.nokcha.efbe.domain.payment.service.RevenueCatEventService;
 import com.nokcha.efbe.support.IntegrationTest;
@@ -38,6 +40,7 @@ class PaymentEnforcementIntegrationTest {
 
     @Autowired PlanLimitResolver planLimitResolver;
     @Autowired ItemUsageService itemUsageService;
+    @Autowired ItemQuotaService itemQuotaService;
     @Autowired InkService inkService;
     @Autowired PaletteService paletteService;
     @Autowired RevenueCatEventService revenueCatEventService;
@@ -70,6 +73,7 @@ class PaymentEnforcementIntegrationTest {
         // 1회차 — 무료(기본 한도 1)
         UsageResult r1 = itemUsageService.consume(u, ItemCodes.SUPER_LIKE, 1L);
         assertThat(r1.source()).isEqualTo(UsageSource.FREE);
+        assertThat(r1.remaining()).isEqualTo(0); // 무료 1 소진 → 0 남음
 
         // 2회차 — 무료 소진 + 잉크 없음 → 부족 예외
         assertThatThrownBy(() -> itemUsageService.consume(u, ItemCodes.SUPER_LIKE, 2L))
@@ -80,6 +84,7 @@ class PaymentEnforcementIntegrationTest {
         UsageResult r2 = itemUsageService.consume(u, ItemCodes.SUPER_LIKE, 3L);
         assertThat(r2.source()).isEqualTo(UsageSource.INK);
         assertThat(r2.inkCost()).isEqualTo(2);
+        assertThat(r2.remaining()).isEqualTo(0); // 무료 소진 상태 유지 → 0
         assertThat(inkService.getBalance(u)).isEqualTo(8); // 10 - 2
     }
 
@@ -163,5 +168,38 @@ class PaymentEnforcementIntegrationTest {
         assertThatThrownBy(() ->
                 itemUsageService.consumeFreeOnly(u, ItemCodes.LOCATION_CHANGE, ErrorCode.LOCATION_COOLDOWN))
                 .isInstanceOf(BusinessException.class); // 5회째 차단
+    }
+
+    @Test
+    void 아이템_잔여_조회_사용후_감소() {
+        long u = 90010L;
+        ItemQuotaRspDto before = itemQuotaService.getQuota(u, ItemCodes.SUPER_LIKE);
+        assertThat(before.getLimit()).isEqualTo(1);   // 무료 등급 super_like = 1
+        assertThat(before.getUsed()).isEqualTo(0);
+        assertThat(before.getRemaining()).isEqualTo(1);
+        assertThat(before.isUnlimited()).isFalse();
+
+        itemUsageService.consume(u, ItemCodes.SUPER_LIKE, 1L); // 무료 1회 소진
+
+        ItemQuotaRspDto after = itemQuotaService.getQuota(u, ItemCodes.SUPER_LIKE);
+        assertThat(after.getUsed()).isEqualTo(1);
+        assertThat(after.getRemaining()).isEqualTo(0);
+    }
+
+    @Test
+    void 아이템_잔여_무제한_등급() {
+        long u = 90011L;
+        paletteService.applyPurchase(u, 30, null); // 프리미엄 → match_like palette_value=-1(무제한)
+        ItemQuotaRspDto q = itemQuotaService.getQuota(u, ItemCodes.MATCH_LIKE);
+        assertThat(q.isUnlimited()).isTrue();
+        assertThat(q.getRemaining()).isNull();
+        assertThat(q.getLimit()).isEqualTo(-1);
+    }
+
+    @Test
+    void 아이템_잔여_COUNT_아니면_예외() {
+        long u = 90012L;
+        assertThatThrownBy(() -> itemQuotaService.getQuota(u, ItemCodes.POST_PIN)) // CAPABILITY
+                .isInstanceOf(BusinessException.class);
     }
 }

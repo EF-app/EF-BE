@@ -63,31 +63,35 @@ public class MatchFeedActionService {
      */
     @Transactional
     public MatchFeedActionResultRspDto recordFeedAction(long actorId, long targetId, MatchActionType type) {
-        consumeForFeedAction(actorId, targetId, type);
-        return recordAction(actorId, targetId, type);
+        Integer remaining = consumeForFeedAction(actorId, targetId, type);
+        MatchFeedActionResultRspDto result = recordAction(actorId, targetId, type);
+        return MatchFeedActionResultRspDto.builder()
+                .isMatched(result.isMatched())
+                .chatRoomId(result.getChatRoomId())
+                .remaining(remaining)
+                .build();
     }
 
     /**
      * 피드 액션 아이템 소비 — LIKE=매칭좋아요(무료 한도), SUPER_LIKE=슈퍼좋아요, POWER_MESSAGE=파워메시지(무료→잉크).
      *  같은 타입 재프레스는 스킵(멱등) — 같은 카드 중복차감 방지. PASS 는 소비 없음.
      */
-    private void consumeForFeedAction(long actorId, long targetId, MatchActionType type) {
+    private Integer consumeForFeedAction(long actorId, long targetId, MatchActionType type) {
         if (type == MatchActionType.PASS) {
-            return;
+            return null;
         }
         boolean alreadySameType = actionRepo.findByActorIdAndTargetId(actorId, targetId)
                 .map(existing -> existing.getActionType() == type)
                 .orElse(false);
         if (alreadySameType) {
-            return;
+            return null;
         }
-        switch (type) {
-            case LIKE -> itemUsageService.consumeFreeOnly(actorId, ItemCodes.MATCH_LIKE);
-            case SUPER_LIKE -> itemUsageService.consume(actorId, ItemCodes.SUPER_LIKE, targetId);
-            case POWER_MESSAGE -> itemUsageService.consume(actorId, ItemCodes.POWER_MSG, targetId);
-            default -> {
-            }
-        }
+        return switch (type) {
+            case LIKE -> itemUsageService.consumeFreeOnly(actorId, ItemCodes.MATCH_LIKE).remaining();
+            case SUPER_LIKE -> itemUsageService.consume(actorId, ItemCodes.SUPER_LIKE, targetId).remaining();
+            case POWER_MESSAGE -> itemUsageService.consume(actorId, ItemCodes.POWER_MSG, targetId).remaining();
+            default -> null;
+        };
     }
 
     /**
@@ -148,8 +152,8 @@ public class MatchFeedActionService {
         log.debug("[MatchFeedAction] {} {} → {}, expiresAt={}, hasTags={}, isMatched={}, isSuper={}",
                 type, actorId, targetId, expiresAt, tagsJson != null, isMatched, mutualIsSuper);
 
-        // chatRoomId 는 chat 도메인 작업 후 추가. v1 은 null.
-        return new MatchFeedActionResultRspDto(isMatched, null);
+        // chatRoomId 는 chat 도메인 작업 후 추가. v1 은 null. remaining 은 recordFeedAction 에서 채움(직접 호출 시 null).
+        return new MatchFeedActionResultRspDto(isMatched, null, null);
     }
 
     /**

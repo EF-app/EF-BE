@@ -4,6 +4,7 @@ import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.domain.payment.entity.CodeItem;
 import com.nokcha.efbe.domain.payment.entity.InkHistory;
+import com.nokcha.efbe.domain.payment.entity.ItemUsageCounter;
 import com.nokcha.efbe.domain.payment.entity.ItemUsageHistory;
 import com.nokcha.efbe.domain.payment.model.ItemCodes;
 import com.nokcha.efbe.domain.payment.model.ItemValueType;
@@ -48,12 +49,14 @@ public class ItemUsageService {
 
         // 무제한 등급 — 카운터/잉크 없이 무료 기록
         if (policy.isUnlimited()) {
-            return record(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, targetId);
+            recordHistory(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, targetId);
+            return new UsageResult(UsageSource.FREE, 0, null, true);
         }
 
         // 무료 몫 원자 차감 시도 (limit > 0 일 때만; limit == 0 은 바로 유료/불가)
         if (policy.value() > 0 && tryConsumeFree(userId, item, policy.value())) {
-            return record(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, targetId);
+            recordHistory(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, targetId);
+            return new UsageResult(UsageSource.FREE, 0, remainingAfter(userId, item, policy), false);
         }
 
         // 무료 소진 → 잉크 폴백
@@ -62,7 +65,8 @@ public class ItemUsageService {
         }
         int cost = item.getInkCost();
         InkHistory ink = inkService.use(userId, cost, itemCode, item.getName());
-        return record(userId, itemCode, UsageSource.INK, cost, policy.tier(), ink.getInkHistoryId(), targetId);
+        recordHistory(userId, itemCode, UsageSource.INK, cost, policy.tier(), ink.getInkHistoryId(), targetId);
+        return new UsageResult(UsageSource.INK, cost, remainingAfter(userId, item, policy), false);
     }
 
     /**
@@ -77,23 +81,25 @@ public class ItemUsageService {
 
     /** 무료 전용 소비(ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요). 소진이면 DAILY_LIMIT_EXCEEDED. */
     @Transactional
-    public void consumeFreeOnly(Long userId, String itemCode) {
-        consumeFreeOnly(userId, itemCode, ErrorCode.DAILY_LIMIT_EXCEEDED);
+    public UsageResult consumeFreeOnly(Long userId, String itemCode) {
+        return consumeFreeOnly(userId, itemCode, ErrorCode.DAILY_LIMIT_EXCEEDED);
     }
 
-    /** 무료 전용 소비 (ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요·닉변·위치변경)  — 한도 초과 시 지정 에러로 throw */
+    /** 무료 전용 소비 (ink_cost 없는 COUNT: 글쓰기·번개·되돌리기·매칭좋아요·닉변·위치변경) — 한도 초과 시 지정 에러로 throw */
     @Transactional
-    public void consumeFreeOnly(Long userId, String itemCode, ErrorCode limitExceeded) {
+    public UsageResult consumeFreeOnly(Long userId, String itemCode, ErrorCode limitExceeded) {
         ItemPolicy policy = planLimitResolver.resolvePolicy(userId, itemCode);
-        requireCount(policy.item());
+        CodeItem item = policy.item();
+        requireCount(item);
         if (policy.isUnlimited()) {
-            record(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, null);
-            return;
+            recordHistory(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, null);
+            return new UsageResult(UsageSource.FREE, 0, null, true);
         }
-        if (policy.value() <= 0 || !tryConsumeFree(userId, policy.item(), policy.value())) {
+        if (policy.value() <= 0 || !tryConsumeFree(userId, item, policy.value())) {
             throw new BusinessException(limitExceeded);
         }
-        record(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, null);
+        recordHistory(userId, itemCode, UsageSource.FREE, 0, policy.tier(), null, null);
+        return new UsageResult(UsageSource.FREE, 0, remainingAfter(userId, item, policy), false);
     }
 
     private boolean tryConsumeFree(Long userId, CodeItem item, int limit) {
@@ -108,7 +114,7 @@ public class ItemUsageService {
         }
     }
 
-    private UsageResult record(Long userId, String itemCode, UsageSource source, int inkCost,
+    private void recordHistory(Long userId, String itemCode, UsageSource source, int inkCost,
                                UserTier tier, Long inkHistoryId, Long targetId) {
         usageHistoryRepository.save(ItemUsageHistory.builder()
                 .userId(userId)
@@ -119,6 +125,17 @@ public class ItemUsageService {
                 .inkHistoryId(inkHistoryId)
                 .targetId(targetId)
                 .build());
-        return new UsageResult(source, inkCost);
+    }
+
+    /** 소비 직후 현재 주기 남은 무료 횟수 — 무제한이면 null. 표시용(집행은 카운터 가드가 담당). */
+    private Integer remainingAfter(Long userId, CodeItem item, ItemPolicy policy) {
+        if (policy.isUnlimited()) {
+            return null;
+        }
+        String periodKey = periodKeyResolver.resolve(item.getResetPeriod(), LocalDate.now(KST));
+        int used = counterRepository.findByUserIdAndItemCodeAndPeriodKey(userId, item.getItemCode(), periodKey)
+                .map(ItemUsageCounter::getUsedCount)
+                .orElse(0);
+        return Math.max(0, policy.value() - used);
     }
 }
