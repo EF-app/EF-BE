@@ -48,4 +48,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update User u set u.lastActiveAt = :lastActiveAt where u.id = :userId")
     void updateLastActiveAt(@Param("userId") Long userId, @Param("lastActiveAt") LocalDateTime lastActiveAt);
+
+    // 휴면 파기 배치 대상 — ACTIVE 상태 & 마지막 활동이 기준 시각 이전(2년 경과).
+    //  lastActiveAt 은 가입 시부터 채워지므로 정상 계정엔 null 이 없음. is not null 은 파기 배치 도입 이전
+    //  레거시(가입만 하고 방치해 null 인 계정) 방어용 — 그런 계정은 1회 백필(create_time)로 편입 필요.
+    //  Pageable 로 회당 처리량 상한 → 대량 백로그를 한 실행에 통째로 적재하지 않음(오래된 순으로 처리).
+    @Query("select u.id from User u " +
+            "where u.status = com.nokcha.efbe.domain.user.entity.UserStatus.ACTIVE " +
+            "and u.lastActiveAt is not null and u.lastActiveAt <= :threshold " +
+            "order by u.lastActiveAt asc")
+    List<Long> findActiveDormantUserIds(@Param("threshold") LocalDateTime threshold, Pageable pageable);
 }

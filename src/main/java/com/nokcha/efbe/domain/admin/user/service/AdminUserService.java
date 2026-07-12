@@ -37,6 +37,8 @@ import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.entity.UserWithdrawal;
+import com.nokcha.efbe.domain.user.entity.UserDestructionLog;
+import com.nokcha.efbe.domain.user.repository.UserDestructionLogRepository;
 import com.nokcha.efbe.domain.user.repository.CodeKeywordRepository;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
@@ -71,6 +73,7 @@ public class AdminUserService {
     private final ProfileRepository profileRepository;
     private final ProfileImageRepository profileImageRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
+    private final UserDestructionLogRepository userDestructionLogRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final UserInkFundRepository userInkFundRepository;
     private final PaymentLogRepository paymentLogRepository;
@@ -135,9 +138,12 @@ public class AdminUserService {
 
         List<UserProfileImage> photos = profileImageRepository.findByUserIdOrderBySortOrderAsc(id);
         List<UserLoginLog> loginLogs = userLoginLogRepository.findTop20ByUserIdOrderByLoginAtDesc(id);
+        // user_withdrawal 이 없는 파기 유저(휴면 파기 DORMANT_2Y 등)는 파기 이력의 destroyed_at 으로 폴백
         LocalDateTime withdrawAt = userWithdrawalRepository.findByUserId(id)
                 .map(UserWithdrawal::getRequestedAt)
-                .orElse(null);
+                .orElseGet(() -> userDestructionLogRepository.findTopByUserIdOrderByDestroyedAtDesc(id)
+                        .map(UserDestructionLog::getDestroyedAt)
+                        .orElse(null));
 
         BigDecimal paymentTotal = paymentLogRepository.sumSuccessAmountByUserId(id);
 

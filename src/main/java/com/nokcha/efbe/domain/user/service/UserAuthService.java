@@ -324,6 +324,7 @@ public class UserAuthService {
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
                 .lastNicknameChangedAt(LocalDateTime.now())
+                .lastActiveAt(LocalDateTime.now()) // 가입 시점을 활동 시각으로 — null 방지(휴면 파기 대상 누락 방지)
                 .status(UserStatus.ACTIVE)
                 .build());
 
