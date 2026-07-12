@@ -29,6 +29,8 @@ import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserPersonalRepository;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.ItemUsageService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.CodePersonalRepository;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
@@ -40,8 +42,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +50,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ProfileEditService {
 
-    private static final long NICKNAME_COOLDOWN_DAYS = 7L;
     private static final int MAX_PROFILE_IMAGES = 5;
     private static final String PROFILE_R2_DIRECTORY = "profile";
 
@@ -81,6 +80,7 @@ public class ProfileEditService {
     private final CodePersonalRepository codePersonalRepository;
     private final R2ImageService r2ImageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ItemUsageService itemUsageService;
 
     /* ─────────── 풀 조회 ─────────── */
 
@@ -104,7 +104,6 @@ public class ProfileEditService {
                 .country(area == null ? null : area.getCountry())
                 .city(area == null ? null : area.getCity())
                 .age(user.getAge())
-                .lastNicknameChangedAt(user.getLastNicknameChangedAt())
                 .photos(photos.stream().map(p -> ProfileFullRspDto.PhotoItem.builder()
                         .id(p.getId())
                         .url(p.getUrl())
@@ -135,16 +134,19 @@ public class ProfileEditService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
 
         if (req.getNickname() != null && !req.getNickname().equals(user.getNickname())) {
-            ensureNicknameCooldownPassed(user);
             if (userRepository.existsByNickname(req.getNickname())) {
                 throw new BusinessException(ErrorCode.ALREADY_NICKNAME);
             }
-            user.updateNickname(req.getNickname(), LocalDateTime.now());
+            // 월 변경 횟수 한도(무료 1 / 프리미엄 4) 소진 — item_usage_counter 원자 차감. 소진 시 NICKNAME_COOLDOWN.
+            itemUsageService.consumeFreeOnly(userId, ItemCodes.NICKNAME_CHANGE, ErrorCode.NICKNAME_COOLDOWN);
+            user.updateNickname(req.getNickname());
         }
         if (req.getAreaId() != null && !req.getAreaId().equals(user.getAreaId())) {
             if (!areaRepository.existsById(req.getAreaId())) {
                 throw new BusinessException(ErrorCode.AREA_REQUIRED);
             }
+            // 월 변경 횟수 한도(무료 1 / 프리미엄 4) 소진. 소진 시 LOCATION_COOLDOWN.
+            itemUsageService.consumeFreeOnly(userId, ItemCodes.LOCATION_CHANGE, ErrorCode.LOCATION_COOLDOWN);
             user.updateAreaId(req.getAreaId());
             // 지역 변경 — 후보 풀/거리/국내·해외 그룹 자체가 바뀜 → 본인 피드 재계산
             eventPublisher.publishEvent(new ProfileUpdatedEvent(userId, ProfileChangeKind.AREA));
@@ -312,15 +314,6 @@ public class ProfileEditService {
             if (!allowedCategories.contains(cp.getBigCategory())) {
                 throw new BusinessException(ErrorCode.INVALID_REQUEST);
             }
-        }
-    }
-
-    private void ensureNicknameCooldownPassed(User user) {
-        LocalDateTime last = user.getLastNicknameChangedAt();
-        if (last == null) return;
-        long days = Duration.between(last, LocalDateTime.now()).toDays();
-        if (days < NICKNAME_COOLDOWN_DAYS) {
-            throw new BusinessException(ErrorCode.NICKNAME_COOLDOWN);
         }
     }
 

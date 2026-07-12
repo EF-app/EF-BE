@@ -4,8 +4,7 @@ import com.nokcha.efbe.domain.chat.entity.ChatRoom;
 import com.nokcha.efbe.domain.chat.repository.ChatParticipantRepository;
 import com.nokcha.efbe.domain.chat.repository.ChatReportEvidenceRepository;
 import com.nokcha.efbe.domain.chat.repository.ChatRoomRepository;
-import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
-import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -32,13 +31,13 @@ public class ChatRoomCleanupScheduler {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatReportEvidenceRepository chatReportEvidenceRepository;
-    private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     @Scheduled(cron = "0 30 3 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "ChatRoomCleanupScheduler.deleteExpiredDeletedRooms", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
     @Transactional
     public void deleteExpiredDeletedRooms() {
-        try {
+        schedulerGuard.runGuarded("ChatRoomCleanupScheduler.deleteExpiredDeletedRooms", () -> {
             LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);
             List<ChatRoom> rooms = chatRoomRepository.findDeletedRoomsForPhysicalDelete(cutoff, PageRequest.of(0, BATCH_SIZE));
             if (rooms.isEmpty()) {
@@ -55,9 +54,6 @@ public class ChatRoomCleanupScheduler {
 
             log.info("[ChatRoomCleanup] deleted rooms={}, participants={}, reportEvidences={}, cutoff={}",
                     rooms.size(), participantDeleted, evidenceDeleted, cutoff);
-        } catch (Exception e) {
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "ChatRoomCleanupScheduler.deleteExpiredDeletedRooms", null, e);
-            throw e;
-        }
+        });
     }
 }

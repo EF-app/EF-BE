@@ -9,6 +9,7 @@ import com.nokcha.efbe.domain.match.service.KeywordFreqService;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
 import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -53,6 +54,7 @@ public class NightlyMatchBatch {
     private final ColdStartFeed coldStartFeed;
     private final ThreadPoolTaskExecutor matchBatchExecutor;
     private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     /** mid-progress 로그 주기 (viewer N 명 처리 시마다 진행 보고). */
     private static final int PROGRESS_LOG_EVERY = 1000;
@@ -63,7 +65,8 @@ public class NightlyMatchBatch {
                              MyFeedRecomputer recomputer,
                              ColdStartFeed coldStartFeed,
                              @Qualifier("matchBatchExecutor") ThreadPoolTaskExecutor matchBatchExecutor,
-                             SystemErrorLogService systemErrorLogService) {
+                             SystemErrorLogService systemErrorLogService,
+                             SchedulerGuard schedulerGuard) {
         this.configLoader = configLoader;
         this.keywordFreqService = keywordFreqService;
         this.userMgmt = userMgmt;
@@ -71,19 +74,15 @@ public class NightlyMatchBatch {
         this.coldStartFeed = coldStartFeed;
         this.matchBatchExecutor = matchBatchExecutor;
         this.systemErrorLogService = systemErrorLogService;
+        this.schedulerGuard = schedulerGuard;
     }
 
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "NightlyMatchBatch.run",
             lockAtMostFor = "PT2H", lockAtLeastFor = "PT5M")
     public void run() {
-        try {
-            runFullNow();
-        } catch (Exception e) {
-            // 배치 전체 중단(설정/캐시 로드 실패 등) — cron 경로에서만 적재. 관리자 수동 트리거는 ADMIN_API
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "NightlyMatchBatch.run", null, e);
-            throw e;
-        }
+        // 배치 전체 중단 적재는 cron 경로에서만. 관리자 수동 트리거(runFullNow 직접 호출)는 ADMIN_API 로 포착됨.
+        schedulerGuard.runGuarded("NightlyMatchBatch.run", this::runFullNow);
     }
 
     /**
@@ -148,12 +147,7 @@ public class NightlyMatchBatch {
     @SchedulerLock(name = "NightlyMatchBatch.recoverFailedViewers",
             lockAtMostFor = "PT1H", lockAtLeastFor = "PT1M")
     public void recoverFailedViewers() {
-        try {
-            runRecoverNow();
-        } catch (Exception e) {
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "NightlyMatchBatch.recoverFailedViewers", null, e);
-            throw e;
-        }
+        schedulerGuard.runGuarded("NightlyMatchBatch.recoverFailedViewers", this::runRecoverNow);
     }
 
     /**

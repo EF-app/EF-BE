@@ -1,62 +1,34 @@
 package com.nokcha.efbe.domain.payment.service;
 
-import com.nokcha.efbe.common.exception.BusinessException;
-import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.payment.dto.request.InkChargeReqDto;
-import com.nokcha.efbe.domain.payment.dto.request.SubscriptionOrderReqDto;
-import com.nokcha.efbe.domain.payment.dto.response.PaymentLogRspDto;
-import com.nokcha.efbe.domain.payment.entity.PaymentLog;
-import com.nokcha.efbe.domain.payment.entity.PaymentType;
-import com.nokcha.efbe.domain.payment.repository.PaymentLogRepository;
+import com.nokcha.efbe.domain.payment.entity.CodePaymentProduct;
+import com.nokcha.efbe.domain.payment.entity.PaymentHistory;
+import com.nokcha.efbe.domain.payment.repository.CodePaymentProductRepository;
+import com.nokcha.efbe.domain.payment.repository.PaymentHistoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 결제 서비스 (멱등 키 기반 - 주문번호)
+import java.util.List;
+
+/**
+ * 결제 조회 — 상품 목록 / 내 결제 내역. 지급(충전/구독)은 RevenueCat webhook({@link RevenueCatEventService}) 담당.
+ */
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private final PaymentLogRepository paymentLogRepository;
-    private final InkService inkService;
-    private final SubscriptionService subscriptionService;
+    private final PaymentHistoryRepository paymentRepository;
+    private final CodePaymentProductRepository productRepository;
 
-    // 별 충전 결제 성공 처리 (PG 콜백 훅)
-    @Transactional
-    public PaymentLogRspDto confirmInkCharge(Long userId, InkChargeReqDto req) {
-        if (paymentLogRepository.findByOrderId(req.getOrderId()).isPresent()) {
-            throw new BusinessException(ErrorCode.DUPLICATE_PAYMENT);
-        }
-        PaymentLog log = paymentLogRepository.save(PaymentLog.builder()
-                .userId(userId).orderId(req.getOrderId()).paymentType(PaymentType.STAR_CHARGE)
-                .starAmount(req.getStarAmount()).amount(req.getAmount()).pgProvider(req.getPgProvider())
-                .build());
-        log.markSuccess();
-        inkService.charge(userId, req.getStarAmount(), "PAYMENT", log.getId(), "star-charge:" + req.getOrderId());
-        return PaymentLogRspDto.from(log);
-    }
-
-    // 구독 결제 성공 처리 (PG 콜백 훅)
-    @Transactional
-    public PaymentLogRspDto confirmSubscription(Long userId, SubscriptionOrderReqDto req) {
-        if (paymentLogRepository.findByOrderId(req.getOrderId()).isPresent()) {
-            throw new BusinessException(ErrorCode.DUPLICATE_PAYMENT);
-        }
-        PaymentLog log = paymentLogRepository.save(PaymentLog.builder()
-                .userId(userId).orderId(req.getOrderId()).paymentType(PaymentType.SUBSCRIPTION)
-                .refPlanId(req.getPlanId()).amount(req.getAmount()).pgProvider(req.getPgProvider())
-                .build());
-        log.markSuccess();
-        subscriptionService.startOrRenew(userId, req.getPlanId());
-        return PaymentLogRspDto.from(log);
-    }
-
-    // 내 결제 내역 조회
+    /** 판매 중인 상품 목록. */
     @Transactional(readOnly = true)
-    public Page<PaymentLogRspDto> getMyPayments(Long userId, int page, int size) {
-        return paymentLogRepository.findByUserIdOrderByCreateTimeDesc(userId, PageRequest.of(page, size))
-                .map(PaymentLogRspDto::from);
+    public List<CodePaymentProduct> getActiveProducts() {
+        return productRepository.findByIsActiveTrueOrderBySortOrderAsc();
+    }
+
+    /** 내 결제 내역 (최신순). */
+    @Transactional(readOnly = true)
+    public List<PaymentHistory> getMyPayments(Long userId) {
+        return paymentRepository.findByUserIdOrderByCreateTimeDesc(userId);
     }
 }

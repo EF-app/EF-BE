@@ -6,9 +6,9 @@ import com.nokcha.efbe.common.response.CursorPageResponse;
 import com.nokcha.efbe.common.util.CursorCodec;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.block.repository.BlockRepository;
-import com.nokcha.efbe.domain.payment.entity.CodeItem;
-import com.nokcha.efbe.domain.payment.repository.CodeItemRepository;
-import com.nokcha.efbe.domain.payment.service.DailyUsageService;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.ItemUsageService;
+import com.nokcha.efbe.domain.payment.service.PlanLimitResolver;
 import com.nokcha.efbe.domain.postIt.dto.request.PostCreateReqDto;
 import com.nokcha.efbe.domain.postIt.dto.response.PostItRspDto;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
@@ -30,14 +30,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostItService {
 
-    private static final int FREE_EXPIRE_HOURS = 24;
-    private static final int PREMIUM_EXPIRE_HOURS = 72;
-
-    // 일일 한도 (BASIC 플랜 기준 — 프리미엄은 별도 처리 지점, 현재는 일괄 적용)
-    private static final String ACTION_POST_WRITE = "POST_WRITE";
-    private static final String ACTION_POST_LIGHTNING = "POST_LIGHTNING";
-    private static final int FREE_POST_WRITE_LIMIT = 10;
-    private static final int FREE_POST_LIGHTNING_LIMIT = 2;
     private static final int DEFAULT_FEED_SIZE = 20;
     private static final int MAX_FEED_SIZE = 50;
 
@@ -46,8 +38,8 @@ public class PostItService {
     private final PostLikeRepository postLikeRepository;
     private final AreaRepository areaRepository;
     private final BlockRepository blockRepository;
-    private final DailyUsageService dailyUsageService;
-    private final CodeItemRepository itemCatalogRepository;
+    private final ItemUsageService itemUsageService;
+    private final PlanLimitResolver planLimitResolver;
     private final CursorCodec cursorCodec;
 
     // 포스트잇 작성 - 카테고리 코드가 LIGHTN 이면 익명 강제 불가, 일일 한도는 user_daily_usage 카운터 기반
@@ -64,14 +56,16 @@ public class PostItService {
             throw new BusinessException(ErrorCode.POST_LIGHTNING_ANONYMOUS);
         }
 
-        // 일일 한도 — 번개는 좁은 카운터(POST_LIGHTNING) 먼저 통과, 그다음 공통 카운터(POST_WRITE) 증가
+        // 일일 작성 한도 — 번개는 post_write + post_flash 이중 카운터(포함형), 일반은 post_write 만.
         if (lightning) {
-            dailyUsageService.consume(userId, ACTION_POST_LIGHTNING, FREE_POST_LIGHTNING_LIMIT);
+            itemUsageService.consumeLightningPost(userId);
+        } else {
+            itemUsageService.consumeFreeOnly(userId, ItemCodes.POST_WRITE);
         }
-        dailyUsageService.consume(userId, ACTION_POST_WRITE, FREE_POST_WRITE_LIMIT);
 
-        int hours = Boolean.TRUE.equals(req.getPremiumDuration()) ? PREMIUM_EXPIRE_HOURS : FREE_EXPIRE_HOURS;
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(hours);
+        // 글 유지 기간 — 등급별 POST_TTL(일): 기본 30 / 프리미엄 60. (구 클라 premiumDuration 플래그 대신 실제 등급 기준)
+        int ttlDays = planLimitResolver.resolveValue(userId, ItemCodes.POST_TTL);
+        LocalDateTime expiresAt = LocalDateTime.now().plusDays(ttlDays);
 
         PostIt post = PostIt.builder()
                 .user(user)
@@ -154,11 +148,9 @@ public class PostItService {
         if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.POST_NOT_OWNER);
         }
-        // TODO(v1.2 잉크 차감): SUPER_LIKE / POWER_MESSAGE / PROFILE_BOOST / UNDO 등을 user_star_balance 에서 직접 차감하는 로직 추가 예정
-        int minutes = itemCatalogRepository.findByItemCode(CodeItem.CODE_POST_PIN)
-                .map(item -> item.getEffectDurationMin() == null ? 0 : item.getEffectDurationMin())
-                .orElse(0);
-        post.activatePin(LocalDateTime.now().plusMinutes(minutes));
+        // 고정핀은 프리미엄 등급 능력(POST_PIN CAPABILITY) — 불가 등급이면 차단. 핀 유지는 글 만료까지.
+        planLimitResolver.assertCapable(userId, ItemCodes.POST_PIN);
+        post.activatePin(post.getExpiresAt());
         // owner 액션 응답 — userId/nickname 노출. 좋아요/area lookup.
         long likeCount = postLikeRepository.countByPostId(post.getId());
         boolean likedByMe = postLikeRepository.existsByPostIdAndUserId(post.getId(), userId);

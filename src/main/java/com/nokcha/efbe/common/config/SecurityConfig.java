@@ -69,7 +69,11 @@ public class SecurityConfig {
                                 "/v1/users/login",
                                 "/v1/users/token/refresh",
                                 "/v1/admin/auth/token/refresh",
-                                "/v1/admin/auth/login"
+                                "/v1/admin/auth/login",
+                                // 외부 스케줄러(Cloud Scheduler) 전용 배치 트리거 — JWT 대신 X-Batch-Token 헤더로 보호
+                                "/v1/internal/batch/**",
+                                // RevenueCat webhook — JWT 대신 Authorization 시크릿으로 보호
+                                "/v1/payments/revenuecat/webhook"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/policies", "/v1/policies/*").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("ADMIN")

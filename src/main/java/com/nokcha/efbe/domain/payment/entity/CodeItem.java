@@ -1,64 +1,91 @@
 package com.nokcha.efbe.domain.payment.entity;
 
 import com.nokcha.efbe.common.entity.BaseEntity;
-import jakarta.persistence.*;
+import com.nokcha.efbe.domain.payment.model.ItemResetPeriod;
+import com.nokcha.efbe.domain.payment.model.ItemValueType;
+import com.nokcha.efbe.domain.payment.model.UserTier;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 아이템 마스터 엔티티 (code_item)
-@Getter
+/**
+ * 아이템/기능 정책 마스터 — 등급별 한도의 단일 진실(SoT).
+ */
 @Entity
-@Table(name = "code_item",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_item_code", columnNames = "item_code")},
-        indexes = {@Index(name = "idx_item_category_active", columnList = "category, is_active")})
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "code_item")
 public class CodeItem extends BaseEntity {
 
-    // 서비스 레이어 훅에서 사용하는 표준 아이템 코드
-    public static final String CODE_SUPER_LIKE = "SUPER_LIKE";
-    public static final String CODE_POWER_MESSAGE = "POWER_MESSAGE";
-    public static final String CODE_PROFILE_BOOST = "PROFILE_BOOST";
-    public static final String CODE_POST_PIN = "POST_PIN";
-    public static final String CODE_UNDO = "UNDO";
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
-
-    @Column(name = "item_code", nullable = false, length = 40)
+    @Column(name = "item_code", length = 50)
     private String itemCode;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "description", length = 255)
-    private String description;
-
-    @Column(name = "star_cost", nullable = false)
-    private Integer starCost;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "value_type", nullable = false, length = 15)
+    private ItemValueType valueType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false, length = 10)
-    private ItemCategory category;
+    @Column(name = "reset_period", nullable = false, length = 10)
+    private ItemResetPeriod resetPeriod;
 
-    @Column(name = "effect_duration_min")
-    private Integer effectDurationMin;
+    /** 무료 소진 후 1회 구매 잉크 방울. null = 구매 불가. */
+    @Column(name = "ink_cost")
+    private Integer inkCost;
+
+    /** 일반 등급 값 (-1 = 무제한). */
+    @Column(name = "normal_value", nullable = false)
+    private int normalValue;
+
+    /** 팔레트 등급 값 (-1 = 무제한). */
+    @Column(name = "palette_value", nullable = false)
+    private int paletteValue;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = Boolean.TRUE;
+    private boolean isActive;
+
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
 
     @Builder
-    private CodeItem(String itemCode, String name, String description, Integer starCost,
-                        ItemCategory category, Integer effectDurationMin, Boolean isActive) {
+    private CodeItem(String itemCode, String name, ItemValueType valueType, ItemResetPeriod resetPeriod,
+                     Integer inkCost, int normalValue, int paletteValue, boolean isActive, int sortOrder) {
         this.itemCode = itemCode;
         this.name = name;
-        this.description = description;
-        this.starCost = starCost;
-        this.category = category;
-        this.effectDurationMin = effectDurationMin;
-        this.isActive = isActive == null ? Boolean.TRUE : isActive;
+        this.valueType = valueType;
+        this.resetPeriod = resetPeriod;
+        this.inkCost = inkCost;
+        this.normalValue = normalValue;
+        this.paletteValue = paletteValue;
+        this.isActive = isActive;
+        this.sortOrder = sortOrder;
+    }
+
+    /** 등급에 해당하는 한도값 (-1 = 무제한). */
+    public int resolveValue(UserTier tier) {
+        return tier == UserTier.PALETTE ? paletteValue : normalValue;
+    }
+
+    /** 무료 소진 후 잉크로 구매 가능한 아이템인지. */
+    public boolean isPurchasable() {
+        return inkCost != null;
+    }
+
+    /** 관리자 한도/단가 조정 진입점. */
+    public void applyUpdate(Integer inkCost, int normalValue, int paletteValue, boolean isActive) {
+        this.inkCost = inkCost;
+        this.normalValue = normalValue;
+        this.paletteValue = paletteValue;
+        this.isActive = isActive;
     }
 }

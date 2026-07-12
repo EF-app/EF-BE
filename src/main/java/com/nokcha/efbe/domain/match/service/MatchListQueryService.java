@@ -11,9 +11,13 @@ import com.nokcha.efbe.domain.match.dto.response.SentLikeItemRspDto;
 import com.nokcha.efbe.domain.match.repository.MatchListQueryRepository;
 import com.nokcha.efbe.domain.match.repository.projection.LikeActionRow;
 import com.nokcha.efbe.domain.match.repository.projection.MutualMatchRow;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.model.UserTier;
+import com.nokcha.efbe.domain.payment.service.PlanLimitResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +36,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MatchListQueryService {
 
     private static final ObjectMapper OM = new ObjectMapper();
@@ -39,8 +44,10 @@ public class MatchListQueryService {
     private static final int SUPER_PIN_DAYS_RECEIVED = 3;
     private static final int LIST_CUTOFF_DAYS = 7;
     private static final int MUTUAL_FRESH_HOURS = 3;   // 매칭 후 3h 안
+    private static final int BLUR_WINDOW_HOURS = 2;    // 기본 등급: 최근 2h 만 노출, 이후 블러
 
     private final MatchListQueryRepository repo;
+    private final PlanLimitResolver planLimitResolver;
 
     /* ───────── COUNT ───────── */
 
@@ -65,14 +72,19 @@ public class MatchListQueryService {
 
         LocalDateTime onlineThreshold = LocalDateTime.now().minusMinutes(ONLINE_THRESHOLD_MINUTES);
         LocalDateTime superPinThreshold = LocalDateTime.now().minusDays(SUPER_PIN_DAYS_RECEIVED);
+        LocalDateTime blurThreshold = LocalDateTime.now().minusHours(BLUR_WINDOW_HOURS);
+        UserTier tier = planLimitResolver.resolveTier(meId);
+        boolean canSeeOnline = planLimitResolver.isCapable(tier, ItemCodes.ONLINE_BADGE);
+        boolean canSeeFull = planLimitResolver.isCapable(tier, ItemCodes.LIKED_LIST_FULL);
 
         List<ReceivedLikeItemRspDto> items = new ArrayList<>(rows.size());
         Long lastId = null;
         for (LikeActionRow r : rows) {
             boolean isSuper = "SUPER_LIKE".equals(r.actionType()) && r.createdAt().isAfter(superPinThreshold);
-            MatchLikeUserDto user = toUserDto(r, onlineThreshold);
+            boolean blurred = !canSeeFull && r.createdAt().isBefore(blurThreshold);
+            MatchLikeUserDto user = blurred ? maskedUser() : toUserDto(r, onlineThreshold, canSeeOnline);
             items.add(new ReceivedLikeItemRspDto(
-                    String.valueOf(r.actionId()), r.createdAt().toString(), isSuper, user
+                    String.valueOf(r.actionId()), r.createdAt().toString(), isSuper, blurred, user
             ));
             lastId = r.actionId();
         }
@@ -88,14 +100,19 @@ public class MatchListQueryService {
 
         LocalDateTime onlineThreshold = LocalDateTime.now().minusMinutes(ONLINE_THRESHOLD_MINUTES);
         LocalDateTime superPinThreshold = LocalDateTime.now().minusDays(SUPER_PIN_DAYS_RECEIVED);
+        LocalDateTime blurThreshold = LocalDateTime.now().minusHours(BLUR_WINDOW_HOURS);
+        UserTier tier = planLimitResolver.resolveTier(meId);
+        boolean canSeeOnline = planLimitResolver.isCapable(tier, ItemCodes.ONLINE_BADGE);
+        boolean canSeeFull = planLimitResolver.isCapable(tier, ItemCodes.LIKED_LIST_FULL);
 
         List<SentLikeItemRspDto> items = new ArrayList<>(rows.size());
         Long lastId = null;
         for (LikeActionRow r : rows) {
             boolean isSuper = "SUPER_LIKE".equals(r.actionType()) && r.createdAt().isAfter(superPinThreshold);
-            MatchLikeUserDto user = toUserDto(r, onlineThreshold);
+            boolean blurred = !canSeeFull && r.createdAt().isBefore(blurThreshold);
+            MatchLikeUserDto user = blurred ? maskedUser() : toUserDto(r, onlineThreshold, canSeeOnline);
             items.add(new SentLikeItemRspDto(
-                    String.valueOf(r.actionId()), r.createdAt().toString(), isSuper, user
+                    String.valueOf(r.actionId()), r.createdAt().toString(), isSuper, blurred, user
             ));
             lastId = r.actionId();
         }
@@ -111,12 +128,14 @@ public class MatchListQueryService {
 
         LocalDateTime onlineThreshold = LocalDateTime.now().minusMinutes(ONLINE_THRESHOLD_MINUTES);
         LocalDateTime freshThreshold  = LocalDateTime.now().minusHours(MUTUAL_FRESH_HOURS);
+        UserTier tier = planLimitResolver.resolveTier(meId);
+        boolean canSeeOnline = planLimitResolver.isCapable(tier, ItemCodes.ONLINE_BADGE);
 
         List<MutualMatchItemRspDto> items = new ArrayList<>(rows.size());
         Long lastMatchId = null;
         for (MutualMatchRow r : rows) {
             boolean isFresh = r.matchedAt().isAfter(freshThreshold);
-            boolean isOnline = r.lastActiveAt() != null && r.lastActiveAt().isAfter(onlineThreshold);
+            boolean isOnline = canSeeOnline && r.lastActiveAt() != null && r.lastActiveAt().isAfter(onlineThreshold);
             String region = composeRegion(r.country(), r.city());
             ParsedTags parsed = parseTags(r.tagsJson());
 
@@ -147,8 +166,8 @@ public class MatchListQueryService {
         return LocalDateTime.now().minusDays(LIST_CUTOFF_DAYS);
     }
 
-    private MatchLikeUserDto toUserDto(LikeActionRow r, LocalDateTime onlineThreshold) {
-        boolean isOnline = r.lastActiveAt() != null && r.lastActiveAt().isAfter(onlineThreshold);
+    private MatchLikeUserDto toUserDto(LikeActionRow r, LocalDateTime onlineThreshold, boolean canSeeOnline) {
+        boolean isOnline = canSeeOnline && r.lastActiveAt() != null && r.lastActiveAt().isAfter(onlineThreshold);
         String region = composeRegion(r.country(), r.city());
         ParsedTags parsed = parseTags(r.tagsJson());
         return new MatchLikeUserDto(
@@ -157,6 +176,11 @@ public class MatchListQueryService {
                 r.bioMessage(), r.distanceKm(),
                 ActivityStatusResolver.resolve(r.lastActiveAt())
         );
+    }
+
+    /** 블러 마스킹 — 상대 식별 정보 전부 null. "누군가 좋아요 했다"는 사실(항목 존재)만 유지. */
+    private MatchLikeUserDto maskedUser() {
+        return new MatchLikeUserDto(null, null, null, null, List.of(), 0, false, null, null, null, null);
     }
 
     private static String composeRegion(String country, String city) {

@@ -5,10 +5,10 @@ import com.nokcha.efbe.domain.suspension.repository.UserSuspensionRepository;
 import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
-import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
-import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +30,13 @@ public class SuspensionExpirationScheduler {
     private final UserSuspensionRepository userSuspensionRepository;
     private final UserRepository userRepository;
     private final SuspensionService suspensionService;
-    private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "SuspensionExpirationScheduler.expireSuspensions", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
     @Transactional
     public void expireSuspensions() {
-        try {
+        schedulerGuard.runGuarded("SuspensionExpirationScheduler.expireSuspensions", () -> {
             LocalDateTime now = LocalDateTime.now();
             List<UserSuspension> expired = userSuspensionRepository.findJustExpiredSuspensions(now);
             if (expired.isEmpty()) {
@@ -65,9 +66,6 @@ public class SuspensionExpirationScheduler {
 
             log.info("[SuspensionExpiration] expired rows={}, affected users={}, status changed={}",
                     expired.size(), affectedUserIds.size(), statusChanged);
-        } catch (Exception e) {
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "SuspensionExpirationScheduler.expireSuspensions", null, e);
-            throw e;
-        }
+        });
     }
 }

@@ -27,4 +27,8 @@ public class MatchFeedActionResultRspDto {
 
     @Schema(description = "채팅방 id (chat 도메인 작업 후. 현재 null)")
     private String chatRoomId;
+
+    @Schema(description = "이 액션으로 소비한 아이템의 남은 무료 횟수. PASS·재프레스(소비 없음)·무제한 등급이면 null.",
+            example = "9", nullable = true)
+    private Integer remaining;
 }
