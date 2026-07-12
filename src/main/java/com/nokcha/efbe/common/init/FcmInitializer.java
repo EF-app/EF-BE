@@ -25,8 +25,13 @@ public class FcmInitializer {
     @Value("${firebase.project-id}")
     private String firebaseProjectId;
 
+    // firebase.enabled=false (테스트/로컬 등) 이면 FCM 초기화 스킵. 운영은 기본 true.
+    @Value("${firebase.enabled:true}")
+    private boolean firebaseEnabled;
+
     @PostConstruct
     public void initialize() {
+        if (!firebaseEnabled) return;
         if (isDefaultAppInitialized()) return;
 
         Resource firebaseConfig = resourceLoader.getResource(firebaseConfigPath);
