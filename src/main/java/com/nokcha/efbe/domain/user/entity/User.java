@@ -39,13 +39,19 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 36)
     private String uuid;
 
-    @Column(nullable = false, length = 50, unique = true)
+    // 본인인증(DI) 도입 시 산출·저장 — 영구정지자 재가입 차단 원장(blocked_identity) 대조 키.
+    //  원문 DI 는 저장하지 않고 HMAC 해시(hex 64)만. 본인인증 미도입 현재는 전부 NULL.
+    @Column(name = "di_hash", length = 64)
+    private String diHash;
+
+    // 탈퇴 완료 시 NULL 익명화 대상 — anonymize() 참조. UNIQUE 는 NULL 중복 허용.
+    @Column(length = 50, unique = true)
     private String loginId;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
-    @Column(nullable = false, length = 20, unique = true)
+    @Column(length = 20, unique = true)
     private String phone;
 
     @Column(length = 100)
@@ -54,7 +60,7 @@ public class User extends BaseEntity {
     @Column(length = 100)
     private String scode;
 
-    @Column(nullable = false, length = 30, unique = true)
+    @Column(length = 30, unique = true)
     private String nickname;
 
     @Column
@@ -138,12 +144,44 @@ public class User extends BaseEntity {
         this.status = UserStatus.WITHDRAWING;
     }
 
-    // 탈퇴 완료 (배치)
+    // 탈퇴 완료 (배치) — status 플립만. 실제 PII 파기는 anonymize() 에서 수행.
     public void completeWithdrawal() {
         this.status = UserStatus.WITHDRAWN;
     }
 
-    // 탈퇴 진행 여부
+    // 개인정보 파기(익명화) — 탈퇴 완료(30일 경과) 시 파기 배치가 호출.
+    //  PII 컬럼을 NULL 로 밀고 WITHDRAWN 으로 전환. id/uuid/area_id 는 회계·통계·표시용으로 유지.
+    //  닉네임이 NULL 이 되면 노출 지점에서 "탈퇴한 회원" 으로 표시된다.
+    public void anonymize() {
+        this.loginId = null;
+        this.password = null;
+        this.phone = null;
+        this.email = null;
+        this.scode = null;
+        this.nickname = null;
+        this.birth = null;
+        this.age = null;
+        this.fcmToken = null;
+        this.diHash = null; // 일반 파기는 차단 흔적 미보존(쿨다운 없음). 영구정지 차단은 ban 시점에 이미 원장 등록됨.
+        this.status = UserStatus.WITHDRAWN;
+    }
+
+    // 본인인증(DI) 완료 시 di_hash 주입 — 가입 완료/소급 백필에서 호출. 원문 DI 는 받지 않음.
+    public void assignDiHash(String diHash) {
+        this.diHash = diHash;
+    }
+
+    // 탈퇴 대기(유예 30일) 여부 — 로그인 허용하되 철회만 가능한 상태
+    public boolean isWithdrawing() {
+        return this.status == UserStatus.WITHDRAWING;
+    }
+
+    // 탈퇴 완료(파기) 여부 — 로그인 완전 차단 대상
+    public boolean isWithdrawn() {
+        return this.status == UserStatus.WITHDRAWN;
+    }
+
+    // 탈퇴 진행 여부 (신청~완료 전체)
     public boolean isWithdrawnOrWithdrawing() {
         return this.status == UserStatus.WITHDRAWING || this.status == UserStatus.WITHDRAWN;
     }

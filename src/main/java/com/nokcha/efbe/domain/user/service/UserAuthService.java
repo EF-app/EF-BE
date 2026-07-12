@@ -13,6 +13,7 @@ import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.suspension.dto.response.UserSuspensionRspDto;
 import com.nokcha.efbe.domain.suspension.service.SuspensionService;
+import com.nokcha.efbe.domain.blockedIdentity.service.BlockedIdentityService;
 import com.nokcha.efbe.domain.profile.repository.ProfileRepository;
 import com.nokcha.efbe.domain.profile.repository.UserCustomKeywordRepository;
 import com.nokcha.efbe.domain.profile.repository.UserKeywordRepository;
@@ -46,6 +47,7 @@ import com.nokcha.efbe.domain.user.repository.UserSignUpPersonalRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpProfileRepository;
 import com.nokcha.efbe.domain.user.repository.UserSignUpSessionRepository;
 import com.nokcha.efbe.domain.user.repository.UserTermsRepository;
+import com.nokcha.efbe.domain.user.repository.UserWithdrawalRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,11 +87,16 @@ public class UserAuthService {
     private final UserPersonalRepository userPersonalRepository;
     private final UserActivityStatusRepository userActivityStatusRepository;
     private final UserTermsRepository userTermsRepository;
+
+    private final UserWithdrawalRepository userWithdrawalRepository;
+    private final UserInkFundRepository userInkFundRepository;
+
     private final UserLoginLogService userLoginLogService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RevokedTokenRepository revokedTokenRepository;
     private final SuspensionService suspensionService;
+    private final BlockedIdentityService blockedIdentityService;
     private final ApplicationEventPublisher eventPublisher;
 
     // 로그인 아이디 사용 가능 여부
@@ -287,6 +294,14 @@ public class UserAuthService {
 
         validateSignUpSessionForCompletion(signUpSession);
 
+        // [HOOK] 재가입 차단 대조 — 본인인증(DI) 도입 시 signUpSession 의 DI 로 di_hash 산출해 검사.
+        //  현재는 DI 미보유라 diHash=null → isBlocked=false (inert). DI 도입 시 diHash 산출부만 붙이면 활성화.
+        //    String diHash = diHashUtil.hash(signUpSession.getDi());
+        String diHash = null;
+        if (blockedIdentityService.isBlocked(diHash)) {
+            throw new BusinessException(ErrorCode.BLOCKED_IDENTITY_REREGISTRATION);
+        }
+
         if (userRepository.existsByLoginId(signUpSession.getLoginId()) || adminAccountRepository.existsByLoginId(signUpSession.getLoginId())) {
             throw new BusinessException(ErrorCode.ALREADY_USER);
         }
@@ -310,8 +325,15 @@ public class UserAuthService {
                 .email(signUpSession.getEmail())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
+
+                .lastNicknameChangedAt(LocalDateTime.now())
+                .lastActiveAt(LocalDateTime.now()) // 가입 시점을 활동 시각으로 — null 방지(휴면 파기 대상 누락 방지)
+
                 .status(UserStatus.ACTIVE)
                 .build());
+
+        // [HOOK] 본인인증(DI) 도입 시 di_hash 저장 지점 — 현재 diHash=null 이라 no-op.
+        user.assignDiHash(diHash);
 
         saveFinalProfile(user.getId(), signUpSession.getId(), signUpSession.getPurpose());
         saveUserKeywords(user.getId(), signUpSession.getId());
@@ -356,7 +378,8 @@ public class UserAuthService {
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
 
-        if (user.isWithdrawnOrWithdrawing()) {
+        // WITHDRAWN(파기 완료)만 로그인 차단. WITHDRAWING(30일 유예)은 철회 가능하도록 로그인 허용.
+        if (user.isWithdrawn()) {
             logFailure(user.getId(), reqDto, request, LoginFailureReason.WITHDRAWN);
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
@@ -393,6 +416,13 @@ public class UserAuthService {
                 .map(UserSuspensionRspDto::from)
                 .orElseGet(UserSuspensionRspDto::inactive);
 
+        // 탈퇴 대기(WITHDRAWING)면 철회 유도용 플래그 — FE 는 '탈퇴 대기 — 철회' 화면으로 라우팅
+        boolean withdrawing = user.isWithdrawing();
+        LocalDateTime scheduledDestroyAt = withdrawing
+                ? userWithdrawalRepository.findByUserId(user.getId())
+                        .map(w -> w.getScheduledDestroyAt()).orElse(null)
+                : null;
+
         return LoginRspDto.builder()
                 .userId(user.getId())
                 .accessToken(jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId(), USER_ROLE))
@@ -401,6 +431,8 @@ public class UserAuthService {
                 .fcmToken(user.getFcmToken())
                 .firebaseToken(createFirebaseToken(user.getId()))
                 .suspension(suspension)
+                .withdrawing(withdrawing)
+                .scheduledDestroyAt(scheduledDestroyAt)
                 .build();
     }
 
@@ -408,7 +440,7 @@ public class UserAuthService {
     public FirebaseTokenRspDto refreshFirebaseToken(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
-        if (user.isWithdrawnOrWithdrawing()) {
+        if (user.isWithdrawn()) {
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
 
@@ -433,7 +465,7 @@ public class UserAuthService {
         User user = userRepository.findByLoginId(jwtTokenProvider.getLoginId(reqDto.getRefreshToken()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
 
-        if (user.isWithdrawnOrWithdrawing()) {
+        if (user.isWithdrawn()) {
             throw new BusinessException(ErrorCode.WITHDRAWN_USER);
         }
 

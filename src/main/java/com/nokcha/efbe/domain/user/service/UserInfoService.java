@@ -10,6 +10,7 @@ import com.nokcha.efbe.domain.user.dto.response.AccountMaskedRspDto;
 import com.nokcha.efbe.domain.user.dto.response.AccountRevealRspDto;
 import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
+import com.nokcha.efbe.domain.user.dto.response.WithdrawalPreviewRspDto;
 import com.nokcha.efbe.domain.profile.entity.UserProfileImage;
 import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.event.UserReactivatedEvent;
@@ -85,11 +86,42 @@ public class UserInfoService {
         user.updateScode(passwordEncoder.encode(reqDto.getScode()));
     }
 
+    // 탈퇴 유예 일수 — UserWithdrawal.request() 의 plusDays(30) 와 반드시 일치해야 함
+    private static final int WITHDRAWAL_GRACE_DAYS = 30;
+
+    // 탈퇴 화면 안내 정보 — 유예/잉크/구독 경고. 잉크·구독은 payment 도메인 연동 전이라 훅(스텁)만.
+    @Transactional(readOnly = true)
+    public WithdrawalPreviewRspDto getWithdrawalPreview() {
+        Long userId = securityUtil.getCurrentUserId();
+
+        // [HOOK] payment 도메인 안정화 후 실제 잉크 잔액/구독 상태 조회로 교체
+        //   Integer inkBalance = inkFundService.getBalance(userId);
+        //   SubscriptionStatus sub = subscriptionService.getActive(userId);
+        Integer inkBalance = null;
+        Boolean hasActiveSubscription = null;
+        LocalDateTime subscriptionExpiresAt = null;
+        boolean paymentInfoAvailable = false;
+
+        return WithdrawalPreviewRspDto.builder()
+                .graceDays(WITHDRAWAL_GRACE_DAYS)
+                .scheduledDestroyAt(LocalDateTime.now().plusDays(WITHDRAWAL_GRACE_DAYS))
+                .inkBalance(inkBalance)
+                .hasActiveSubscription(hasActiveSubscription)
+                .subscriptionExpiresAt(subscriptionExpiresAt)
+                .paymentInfoAvailable(paymentInfoAvailable)
+                .build();
+    }
+
     // 탈퇴
     @Transactional
     public void withdraw(UserWithdrawalReqDto reqDto, HttpServletRequest request) {
         User user = userRepository.findById(securityUtil.getCurrentUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_USER));
+
+        // 본인 확인 — 탈퇴는 되돌리기 어려우므로 비밀번호 재인증
+        if (!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
 
         UserWithdrawal withdrawal = userWithdrawalRepository.findByUserId(user.getId())
                 .orElse(null);

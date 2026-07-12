@@ -2,6 +2,7 @@ package com.nokcha.efbe.domain.admin.suspension.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.blockedIdentity.service.BlockedIdentityService;
 import com.nokcha.efbe.domain.admin.auth.entity.AdminAccount;
 import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
 import com.nokcha.efbe.domain.admin.suspension.dto.response.AdminSuspensionRspDto;
@@ -62,6 +63,7 @@ public class AdminSuspensionService {
     private final UserRepository userRepository;
     private final SuspensionService suspensionService;
     private final AdminAccountRepository adminAccountRepository;
+    private final BlockedIdentityService blockedIdentityService;
 
     /* ─────────── 부과 / 해제 / 조회 ─────────── */
 
@@ -90,6 +92,12 @@ public class AdminSuspensionService {
                 .build();
         userSuspensionRepository.save(suspension);
         suspensionService.evaluateAndUpdateStatus(user);
+
+        // 영구정지 → 재가입 차단 원장 등록 (약관 제7조/아웃팅 무관용 근거).
+        //  본인인증(DI) 미도입 현재는 user.diHash 가 null 이라 no-op — DI 채워지면 자동 동작.
+        if (type == SuspensionType.PERMANENT) {
+            blockedIdentityService.registerPermanentBan(user.getDiHash(), user.getId(), reason);
+        }
 
         // WARNING 부과 직후만 에스컬레이션 검사. TEMPORARY/PERMANENT 부과 시 검사 안 함 (무한 루프 방지).
         if (type == SuspensionType.WARNING) {

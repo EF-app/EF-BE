@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -148,6 +149,18 @@ public class R2ImageServiceImpl implements R2ImageService {
                 .build();
 
         return feedbackImageRepository.save(feedbackImage);
+    }
+
+    // URL 로 R2 객체 삭제 (탈퇴 파기). key = url 에서 publicUrl prefix 제거. deleteObject 는 멱등.
+    @Override
+    public void deleteByUrl(String url) {
+        if (url == null || url.isBlank()) return;
+        String prefix = publicUrl + "/";
+        String key = url.startsWith(prefix) ? url.substring(prefix.length()) : url;
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build());
     }
 
     // 프로필 이미지 유효성 검증

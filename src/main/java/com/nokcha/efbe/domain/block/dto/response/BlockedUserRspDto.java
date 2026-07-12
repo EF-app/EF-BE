@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.block.dto.response;
 
+import com.nokcha.efbe.common.util.DisplayNameUtil;
 import com.nokcha.efbe.domain.block.entity.Block;
 import com.nokcha.efbe.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -36,7 +37,7 @@ public class BlockedUserRspDto {
         return BlockedUserRspDto.builder()
                 .id(b.getId())
                 .blockedUserId(blocked.getId())
-                .nickname(blocked.getNickname())
+                .nickname(DisplayNameUtil.orWithdrawn(blocked.getNickname()))
                 .age(blocked.getAge())
                 .area(area)
                 .createTime(b.getCreateTime())

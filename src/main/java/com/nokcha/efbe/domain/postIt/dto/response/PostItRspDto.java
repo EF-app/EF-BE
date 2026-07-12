@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.postIt.dto.response;
 
+import com.nokcha.efbe.common.util.DisplayNameUtil;
 import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.domain.postIt.entity.PostCategory;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
@@ -171,6 +172,7 @@ public class PostItRspDto {
 
     private static String resolveNickname(boolean anonymous, String rawNickname) {
         if (anonymous) return ANONYMOUS_NICKNAME;
-        return rawNickname == null ? ANONYMOUS_NICKNAME : rawNickname;
+        // 비익명인데 닉네임이 null → 탈퇴 완료(파기) 회원 (users.nickname 익명화됨)
+        return DisplayNameUtil.orWithdrawn(rawNickname);
     }
 }

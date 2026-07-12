@@ -55,6 +55,7 @@ public enum ErrorCode {
     BANNED_USER_SEVEN_DAYS(403, "7일 정지된 회원은 로그인할 수 없습니다."),
     BANNED_USER_THIRTY_DAYS(403, "30일 정지된 회원은 로그인할 수 없습니다."),
     BANNED_USER_FOREVER(403, "영구 정지된 회원은 로그인할 수 없습니다."),
+    BLOCKED_IDENTITY_REREGISTRATION(403, "재가입이 제한된 사용자입니다."),
     ALREADY_USER(409, "이미 존재하는 유저입니다."),
     ALREADY_PHONE(409, "이미 가입된 휴대폰 번호입니다."),
     ALREADY_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
