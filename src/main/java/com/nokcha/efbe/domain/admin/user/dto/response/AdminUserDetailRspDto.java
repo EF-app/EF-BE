@@ -58,9 +58,6 @@ public class AdminUserDetailRspDto {
     @Schema(description = "마지막 활동 시각", example = "2026-05-23T18:42:00", nullable = true)
     private LocalDateTime lastActiveAt;
 
-    @Schema(description = "마지막 닉네임 변경 시각", example = "2026-03-10T14:00:00", nullable = true)
-    private LocalDateTime lastNicknameChangedAt;
-
     @Schema(description = "가입 시각", example = "2025-12-01T09:30:00")
     private LocalDateTime createTime;
 
@@ -128,7 +125,6 @@ public class AdminUserDetailRspDto {
                 .isWithdraw(u.isWithdrawnOrWithdrawing())
                 .withdrawAt(withdrawAt)
                 .lastActiveAt(u.getLastActiveAt())
-                .lastNicknameChangedAt(u.getLastNicknameChangedAt())
                 .createTime(u.getCreateTime())
                 .updateTime(u.getUpdateTime())
                 .paymentTotal(paymentTotal == null ? BigDecimal.ZERO : paymentTotal)

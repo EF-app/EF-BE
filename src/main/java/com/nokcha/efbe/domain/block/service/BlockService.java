@@ -3,6 +3,7 @@ package com.nokcha.efbe.domain.block.service;
 import com.nokcha.efbe.common.util.LocationUtil;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
+import com.nokcha.efbe.domain.area.entity.CodeArea;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.block.dto.response.BlockRspDto;
 import com.nokcha.efbe.domain.block.dto.response.BlockedUserRspDto;
@@ -18,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -71,13 +76,23 @@ public class BlockService {
     // 내 차단 목록
     @Transactional(readOnly = true)
     public List<BlockedUserRspDto> getMyBlocks(Long blockerId) {
-        return blockRepository.findByBlocker_IdOrderByCreateTimeDesc(blockerId).stream()
+        List<Block> blocks = blockRepository.findByBlocker_IdOrderByCreateTimeDesc(blockerId);
+
+        // 지역명 배치 조회 — 차단 대상들의 areaId 를 모두 불러옴
+        List<Long> areaIds = blocks.stream()
+                .map(b -> b.getBlocked().getAreaId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, CodeArea> areaMap = areaIds.isEmpty() ? Map.of()
+                : areaRepository.findAllById(areaIds).stream()
+                        .collect(Collectors.toMap(CodeArea::getId, Function.identity()));
+
+        return blocks.stream()
                 .map(b -> {
-                    User blocked = b.getBlocked();
-                    String area = blocked.getAreaId() == null ? null
-                            : areaRepository.findById(blocked.getAreaId())
-                            .map(LocationUtil::composeLocation)
-                            .orElse(null);
+                    Long areaId = b.getBlocked().getAreaId();
+                    String area = areaId == null ? null
+                            : LocationUtil.composeLocation(areaMap.get(areaId));
                     return BlockedUserRspDto.of(b, area);
                 })
                 .toList();

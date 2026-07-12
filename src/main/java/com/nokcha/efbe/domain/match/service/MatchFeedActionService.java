@@ -14,6 +14,8 @@ import com.nokcha.efbe.domain.match.model.UserContext;
 import com.nokcha.efbe.domain.match.repository.MatchActionRepository;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.ItemUsageService;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,45 @@ public class MatchFeedActionService {
     private final TagDisplayFormatter tagFormatter;
     // mutual 성사 시 match_results INSERT — recordAction 안에서 호출
     private final MatchResultService matchResultService;
+    // 아이템 소비 (슈퍼좋아요/파워메시지 무료→잉크, 되돌리기 무료 카운터)
+    private final ItemUsageService itemUsageService;
+
+    /**
+     * 매칭피드 카드 액션의 진입점 — 아이템 소비(무료 한도/잉크 폴백) 후 액션 등록.
+     *  recordAction 은 MatchListActionService(수락/거절)에서도 재사용되므로, 소비는 이 진입점에서만 한다.
+     */
+    @Transactional
+    public MatchFeedActionResultRspDto recordFeedAction(long actorId, long targetId, MatchActionType type) {
+        Integer remaining = consumeForFeedAction(actorId, targetId, type);
+        MatchFeedActionResultRspDto result = recordAction(actorId, targetId, type);
+        return MatchFeedActionResultRspDto.builder()
+                .isMatched(result.isMatched())
+                .chatRoomId(result.getChatRoomId())
+                .remaining(remaining)
+                .build();
+    }
+
+    /**
+     * 피드 액션 아이템 소비 — LIKE=매칭좋아요(무료 한도), SUPER_LIKE=슈퍼좋아요, POWER_MESSAGE=파워메시지(무료→잉크).
+     *  같은 타입 재프레스는 스킵(멱등) — 같은 카드 중복차감 방지. PASS 는 소비 없음.
+     */
+    private Integer consumeForFeedAction(long actorId, long targetId, MatchActionType type) {
+        if (type == MatchActionType.PASS) {
+            return null;
+        }
+        boolean alreadySameType = actionRepo.findByActorIdAndTargetId(actorId, targetId)
+                .map(existing -> existing.getActionType() == type)
+                .orElse(false);
+        if (alreadySameType) {
+            return null;
+        }
+        return switch (type) {
+            case LIKE -> itemUsageService.consumeFreeOnly(actorId, ItemCodes.MATCH_LIKE).remaining();
+            case SUPER_LIKE -> itemUsageService.consume(actorId, ItemCodes.SUPER_LIKE, targetId).remaining();
+            case POWER_MESSAGE -> itemUsageService.consume(actorId, ItemCodes.POWER_MSG, targetId).remaining();
+            default -> null;
+        };
+    }
 
     /**
      * 매칭피드 카드의 ❤/✕/⭐/💌 등록.
@@ -68,6 +109,7 @@ public class MatchFeedActionService {
             throw new BusinessException(ErrorCode.MATCH_ACTION_TARGET_NOT_FOUND);
         }
 
+        // 아이템 소비는 피드 진입점(recordFeedAction)에서 선행
         MatchingConfig cfg = configLoader.load();
 
         /* DELETE + INSERT — UNIQUE(actor,target) 보장. */
@@ -110,8 +152,8 @@ public class MatchFeedActionService {
         log.debug("[MatchFeedAction] {} {} → {}, expiresAt={}, hasTags={}, isMatched={}, isSuper={}",
                 type, actorId, targetId, expiresAt, tagsJson != null, isMatched, mutualIsSuper);
 
-        // chatRoomId 는 chat 도메인 작업 후 추가. v1 은 null.
-        return new MatchFeedActionResultRspDto(isMatched, null);
+        // chatRoomId 는 chat 도메인 작업 후 추가. v1 은 null. remaining 은 recordFeedAction 에서 채움(직접 호출 시 null).
+        return new MatchFeedActionResultRspDto(isMatched, null, null);
     }
 
     /**
@@ -127,6 +169,8 @@ public class MatchFeedActionService {
         if (action.getActionType() != MatchActionType.PASS) {
             throw new BusinessException(ErrorCode.MATCH_ACTION_UNDO_NOT_ALLOWED);
         }
+        // 되돌리기 일일 한도 — 무료 카운터(기본 1회/일, 프리미엄 무제한). 소진 시 차단.
+        itemUsageService.consumeFreeOnly(actorId, ItemCodes.UNDO);
         actionRepo.delete(action);
         log.debug("[MatchFeedAction] undo PASS {} → {}", actorId, targetId);
     }

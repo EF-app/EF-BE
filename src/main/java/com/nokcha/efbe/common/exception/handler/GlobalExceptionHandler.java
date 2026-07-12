@@ -3,7 +3,6 @@ package com.nokcha.efbe.common.exception.handler;
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
 import com.nokcha.efbe.common.exception.dto.ErrorRspDto;
-import com.nokcha.efbe.common.util.LoggingUtil;
 import com.nokcha.efbe.common.util.SecurityUtil;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSource;
@@ -104,10 +103,12 @@ public class GlobalExceptionHandler {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         log.error("예외 처리 범위 외의 오류 발생");
         printLog(e, request);
+        // 상세 stacktrace 는 파일 로그(printLog) + system_error_log(logStoreApi)에만 저장.
+        // 클라이언트 응답엔 일반 메시지만 — 내부 구조/SQL/경로 노출 방지.
         logStoreApi(e, request, httpStatus.value());
-        String fullStackTrace = LoggingUtil.stackTraceToString(e);
+        //String fullStackTrace = LoggingUtil.stackTraceToString(e);
 
-        return createErrorResponse(httpStatus.value(), httpStatus, e.getMessage() +", " + fullStackTrace);
+        return createErrorResponse(httpStatus.value(), httpStatus, "서버 오류가 발생했습니다.");
     }
 
     // 응답 생성 메소드

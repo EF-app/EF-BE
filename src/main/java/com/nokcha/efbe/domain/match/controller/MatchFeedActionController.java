@@ -38,7 +38,7 @@ public class MatchFeedActionController {
     public RspTemplate<MatchFeedActionResultRspDto> createAction(@PathVariable Long targetId,
                                                               @Valid @RequestBody MatchActionReqDto req) {
         Long actorId = securityUtil.getCurrentUserId();
-        MatchFeedActionResultRspDto result = matchFeedActionService.recordAction(actorId, targetId, req.getType());
+        MatchFeedActionResultRspDto result = matchFeedActionService.recordFeedAction(actorId, targetId, req.getType());
         return new RspTemplate<>(HttpStatus.CREATED, "매칭 액션 등록 성공", result);
     }
 

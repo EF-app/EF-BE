@@ -9,8 +9,6 @@ import com.nokcha.efbe.domain.admin.auth.repository.AdminAccountRepository;
 import com.nokcha.efbe.domain.area.repository.AreaRepository;
 import com.nokcha.efbe.domain.log.entity.LoginFailureReason;
 import com.nokcha.efbe.domain.log.service.UserLoginLogService;
-import com.nokcha.efbe.domain.payment.entity.UserInkFund;
-import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
 import com.nokcha.efbe.domain.policy.entity.PolicyType;
 import com.nokcha.efbe.domain.profile.entity.*;
 import com.nokcha.efbe.domain.suspension.dto.response.UserSuspensionRspDto;
@@ -37,6 +35,7 @@ import com.nokcha.efbe.domain.user.dto.response.TokenRefreshRspDto;
 import com.nokcha.efbe.domain.user.entity.*;
 import com.nokcha.efbe.domain.user.entity.RevokedToken;
 import com.nokcha.efbe.domain.user.event.UserCreatedEvent;
+import com.nokcha.efbe.domain.user.event.UserReactivatedEvent;
 import com.nokcha.efbe.domain.user.repository.ProfileImageRepository;
 import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
 import com.nokcha.efbe.domain.user.repository.UserActivityStatusRepository;
@@ -61,6 +60,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -87,8 +87,10 @@ public class UserAuthService {
     private final UserPersonalRepository userPersonalRepository;
     private final UserActivityStatusRepository userActivityStatusRepository;
     private final UserTermsRepository userTermsRepository;
+
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final UserInkFundRepository userInkFundRepository;
+
     private final UserLoginLogService userLoginLogService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -323,8 +325,10 @@ public class UserAuthService {
                 .email(signUpSession.getEmail())
                 .nickname(signUpSession.getNickname())
                 .areaId(signUpSession.getAreaId())
+
                 .lastNicknameChangedAt(LocalDateTime.now())
                 .lastActiveAt(LocalDateTime.now()) // 가입 시점을 활동 시각으로 — null 방지(휴면 파기 대상 누락 방지)
+
                 .status(UserStatus.ACTIVE)
                 .build());
 
@@ -336,7 +340,6 @@ public class UserAuthService {
         saveUserCustomKeywords(user.getId(), signUpSession.getId());
         saveUserPersonals(user.getId(), signUpSession.getId());
         saveUserActivityStatus(user.getId());
-        saveUserInkFund(user.getId());
         saveUserTerms(user.getId(), signUpSession);
 
         List<UserProfileImage> userProfileImages = profileImageRepository.findBySignUpSessionIdOrderBySortOrderAsc(signUpSession.getId());
@@ -404,9 +407,9 @@ public class UserAuthService {
         logSuccess(user.getId(), reqDto, request);
 
         if (dormantRecovered) {
-            eventPublisher.publishEvent(new com.nokcha.efbe.domain.user.event.UserReactivatedEvent(
+            eventPublisher.publishEvent(new UserReactivatedEvent(
                     user.getId(),
-                    com.nokcha.efbe.domain.user.event.UserReactivatedEvent.Reason.DORMANT_RECOVERED));
+                    UserReactivatedEvent.Reason.DORMANT_RECOVERED));
         }
 
         UserSuspensionRspDto suspension = suspensionService.findActiveBlockingSuspension(user.getId())
@@ -645,7 +648,7 @@ public class UserAuthService {
 
     // UUID 생성
     private String generateUuid() {
-        return java.util.UUID.randomUUID().toString();
+        return UUID.randomUUID().toString();
     }
 
     // YYYYMMDD 형식 생년월일 기준 한국 나이 계산
@@ -723,16 +726,6 @@ public class UserAuthService {
                 .postitReplyReceivedCount(0L)
                 .matchLikeReceivedCount(0L)
                 .matchSuccessCount(0L)
-                .build());
-    }
-
-    // 유저 잉크 잔액 정보 초기화
-    private void saveUserInkFund(Long userId) {
-        userInkFundRepository.save(UserInkFund.builder()
-                .userId(userId)
-                .fund(0)
-                .totalCharged(0)
-                .totalUsed(0)
                 .build());
     }
 

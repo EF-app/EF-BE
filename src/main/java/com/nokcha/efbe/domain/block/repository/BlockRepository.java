@@ -26,6 +26,11 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
     @Query("select b.blocked.id from Block b where b.blocker.id = :blockerId")
     List<Long> findBlockedUserIds(@Param("blockerId") Long blockerId);
 
+    // userId 와 차단 관계(양방향)인 상대 유저 id 전체 — 채팅방 일괄 활성화 판정용(N+1 방지)
+    @Query("select case when b.blocker.id = :userId then b.blocked.id else b.blocker.id end " +
+            "from Block b where b.blocker.id = :userId or b.blocked.id = :userId")
+    List<Long> findCounterpartUserIds(@Param("userId") Long userId);
+
     // 어드민 차단 내역 — keyword(차단자/피차단자 닉네임·UUID LIKE) 동적 필터
     @Query("select b from Block b " +
             "where (:keyword is null " +

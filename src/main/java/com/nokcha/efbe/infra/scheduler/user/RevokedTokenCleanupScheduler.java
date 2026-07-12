@@ -1,10 +1,10 @@
 package com.nokcha.efbe.infra.scheduler.user;
 
 import com.nokcha.efbe.domain.user.repository.RevokedTokenRepository;
-import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
-import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,19 +19,17 @@ import java.time.LocalDateTime;
 public class RevokedTokenCleanupScheduler {
 
     private final RevokedTokenRepository revokedTokenRepository;
-    private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     @Transactional
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "RevokedTokenCleanupScheduler.cleanupExpired", lockAtMostFor = "PT5M", lockAtLeastFor = "PT30S")
     public void cleanupExpired() {
-        try {
+        schedulerGuard.runGuarded("RevokedTokenCleanupScheduler.cleanupExpired", () -> {
             int deleted = revokedTokenRepository.deleteAllExpired(LocalDateTime.now());
             if (deleted > 0) {
                 log.info("[RevokedTokenCleanup] 만료된 폐기 토큰 row 삭제: {}", deleted);
             }
-        } catch (Exception e) {
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "RevokedTokenCleanupScheduler.cleanupExpired", null, e);
-            throw e;
-        }
+        });
     }
 }

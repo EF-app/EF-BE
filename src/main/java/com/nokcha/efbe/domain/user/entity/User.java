@@ -75,9 +75,6 @@ public class User extends BaseEntity {
     @Column
     private LocalDateTime lastActiveAt;
 
-    @Column
-    private LocalDateTime lastNicknameChangedAt;
-
     @Column(name = "fcm_token")
     private String fcmToken;
 
@@ -86,7 +83,7 @@ public class User extends BaseEntity {
     private UserStatus status;
 
     @Builder
-    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, Long areaId, String fcmToken, LocalDateTime lastNicknameChangedAt, UserStatus status, LocalDateTime lastActiveAt) {
+    public User(String uuid, String loginId, String password, String phone, String email, String scode, String nickname, LocalDate birth, Integer age, Long areaId, String fcmToken, UserStatus status, LocalDateTime lastActiveAt) {
         this.uuid = uuid;
         this.loginId = loginId;
         this.password = password;
@@ -98,7 +95,6 @@ public class User extends BaseEntity {
         this.age = age;
         this.areaId = areaId;
         this.fcmToken = fcmToken;
-        this.lastNicknameChangedAt = lastNicknameChangedAt;
         this.status = status == null ? UserStatus.ACTIVE : status;
         this.lastActiveAt = lastActiveAt;
     }
@@ -128,15 +124,9 @@ public class User extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    // 닉네임 변경 시각 갱신 (7일 쿨다운)
-    public void markNicknameChanged(LocalDateTime when) {
-        this.lastNicknameChangedAt = when;
-    }
-
-    // 닉네임 변경 + 마지막 변경 시각 동시 갱신 (마이 프로필 수정)
-    public void updateNickname(String nickname, LocalDateTime when) {
+    // 닉네임 변경 (마이 프로필 수정)
+    public void updateNickname(String nickname) {
         this.nickname = nickname;
-        this.lastNicknameChangedAt = when;
     }
 
     // 지역 변경 (마이 프로필 수정)

@@ -25,6 +25,8 @@ import com.nokcha.efbe.domain.chat.repository.projection.ChatRoomCursor;
 import com.nokcha.efbe.domain.postIt.dto.request.PostReplyReqDto;
 import com.nokcha.efbe.domain.postIt.entity.PostIt;
 import com.nokcha.efbe.domain.postIt.repository.PostItRepository;
+import com.nokcha.efbe.domain.payment.model.ItemCodes;
+import com.nokcha.efbe.domain.payment.service.ItemUsageService;
 import com.nokcha.efbe.domain.profile.entity.CodeKeyword;
 import com.nokcha.efbe.domain.profile.entity.CodePersonal;
 import com.nokcha.efbe.domain.profile.entity.IdealPointType;
@@ -85,6 +87,7 @@ public class ChatService {
     private final ProfileImageRepository profileImageRepository;
     private final CursorCodec cursorCodec;
     private final ChatFirebaseService chatFirebaseService;
+    private final ItemUsageService itemUsageService;
 
     // 내 채팅방 목록
     @Transactional(readOnly = true)
@@ -137,6 +140,9 @@ public class ChatService {
                 ChatRoomType.POST, post.getId(), partnerId)) {
             throw new BusinessException(ErrorCode.DUPLICATE_POST_REPLY);
         }
+
+        // 답장 일일 한도 집행 — 무료 소진 시 잉크 폴백(post_reply). actor=답장자(partnerId), target=글쓴이.
+        itemUsageService.consume(partnerId, ItemCodes.POST_REPLY, post.getUser().getId());
 
         return createPostChatRoom(post, partner, pair, req);
     }
@@ -209,9 +215,16 @@ public class ChatService {
         Long pairUserAId = Math.min(firstUserId, secondUserId);
         Long pairUserBId = Math.max(firstUserId, secondUserId);
         List<ChatRoom> rooms = chatRoomRepository.findNonAnonymousRoomsByPair(pairUserAId, pairUserBId);
+        if (rooms.isEmpty()) return;
+
+        // pair 가 고정이므로 차단/활성 판정을 1회만
+        if (hasBlockBetween(pairUserAId, pairUserBId)) return;
+        if (!arePairUsersActive(pairUserAId, pairUserBId)) return;
 
         for (ChatRoom room : rooms) {
-            activateRoomIfAvailable(room);
+            if (Boolean.TRUE.equals(room.getIsDelete())) continue;
+            room.activate();
+            chatFirebaseService.updateRoomStatus(room);
         }
     }
 
@@ -230,9 +243,26 @@ public class ChatService {
     @Transactional
     public void activateAvailableRoomsByUser(Long userId) {
         List<ChatRoom> rooms = chatRoomRepository.findRoomsByUser(userId);
+        if (rooms.isEmpty()) return;
+
+        // 상대 유저 상태 + 차단 관계를 루프 전에 일괄 조회
+        Set<Long> checkIds = new HashSet<>();
+        checkIds.add(userId);
+        for (ChatRoom room : rooms) checkIds.add(counterpartId(room, userId));
+
+        Map<Long, UserStatus> statusMap = new HashMap<>();
+        for (User u : userRepository.findAllById(checkIds)) statusMap.put(u.getId(), u.getStatus());
+        if (statusMap.get(userId) != UserStatus.ACTIVE) return;   // 본인 비활성이면 전부 활성화 불가
+
+        Set<Long> blockedCounterparts = new HashSet<>(blockRepository.findCounterpartUserIds(userId));
 
         for (ChatRoom room : rooms) {
-            activateRoomIfAvailable(room);
+            if (Boolean.TRUE.equals(room.getIsDelete())) continue;
+            Long other = counterpartId(room, userId);
+            if (blockedCounterparts.contains(other)) continue;         // 차단 관계면 skip
+            if (statusMap.get(other) != UserStatus.ACTIVE) continue;   // 상대 비활성이면 skip
+            room.activate();
+            chatFirebaseService.updateRoomStatus(room);
         }
     }
 
@@ -603,13 +633,9 @@ public class ChatService {
         return room;
     }
 
-    private void activateRoomIfAvailable(ChatRoom room) {
-        if (Boolean.TRUE.equals(room.getIsDelete())) return;
-        if (hasBlockBetween(room.getPairUserAId(), room.getPairUserBId())) return;
-        if (!arePairUsersActive(room.getPairUserAId(), room.getPairUserBId())) return;
-
-        room.activate();
-        chatFirebaseService.updateRoomStatus(room);
+    // 방에서 나(userId) 의 상대 유저 id
+    private Long counterpartId(ChatRoom room, Long userId) {
+        return userId.equals(room.getPairUserAId()) ? room.getPairUserBId() : room.getPairUserAId();
     }
 
     private boolean hasBlockBetween(Long firstUserId, Long secondUserId) {

@@ -4,10 +4,10 @@ import com.nokcha.efbe.domain.suspension.service.SuspensionService;
 import com.nokcha.efbe.domain.user.entity.User;
 import com.nokcha.efbe.domain.user.entity.UserStatus;
 import com.nokcha.efbe.domain.user.repository.UserRepository;
-import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
-import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +23,13 @@ public class SuspensionIntegrityScheduler {
 
     private final UserRepository userRepository;
     private final SuspensionService suspensionService;
-    private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     @Scheduled(cron = "0 0 3 * * MON", zone = "Asia/Seoul")
+    @SchedulerLock(name = "SuspensionIntegrityScheduler.verifyIntegrity", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
     @Transactional
     public void verifyIntegrity() {
-        try {
+        schedulerGuard.runGuarded("SuspensionIntegrityScheduler.verifyIntegrity", () -> {
             List<User> users = userRepository.findAllNonWithdrawn();
             int fixed = 0;
 
@@ -44,9 +45,6 @@ public class SuspensionIntegrityScheduler {
             }
 
             log.info("[SuspensionIntegrity] scanned={}, fixed={}", users.size(), fixed);
-        } catch (Exception e) {
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "SuspensionIntegrityScheduler.verifyIntegrity", null, e);
-            throw e;
-        }
+        });
     }
 }

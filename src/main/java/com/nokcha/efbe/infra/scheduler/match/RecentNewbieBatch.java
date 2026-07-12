@@ -7,13 +7,13 @@ import com.nokcha.efbe.domain.match.config.MatchingConfigLoader;
 import com.nokcha.efbe.domain.match.feed.FeedSelector;
 import com.nokcha.efbe.domain.match.model.PairScore;
 import com.nokcha.efbe.domain.match.model.UserContext;
+import com.nokcha.efbe.domain.match.repository.RecentNewbieFanoutQueryRepository;
+import com.nokcha.efbe.domain.match.repository.RecentNewbieFanoutQueryRepository.FreshNewbieInsert;
 import com.nokcha.efbe.domain.match.repository.UserManagement;
 import com.nokcha.efbe.domain.match.tag.TagDisplayFormatter;
 import com.nokcha.efbe.domain.errorLog.entity.ErrorSeverity;
 import com.nokcha.efbe.domain.errorLog.service.SystemErrorLogService;
-import com.nokcha.efbe.domain.profile.entity.ProfileStatus;
-import com.nokcha.efbe.domain.user.entity.UserStatus;
-import jakarta.persistence.EntityManager;
+import com.nokcha.efbe.infra.scheduler.SchedulerGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -25,7 +25,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,13 +59,14 @@ import java.util.TreeSet;
 @RequiredArgsConstructor
 public class RecentNewbieBatch {
 
-    private final EntityManager em;
+    private final RecentNewbieFanoutQueryRepository fanoutQueryRepository;
     private final MatchingConfigLoader configLoader;
     private final UserManagement userMgmt;
     private final MatchCalculator matchCalculator;
     private final SortKeyCalculator sortKeyCalculator;
     private final TagDisplayFormatter tagFormatter;
     private final SystemErrorLogService systemErrorLogService;
+    private final SchedulerGuard schedulerGuard;
 
     /**
      * 매시 30분 KST — 04:00 NightlyMatchBatch 와 시간차 30분 확보.
@@ -77,7 +77,8 @@ public class RecentNewbieBatch {
     @Transactional
     public void run() {
         long start = System.currentTimeMillis();
-        try {
+        // 전체 중단(설정 로드/신규자 조회 실패 등)은 가드가 ERROR 적재. 개별 newcomer 실패는 루프 내 WARN.
+        schedulerGuard.runGuarded("RecentNewbieBatch.run", () -> {
             MatchingConfig cfg = configLoader.load();
 
             List<Integer> reservedRanks = sortedReserved(cfg);
@@ -87,7 +88,7 @@ public class RecentNewbieBatch {
             }
 
             LocalDateTime since = LocalDateTime.now().minusHours(cfg.getFreshNewbieWindowHours());
-            List<Long> newcomers = findRecentNewcomers(since);
+            List<Long> newcomers = fanoutQueryRepository.findRecentNewcomerIds(since);
             if (newcomers.isEmpty()) {
                 log.debug("[RecentNewbieBatch] 신규자 없음 — since={}", since);
                 return;
@@ -107,40 +108,12 @@ public class RecentNewbieBatch {
             long ms = System.currentTimeMillis() - start;
             log.info("[RecentNewbieBatch] 완료 — newcomers={}, inserts={}, 소요={}ms",
                     newcomers.size(), totalInserted, ms);
-        } catch (Exception e) {
-            // 배치 전체 중단(설정 로드/신규자 조회 실패 등)
-            systemErrorLogService.logStoreBatch(ErrorSeverity.ERROR, "RecentNewbieBatch.run", null, e);
-            throw e;
-        }
+        });
     }
 
     private static List<Integer> sortedReserved(MatchingConfig cfg) {
         Set<Integer> reserved = FeedSelector.computeReservedRanks(cfg);
         return new ArrayList<>(new TreeSet<>(reserved));  // 오름차순
-    }
-
-    /**
-     * 지난 freshNewbieWindowHours 시간 안에 가입한 신규자 ID 목록.
-     *  최신 가입자 우선 처리 — viewer 의 reserved 5자리 (5/10/15/20/25) 가 INSERT IGNORE first-fit 으로
-     *  채워지므로, 처리 순서가 자리 선점 순서가 됨. 신선도 보장을 위해 DESC.
-     *
-     *  인덱스 노트: users.create_time 별도 인덱스 없음 (PK + uk_* 만).
-     *  24h 안 가입자만 필터 + status/profile_status 추가 필터 → 풀스캔이라도 결과 row 가 적음.
-     *  users 행이 10만 넘으면 (create_time, status) 복합 인덱스 검토.
-     */
-    private List<Long> findRecentNewcomers(LocalDateTime since) {
-        return em.createQuery("""
-                SELECT u.id FROM User u
-                  JOIN UserProfile up ON up.userId = u.id
-                 WHERE u.createTime >= :since
-                   AND u.status = :active
-                   AND up.profileStatus = :approved
-                 ORDER BY u.createTime DESC
-                """, Long.class)
-                .setParameter("since", since)
-                .setParameter("active", UserStatus.ACTIVE)
-                .setParameter("approved", ProfileStatus.APPROVED)
-                .getResultList();
     }
 
     /**
@@ -182,24 +155,12 @@ public class RecentNewbieBatch {
             viewerCtxByid.put(v.id(), v);
         }
 
-        // Step A — viewer N 명의 reserved 5자리 점유 상태 SELECT (IN 절 1회)
-        @SuppressWarnings("unchecked")
-        List<Object[]> occupiedRows = em.createNativeQuery(
-                "SELECT viewer_id, match_rank FROM match_daily_feed " +
-                " WHERE feed_date = CURDATE() AND viewer_id IN (:vs) AND match_rank IN (:rs)")
-                .setParameter("vs", viewerIds)
-                .setParameter("rs", reservedRanks)
-                .getResultList();
-        Map<Long, Set<Integer>> occupiedByViewer = new HashMap<>(viewerIds.size() * 2);
-        for (Object[] r : occupiedRows) {
-            long v = ((Number) r[0]).longValue();
-            int rank = ((Number) r[1]).intValue();
-            occupiedByViewer.computeIfAbsent(v, k -> new HashSet<>()).add(rank);
-        }
+        // Step A — viewer N 명의 reserved 자리 점유 상태 조회 (IN 절 1회, Repository 위임)
+        Map<Long, Set<Integer>> occupiedByViewer =
+                fanoutQueryRepository.findOccupiedReservedRanks(viewerIds, reservedRanks);
 
         // Step B — viewer 별 첫 빈 rank 결정. 카드 점수/태그 미리 계산.
-        record InsertRow(long viewerId, int matchRank, double sortKey, String tagsJson) {}
-        List<InsertRow> toInsert = new ArrayList<>(viewerIds.size());
+        List<FreshNewbieInsert> toInsert = new ArrayList<>(viewerIds.size());
         for (Long viewerId : viewerIds) {
             UserContext viewerCtx = viewerCtxByid.get(viewerId);
             if (viewerCtx == null) continue;  // code_area 누락 등 컨텍스트 빌드 실패
@@ -208,35 +169,17 @@ public class RecentNewbieBatch {
             for (Integer r : reservedRanks) {
                 if (!occupied.contains(r)) { firstFree = r; break; }
             }
-            if (firstFree == null) continue;  // reserved 5자리 다 차있음
+            if (firstFree == null) continue;  // reserved 자리 다 차있음
             PairScore ps = matchCalculator.score(viewerCtx, newcomerCtx, cfg);
             double sortKey = sortKeyCalculator.calc(
                     viewerCtx, ps.keyword(), ps.idealBidir(),
                     ps.lifestyle(), ps.location(), cfg);
             String tagsJson = tagFormatter.renderJson(viewerCtx, ps);
-            toInsert.add(new InsertRow(viewerId, firstFree, sortKey, tagsJson));
+            toInsert.add(new FreshNewbieInsert(viewerId, firstFree, sortKey, tagsJson));
         }
-        if (toInsert.isEmpty()) return 0;
 
-        // Step C — multi-row INSERT IGNORE. (viewer, rank) 별 한 줄. positional 파라미터 `?` 순차 바인딩.
-        //  동시성 race (SELECT 후 INSERT 사이 다른 fanOut 이 같은 자리 INSERT) 는 IGNORE 로 자동 흡수.
-        StringBuilder sql = new StringBuilder(
-                "INSERT IGNORE INTO match_daily_feed " +
-                "(feed_date, viewer_id, match_rank, target_id, sort_key, slot_type, tags_json, create_time) VALUES ");
-        for (int i = 0; i < toInsert.size(); i++) {
-            if (i > 0) sql.append(", ");
-            sql.append("(CURDATE(), ?, ?, ?, ?, 'FRESH_NEWBIE', ?, NOW())");
-        }
-        jakarta.persistence.Query insertQ = em.createNativeQuery(sql.toString());
-        int p = 1;
-        for (InsertRow r : toInsert) {
-            insertQ.setParameter(p++, r.viewerId());
-            insertQ.setParameter(p++, r.matchRank());
-            insertQ.setParameter(p++, newcomerId);
-            insertQ.setParameter(p++, r.sortKey());
-            insertQ.setParameter(p++, r.tagsJson());
-        }
-        int affected = insertQ.executeUpdate();
+        // Step C — FRESH_NEWBIE 다건 INSERT IGNORE (Repository 위임)
+        int affected = fanoutQueryRepository.insertFreshNewbieRows(newcomerId, toInsert);
         log.debug("[RecentNewbieBatch] newcomer={} fanOut viewer={} attempted={} inserted={}",
                 newcomerId, viewerIds.size(), toInsert.size(), affected);
         return affected;

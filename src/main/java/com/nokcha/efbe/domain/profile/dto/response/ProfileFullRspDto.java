@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -30,9 +29,6 @@ public class ProfileFullRspDto {
 
     @Schema(description = "나이", example = "27", nullable = true)
     private Integer age;
-
-    @Schema(description = "닉네임 마지막 변경 시각 (FE 가 7일 쿨다운 표시용)", nullable = true)
-    private LocalDateTime lastNicknameChangedAt;
 
     /* 사진 */
     @Schema(description = "프로필 사진 목록 (sortOrder asc)")

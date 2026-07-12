@@ -2,89 +2,91 @@ package com.nokcha.efbe.domain.payment.service;
 
 import com.nokcha.efbe.common.exception.BusinessException;
 import com.nokcha.efbe.common.exception.ErrorCode;
-import com.nokcha.efbe.domain.payment.dto.response.StarTransactionRspDto;
-import com.nokcha.efbe.domain.payment.dto.response.UserInkFundRspDto;
-import com.nokcha.efbe.domain.payment.entity.InkTransaction;
-import com.nokcha.efbe.domain.payment.entity.InkTxType;
-import com.nokcha.efbe.domain.payment.entity.UserInkFund;
-import com.nokcha.efbe.domain.payment.repository.InkTransactionRepository;
-import com.nokcha.efbe.domain.payment.repository.UserInkFundRepository;
+import com.nokcha.efbe.domain.payment.entity.InkHistory;
+import com.nokcha.efbe.domain.payment.entity.InkWallet;
+import com.nokcha.efbe.domain.payment.model.InkTxType;
+import com.nokcha.efbe.domain.payment.repository.InkHistoryRepository;
+import com.nokcha.efbe.domain.payment.repository.InkWalletRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 잉크 지갑 도메인 — 원장(ink_history)에 append + 지갑(ink_wallet) 캐시 갱신을 한 트랜잭션으로
+ */
 @Service
 @RequiredArgsConstructor
 public class InkService {
 
-    private final UserInkFundRepository userInkFundRepository;
-    private final InkTransactionRepository inkTransactionRepository;
+    private final InkWalletRepository walletRepository;
+    private final InkHistoryRepository historyRepository;
 
-    // 내 별 잔액 조회 (없으면 0 잔액으로 초기화)
-    @Transactional
-    public UserInkFundRspDto getMyBalance(Long userId) {
-        UserInkFund fund = ensureBalance(userId);
-        return UserInkFundRspDto.from(fund);
-    }
-
-    // 별 충전 (결제 성공 시 내부 호출)
-    @Transactional
-    public UserInkFundRspDto charge(Long userId, int amount, String refType, Long refId, String memo) {
-        UserInkFund fund = ensureBalance(userId);
-        fund.charge(amount);
-        writeTx(userId, InkTxType.CHARGE, amount, fund.getFund(), refType, refId, memo);
-        return UserInkFundRspDto.from(fund);
-    }
-
-    // 별 차감 (아이템 구매 등 내부 호출)
-    @Transactional
-    public UserInkFundRspDto use(Long userId, int amount, String refType, Long refId, String memo) {
-        UserInkFund fund = userInkFundRepository.findByIdForUpdate(userId)
-                .orElseGet(() -> userInkFundRepository.save(UserInkFund.builder().userId(userId).build()));
-        if (fund.getFund() < amount) throw new BusinessException(ErrorCode.INSUFFICIENT_STAR);
-        fund.use(amount);
-        writeTx(userId, InkTxType.USE, -amount, fund.getFund(), refType, refId, memo);
-        return UserInkFundRspDto.from(fund);
-    }
-
-    // 관리자 지급
-    @Transactional
-    public UserInkFundRspDto grant(Long userId, int amount, String memo) {
-        UserInkFund fund = ensureBalance(userId);
-        fund.charge(amount);
-        writeTx(userId, InkTxType.ADMIN_GRANT, amount, fund.getFund(), null, null, memo);
-        return UserInkFundRspDto.from(fund);
-    }
-
-    // 환불
-    @Transactional
-    public UserInkFundRspDto refund(Long userId, int amount, String refType, Long refId, String memo) {
-        UserInkFund fund = ensureBalance(userId);
-        fund.refund(amount);
-        writeTx(userId, InkTxType.REFUND, amount, fund.getFund(), refType, refId, memo);
-        return UserInkFundRspDto.from(fund);
-    }
-
-    // 내 거래 내역
     @Transactional(readOnly = true)
-    public Page<StarTransactionRspDto> getTransactions(Long userId, int page, int size) {
-        return inkTransactionRepository.findByUserIdOrderByCreateTimeDesc(userId, PageRequest.of(page, size))
-                .map(StarTransactionRspDto::from);
+    public int getBalance(Long userId) {
+        return walletRepository.findById(userId).map(InkWallet::getBalance).orElse(0);
     }
 
-    // 잔액 row 없으면 생성 (동시성 보호 위해 LOCK)
-    private UserInkFund ensureBalance(Long userId) {
-        return userInkFundRepository.findByIdForUpdate(userId)
-                .orElseGet(() -> userInkFundRepository.save(UserInkFund.builder().userId(userId).build()));
+    /** 지갑 조회 (잔액 + 누적 통계). 없으면 empty. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<InkWallet> findWallet(Long userId) {
+        return walletRepository.findById(userId);
     }
 
-    // 거래 원장 append
-    private void writeTx(Long userId, InkTxType type, int amount, int balanceAfter,
-                         String refType, Long refId, String memo) {
-        inkTransactionRepository.save(InkTransaction.builder()
-                .userId(userId).txType(type).amount(amount).balanceAfter(balanceAfter)
-                .refType(refType).refId(refId).memo(memo).build());
+    /** 잉크 내역 (최신순). */
+    @Transactional(readOnly = true)
+    public java.util.List<InkHistory> getHistory(Long userId) {
+        return historyRepository.findByUserIdOrderByCreateTimeDesc(userId);
+    }
+
+    /** 결제 충전 — PAID 전이 시 호출. 지갑 없으면 생성. */
+    @Transactional
+    public InkHistory charge(Long userId, int amount, Long paymentId, String description) {
+        InkWallet wallet = lockOrCreate(userId);
+        wallet.charge(amount);
+        return record(userId, InkTxType.CHARGE, amount, wallet.getBalance(), null, paymentId, description);
+    }
+
+    /** 아이템 유료 사용 차감 — 잔액 부족 시 INSUFFICIENT_STAR. */
+    @Transactional
+    public InkHistory use(Long userId, int amount, String itemCode, String description) {
+        InkWallet wallet = walletRepository.findByUserIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INSUFFICIENT_STAR));
+        wallet.use(amount); // 잔액 부족이면 INSUFFICIENT_STAR
+        return record(userId, InkTxType.USE, -amount, wallet.getBalance(), itemCode, null, description);
+    }
+
+    /** 관리자/이벤트 지급. */
+    @Transactional
+    public InkHistory grant(Long userId, int amount, String description) {
+        InkWallet wallet = lockOrCreate(userId);
+        wallet.charge(amount);
+        return record(userId, InkTxType.GRANT, amount, wallet.getBalance(), null, null, description);
+    }
+
+    /** 환불 복원 — 잔액만 되돌림. */
+    @Transactional
+    public InkHistory refund(Long userId, int amount, Long paymentId, String description) {
+        InkWallet wallet = lockOrCreate(userId);
+        wallet.refund(amount);
+        return record(userId, InkTxType.REFUND, amount, wallet.getBalance(), null, paymentId, description);
+    }
+
+    private InkWallet lockOrCreate(Long userId) {
+        walletRepository.ensureWallet(userId); // 없으면 멱등 생성(동시 첫 생성 레이스 제거)
+        return walletRepository.findByUserIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalStateException("ink_wallet ensure 실패: userId=" + userId));
+    }
+
+    private InkHistory record(Long userId, InkTxType type, int amount, int balanceAfter,
+                              String itemCode, Long paymentId, String description) {
+        return historyRepository.save(InkHistory.builder()
+                .userId(userId)
+                .txType(type)
+                .amount(amount)
+                .balanceAfter(balanceAfter)
+                .itemCode(itemCode)
+                .paymentId(paymentId)
+                .description(description)
+                .build());
     }
 }
