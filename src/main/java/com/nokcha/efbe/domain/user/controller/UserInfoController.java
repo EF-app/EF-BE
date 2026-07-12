@@ -8,6 +8,7 @@ import com.nokcha.efbe.domain.user.dto.response.AccountMaskedRspDto;
 import com.nokcha.efbe.domain.user.dto.response.AccountRevealRspDto;
 import com.nokcha.efbe.domain.user.dto.request.*;
 import com.nokcha.efbe.domain.user.dto.response.UserSummaryRspDto;
+import com.nokcha.efbe.domain.user.dto.response.WithdrawalPreviewRspDto;
 import com.nokcha.efbe.domain.user.service.UserInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -118,12 +119,22 @@ public class UserInfoController {
         return new RspTemplate<>(HttpStatus.OK, "비밀번호가 변경되었습니다.");
     }
 
-    @Operation(summary = "회원 탈퇴", description = "로그인한 회원을 탈퇴 처리하고 탈퇴 사유를 기록합니다.")
+    @Operation(summary = "탈퇴 화면 안내 조회",
+            description = "탈퇴 신청 화면 진입 시 호출. 유예 일수 / 예정 파기 시각 / 잉크·구독 경고 문구를 반환합니다. " +
+                    "잉크·구독 수치는 payment 도메인 연동 전이라 현재 null(paymentInfoAvailable=false).")
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/withdrawal/preview")
+    public RspTemplate<WithdrawalPreviewRspDto> getWithdrawalPreview() {
+        return new RspTemplate<>(HttpStatus.OK, "탈퇴 화면 안내 조회 성공", userInfoService.getWithdrawalPreview());
+    }
+
+    @Operation(summary = "회원 탈퇴 신청",
+            description = "로그인한 회원의 탈퇴를 신청하고 사유를 기록합니다. 신청 후 30일 유예를 거쳐 파기되며, 유예 기간 내 철회할 수 있습니다.")
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/withdrawal")
     public RspTemplate<Void> withdraw(@Valid @RequestBody UserWithdrawalReqDto reqDto, HttpServletRequest request) {
         userInfoService.withdraw(reqDto, request);
-        return new RspTemplate<>(HttpStatus.OK, "회원 탈퇴가 완료되었습니다.");
+        return new RspTemplate<>(HttpStatus.OK, "탈퇴 신청이 접수되었습니다. 30일 후 파기가 완료됩니다.");
     }
 
     @Operation(summary = "회원 탈퇴 취소", description = "대기 중인 탈퇴 요청을 사용자가 직접 취소합니다.")

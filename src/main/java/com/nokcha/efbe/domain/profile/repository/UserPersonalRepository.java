@@ -25,6 +25,11 @@ public interface UserPersonalRepository extends JpaRepository<UserPersonal, Long
     @Query("delete from UserPersonal up where up.userId = :userId and up.type = :type")
     void deleteByUserIdAndType(@Param("userId") Long userId, @Param("type") UserPersonalType type);
 
+    // 탈퇴 파기용 (SELF/IDEAL 전체)
+    @Modifying
+    @Query("delete from UserPersonal up where up.userId = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
+
     // 카테고리만 분리 삭제(self : lifestyle / about-me / my-style 각각)
     @Modifying
     @Query("delete from UserPersonal up " +

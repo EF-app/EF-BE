@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @AllArgsConstructor
@@ -32,4 +34,10 @@ public class LoginRspDto {
 
     @Schema(description = "활성 제재 정보. 없으면 active=false")
     private UserSuspensionRspDto suspension;
+
+    @Schema(description = "탈퇴 대기(30일 유예) 상태 여부. true 면 FE 는 '탈퇴 대기 — 철회' 화면으로 유도", example = "false")
+    private boolean withdrawing;
+
+    @Schema(description = "탈퇴 완료(파기) 예정 일시. withdrawing=true 일 때만 값 존재", nullable = true)
+    private LocalDateTime scheduledDestroyAt;
 }

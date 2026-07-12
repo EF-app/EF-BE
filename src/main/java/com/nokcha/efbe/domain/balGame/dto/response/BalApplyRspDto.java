@@ -1,5 +1,6 @@
 package com.nokcha.efbe.domain.balGame.dto.response;
 
+import com.nokcha.efbe.common.util.DisplayNameUtil;
 import com.nokcha.efbe.domain.balGame.entity.BalApply;
 import com.nokcha.efbe.domain.balGame.entity.BalApplyStatus;
 import com.nokcha.efbe.domain.balGame.entity.BalCategoryCode;
@@ -54,7 +55,7 @@ public class BalApplyRspDto {
         return BalApplyRspDto.builder()
                 .id(a.getId())
                 .userId(a.getUser() == null ? null : a.getUser().getId())
-                .userNickname(a.getUser() == null ? null : a.getUser().getNickname())
+                .userNickname(a.getUser() == null ? null : DisplayNameUtil.orWithdrawn(a.getUser().getNickname()))
                 .optionA(a.getOptionA())
                 .optionB(a.getOptionB())
                 .optionAEmoji(a.getOptionAEmoji())

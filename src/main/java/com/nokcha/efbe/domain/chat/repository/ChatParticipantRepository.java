@@ -44,4 +44,10 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from ChatParticipant p where p.chatRoom.id in :chatRoomIds")
     int deleteByChatRoomIds(@Param("chatRoomIds") Collection<Long> chatRoomIds);
+
+    // 탈퇴 파기용 — 대화방 유지 + 발신자 닉네임 스냅샷만 익명화("탈퇴한 회원")
+    //  ⚠️ clearAutomatically 금지 — 같은 트랜잭션에서 이후 실행되는 user.anonymize()/withdrawal.complete()
+    @Modifying
+    @Query("update ChatParticipant p set p.displayName = :label where p.user.id = :userId")
+    int anonymizeDisplayNameByUserId(@Param("userId") Long userId, @Param("label") String label);
 }

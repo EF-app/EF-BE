@@ -15,4 +15,7 @@ public interface R2ImageService {
 
     // 피드백 첨부 이미지 업로드
     FeedbackImage uploadFeedbackImage(MultipartFile multipartFile, String directory, Feedback feedback, int sortOrder);
+
+    // URL 로 R2 객체 삭제 (탈퇴 파기 등). 멱등 — 없는 키 삭제해도 예외 없음.
+    void deleteByUrl(String url);
 }
