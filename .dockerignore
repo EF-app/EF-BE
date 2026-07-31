@@ -1,0 +1,22 @@
+# 빌드 컨텍스트 최소화 — 아래는 이미지 빌드에 불필요
+.git
+.gitignore
+.gradle
+build
+out
+bin
+
+# IDE / 로컬 설정
+.idea
+*.iml
+.vscode
+.DS_Store
+
+# 문서 / 스크래치 (컨테이너와 무관)
+docs
+*.md
+HELP.md
+
+# 로컬 환경 파일 (시크릿은 docker run -e / Secrets Manager 로 주입)
+*.env
+.env*
